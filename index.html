@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Treadmill Counter with Running Belt</title>
+  <title>Treadmill Counter with Stop & Updated Gradient</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,20 +10,22 @@
       margin-top: 50px;
       background: #f2f2f2;
     }
+    /* 1.5x bigger counter display */
     #counter {
-      font-size: 4em;
-      margin: 20px;
-      padding: 20px;
+      font-size: 6em;
+      margin: 30px;
+      padding: 30px;
       background: #000;
       color: #0f0;
       display: inline-block;
       border-radius: 8px;
-      min-width: 150px;
+      min-width: 225px;
     }
+    /* 1.5x bigger buttons */
     button {
-      font-size: 2em;
-      padding: 10px 20px;
-      margin: 10px;
+      font-size: 3em;
+      padding: 15px 30px;
+      margin: 15px;
       border: none;
       border-radius: 5px;
       cursor: pointer;
@@ -36,27 +38,31 @@
       background: #f44336;
       color: white;
     }
-    /* Treadmill base container */
+    /* Stop/Reset Button */
+    #stop {
+      background: #555;
+      color: white;
+    }
+    /* Treadmill base container: spanning full width */
     #beltContainer {
-      width: 80%;
+      width: 100%;
       margin: 30px auto;
-      height: 100px;
+      height: 150px; /* slightly taller for visual impact */
       background: #333;
       border-radius: 8px;
       overflow: hidden;
       position: relative;
     }
-    /* Treadmill belt style */
+    /* Treadmill belt style: 300% wide with updated dark/gray repeating gradient */
     #belt {
-      width: 200%;
+      width: 300%;
       height: 100%;
-      /* Use a repeating linear gradient to simulate a treadmill belt pattern */
       background: repeating-linear-gradient(
         90deg,
         #666,
-        #666 20px,
-        #555 20px,
-        #555 40px
+        #666 80px,
+        #555 80px,
+        #555 160px
       );
       position: absolute;
       top: 0;
@@ -66,7 +72,8 @@
     }
     @keyframes moveBelt {
       0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
+      100% { transform: translateX(-33.33%); }
+      /* With a 300% wide belt, shifting by 33.33% moves one "screen width" */
     }
   </style>
 </head>
@@ -75,7 +82,9 @@
   <!-- Counter display -->
   <div id="counter">0.0</div>
   <br>
+  <!-- Button order: decrease, stop, increase -->
   <button id="decrease">–</button>
+  <button id="stop">Stop</button>
   <button id="increase">+</button>
 
   <!-- Treadmill base with belt view below the counter -->
@@ -88,38 +97,33 @@
     const counterElement = document.getElementById("counter");
     const increaseBtn = document.getElementById("increase");
     const decreaseBtn = document.getElementById("decrease");
+    const stopBtn = document.getElementById("stop");
     const belt = document.getElementById("belt");
 
     let holdInterval;
 
-    // Update the counter display and adjust belt speed.
+    // Update counter display and adjust belt animation speed
     function updateCounter() {
       counterElement.innerText = counter.toFixed(1);
       if (counter <= 0) {
-        counter = 0; // force the counter to remain at 0
+        counter = 0; // ensure counter does not go negative
         belt.style.animationPlayState = "paused";
       } else {
         belt.style.animationPlayState = "running";
-        // As the counter increases, we want the belt to move faster.
-        // One approach is to set the animation duration inversely proportional to the counter.
-        // For instance, duration = 2 / counter seconds. (Adjust the 2 as needed for your desired base speed.)
+        // Calculate animation duration inversely proportional to counter
+        // Clamp at a minimum of 0.01 seconds so that the belt speeds up further for high counter values.
         let duration = 2 / counter;
-        // Use a minimum duration so that the belt does not move excessively fast.
-        duration = Math.max(duration, 0.2);
+        duration = Math.max(duration, 0.01);
         belt.style.animationDuration = duration + "s";
       }
     }
 
-    // Generic function to start auto-changing the counter.
-    // amount: +0.1 for increment, -0.1 for decrement.
-    // delay: time in ms between each auto change.
+    // Function to start auto-changing the counter continuously.
     function startAutoChange(amount, delay = 50) {
-      // Prevent negative values when decreasing.
+      // Prevent decrementing below 0.
       if (amount < 0 && counter <= 0) return;
       counter += amount;
-      if (counter < 0) {
-        counter = 0;
-      }
+      if (counter < 0) counter = 0;
       updateCounter();
       holdInterval = setInterval(() => {
         if (amount < 0 && counter <= 0) {
@@ -127,30 +131,27 @@
           return;
         }
         counter += amount;
-        if (counter < 0) {
-          counter = 0;
-        }
+        if (counter < 0) counter = 0;
         updateCounter();
       }, delay);
     }
 
-    // Clear the auto-change interval.
     function stopAutoChange() {
       clearInterval(holdInterval);
     }
 
-    // --- Event listeners for mouse events ---
+    // Mouse event listeners for desktop devices.
     increaseBtn.addEventListener("mousedown", () => startAutoChange(0.1));
     increaseBtn.addEventListener("mouseup", stopAutoChange);
     increaseBtn.addEventListener("mouseleave", stopAutoChange);
-
+    
     decreaseBtn.addEventListener("mousedown", () => startAutoChange(-0.1));
     decreaseBtn.addEventListener("mouseup", stopAutoChange);
     decreaseBtn.addEventListener("mouseleave", stopAutoChange);
 
-    // --- Event listeners for touch events (for mobile devices) ---
+    // Touch event listeners for mobile devices.
     increaseBtn.addEventListener("touchstart", (e) => {
-      e.preventDefault(); // Prevent mouse event emulation on mobile devices
+      e.preventDefault();
       startAutoChange(0.1);
     });
     increaseBtn.addEventListener("touchend", (e) => {
@@ -161,7 +162,7 @@
       e.preventDefault();
       stopAutoChange();
     });
-
+    
     decreaseBtn.addEventListener("touchstart", (e) => {
       e.preventDefault();
       startAutoChange(-0.1);
@@ -175,7 +176,7 @@
       stopAutoChange();
     });
 
-    // --- Optional: Single click functionality ---
+    // Optional single-click functionality.
     increaseBtn.addEventListener("click", () => {
       counter += 0.1;
       updateCounter();
@@ -187,6 +188,14 @@
         updateCounter();
       }
     });
+
+    // Stop button: reset counter to 0.0, update display, and pause belt animation.
+    stopBtn.addEventListener("click", () => {
+      counter = 0.0;
+      updateCounter();
+      stopAutoChange();
+    });
   </script>
 </body>
 </html>
+

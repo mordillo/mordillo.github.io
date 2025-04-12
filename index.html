@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Treadmill Counter with Running Belt</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+      background: #f2f2f2;
+    }
+    #counter {
+      font-size: 4em;
+      margin: 20px;
+      padding: 20px;
+      background: #000;
+      color: #0f0;
+      display: inline-block;
+      border-radius: 8px;
+      min-width: 150px;
+    }
+    button {
+      font-size: 2em;
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #increase {
+      background: #4CAF50;
+      color: white;
+    }
+    #decrease {
+      background: #f44336;
+      color: white;
+    }
+    /* Treadmill base container */
+    #beltContainer {
+      width: 80%;
+      margin: 30px auto;
+      height: 100px;
+      background: #333;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+    /* Treadmill belt style */
+    #belt {
+      width: 200%;
+      height: 100%;
+      /* Use a repeating linear gradient to simulate a treadmill belt pattern */
+      background: repeating-linear-gradient(
+        90deg,
+        #666,
+        #666 20px,
+        #555 20px,
+        #555 40px
+      );
+      position: absolute;
+      top: 0;
+      left: 0;
+      animation: moveBelt 2s linear infinite;
+      animation-play-state: paused;
+    }
+    @keyframes moveBelt {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Counter display -->
+  <div id="counter">0.0</div>
+  <br>
+  <button id="decrease">–</button>
+  <button id="increase">+</button>
+
+  <!-- Treadmill base with belt view below the counter -->
+  <div id="beltContainer">
+    <div id="belt"></div>
+  </div>
+
+  <script>
+    let counter = 0.0;
+    const counterElement = document.getElementById("counter");
+    const increaseBtn = document.getElementById("increase");
+    const decreaseBtn = document.getElementById("decrease");
+    const belt = document.getElementById("belt");
+
+    let holdInterval;
+
+    // Update the counter display and adjust belt speed.
+    function updateCounter() {
+      counterElement.innerText = counter.toFixed(1);
+      if (counter <= 0) {
+        counter = 0; // force the counter to remain at 0
+        belt.style.animationPlayState = "paused";
+      } else {
+        belt.style.animationPlayState = "running";
+        // As the counter increases, we want the belt to move faster.
+        // One approach is to set the animation duration inversely proportional to the counter.
+        // For instance, duration = 2 / counter seconds. (Adjust the 2 as needed for your desired base speed.)
+        let duration = 2 / counter;
+        // Use a minimum duration so that the belt does not move excessively fast.
+        duration = Math.max(duration, 0.2);
+        belt.style.animationDuration = duration + "s";
+      }
+    }
+
+    // Generic function to start auto-changing the counter.
+    // amount: +0.1 for increment, -0.1 for decrement.
+    // delay: time in ms between each auto change.
+    function startAutoChange(amount, delay = 50) {
+      // Prevent negative values when decreasing.
+      if (amount < 0 && counter <= 0) return;
+      counter += amount;
+      if (counter < 0) {
+        counter = 0;
+      }
+      updateCounter();
+      holdInterval = setInterval(() => {
+        if (amount < 0 && counter <= 0) {
+          clearInterval(holdInterval);
+          return;
+        }
+        counter += amount;
+        if (counter < 0) {
+          counter = 0;
+        }
+        updateCounter();
+      }, delay);
+    }
+
+    // Clear the auto-change interval.
+    function stopAutoChange() {
+      clearInterval(holdInterval);
+    }
+
+    // --- Event listeners for mouse events ---
+    increaseBtn.addEventListener("mousedown", () => startAutoChange(0.1));
+    increaseBtn.addEventListener("mouseup", stopAutoChange);
+    increaseBtn.addEventListener("mouseleave", stopAutoChange);
+
+    decreaseBtn.addEventListener("mousedown", () => startAutoChange(-0.1));
+    decreaseBtn.addEventListener("mouseup", stopAutoChange);
+    decreaseBtn.addEventListener("mouseleave", stopAutoChange);
+
+    // --- Event listeners for touch events (for mobile devices) ---
+    increaseBtn.addEventListener("touchstart", (e) => {
+      e.preventDefault(); // Prevent mouse event emulation on mobile devices
+      startAutoChange(0.1);
+    });
+    increaseBtn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      stopAutoChange();
+    });
+    increaseBtn.addEventListener("touchcancel", (e) => {
+      e.preventDefault();
+      stopAutoChange();
+    });
+
+    decreaseBtn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      startAutoChange(-0.1);
+    });
+    decreaseBtn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      stopAutoChange();
+    });
+    decreaseBtn.addEventListener("touchcancel", (e) => {
+      e.preventDefault();
+      stopAutoChange();
+    });
+
+    // --- Optional: Single click functionality ---
+    increaseBtn.addEventListener("click", () => {
+      counter += 0.1;
+      updateCounter();
+    });
+    decreaseBtn.addEventListener("click", () => {
+      if (counter > 0) {
+        counter -= 0.1;
+        if (counter < 0) counter = 0;
+        updateCounter();
+      }
+    });
+  </script>
+</body>
+</html>
+

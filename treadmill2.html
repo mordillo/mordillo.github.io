@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Treadmill Counter Ver 2</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+      background: #f2f2f2;
+      position: relative;
+    }
+    /* Back link style */
+    .back-link {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 1.5em;
+      text-decoration: none;
+      color: #000;
+    }
+    /* Counter display with a yellow color (no decimals) */
+    #counter {
+      font-size: 6em;
+      margin: 30px;
+      padding: 30px;
+      background: #000;
+      color: #FF0;
+      display: inline-block;
+      border-radius: 8px;
+      min-width: 225px;
+    }
+    /* 1.5x bigger buttons */
+    button {
+      font-size: 3em;
+      padding: 15px 30px;
+      margin: 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #increase {
+      background: #008CBA;
+      color: white;
+    }
+    #decrease {
+      background: #e60000;
+      color: white;
+    }
+    #stop {
+      background: #555;
+      color: white;
+    }
+    /* Treadmill base container with fixed trapezium shape */
+    #beltContainer {
+      position: relative;
+      width: 100%;
+      margin: 30px auto;
+      height: 250px;
+      background: transparent;
+      border-radius: 8px;
+      overflow: hidden;
+      /* Trapezium shape: narrow at the top, wide at the bottom */
+      clip-path: polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%);
+    }
+    /* Treadmill belt:
+       - Uses a repeating-linear-gradient with two colors:
+         dark blue (#004080) and light blue (#80bfff) with each stripe 80px tall.
+       - Background-size is set to create a full repeating unit of 160px tall.
+       - The belt's background is animated to move vertically.
+    */
+    #belt {
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        #004080,
+        #004080 80px,
+        #80bfff 80px,
+        #80bfff 160px
+      );
+      background-size: 100% 160px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      animation: moveBelt 2s linear infinite;
+      animation-play-state: paused;
+    }
+    /* Animate the background position vertically downward */
+    @keyframes moveBelt {
+      from { background-position: 0 0; }
+      to { background-position: 0 160px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Back link to main page -->
+  <a class="back-link" href="index.html">&larr; Back</a>
+  
+  <!-- Counter display -->
+  <div id="counter">0</div>
+  <br>
+  <!-- Buttons: decrease, stop, increase -->
+  <button id="decrease">–</button>
+  <button id="stop">Stop</button>
+  <button id="increase">+</button>
+
+  <!-- Treadmill base container with trapezium shape -->
+  <div id="beltContainer">
+    <div id="belt"></div>
+  </div>
+
+  <script>
+    // Using integer counter.
+    let counter = 0;
+    const counterElement = document.getElementById("counter");
+    const increaseBtn = document.getElementById("increase");
+    const decreaseBtn = document.getElementById("decrease");
+    const stopBtn = document.getElementById("stop");
+    const belt = document.getElementById("belt");
+
+    let holdInterval;
+
+    // Update display without decimals.
+    function updateCounter() {
+      counterElement.innerText = counter;
+      if (counter <= 0) {
+        counter = 0;
+        belt.style.animationPlayState = "paused";
+      } else {
+        belt.style.animationPlayState = "running";
+        // Calculate the belt animation duration inversely proportional to the counter.
+        let duration = 2 / counter;
+        duration = Math.max(duration, 0.01); // Clamp to a minimum of 0.01 seconds.
+        belt.style.animationDuration = duration + "s";
+      }
+    }
+
+    function startAutoChange(amount, delay = 50) {
+      // Prevent decrementing below 0.
+      if (amount < 0 && counter <= 0) return;
+      counter += amount;
+      if (counter < 0) counter = 0;
+      updateCounter();
+      holdInterval = setInterval(() => {
+        if (amount < 0 && counter <= 0) {
+          clearInterval(holdInterval);
+          return;
+        }
+        counter += amount;
+        if (counter < 0) counter = 0;
+        updateCounter();
+      }, delay);
+    }
+
+    function stopAutoChange() {
+      clearInterval(holdInterval);
+    }
+
+    // Mouse event listeners.
+    increaseBtn.addEventListener("mousedown", () => startAutoChange(1));
+    increaseBtn.addEventListener("mouseup", stopAutoChange);
+    increaseBtn.addEventListener("mouseleave", stopAutoChange);
+    
+    decreaseBtn.addEventListener("mousedown", () => startAutoChange(-1));
+    decreaseBtn.addEventListener("mouseup", stopAutoChange);
+    decreaseBtn.addEventListener("mouseleave", stopAutoChange);
+
+    // Touch event listeners.
+    increaseBtn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      startAutoChange(1);
+    });
+    increaseBtn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      stopAutoChange();
+    });
+    increaseBtn.addEventListener("touchcancel", (e) => {
+      e.preventDefault();
+      stopAutoChange();
+    });
+    
+    decreaseBtn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      startAutoChange(-1);
+    });
+    decreaseBtn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      stopAutoChange();
+    });
+    decreaseBtn.addEventListener("touchcancel", (e) => {
+      e.preventDefault();
+      stopAutoChange();
+    });
+
+    // Optional single-click functionality.
+    increaseBtn.addEventListener("click", () => {
+      counter += 1;
+      updateCounter();
+    });
+    decreaseBtn.addEventListener("click", () => {
+      if (counter > 0) {
+        counter -= 1;
+        if (counter < 0) counter = 0;
+        updateCounter();
+      }
+    });
+
+    // Stop button resets the counter and pauses the animation.
+    stopBtn.addEventListener("click", () => {
+      counter = 0;
+      updateCounter();
+      stopAutoChange();
+    });
+  </script>
+</body>
+</html>

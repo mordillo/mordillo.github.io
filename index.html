@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Treadmill Counter with Stop & Updated Gradient</title>
+  <title>Treadmill Selector</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,192 +10,26 @@
       margin-top: 50px;
       background: #f2f2f2;
     }
-    /* 1.5x bigger counter display */
-    #counter {
-      font-size: 6em;
-      margin: 30px;
-      padding: 30px;
-      background: #000;
-      color: #0f0;
-      display: inline-block;
-      border-radius: 8px;
-      min-width: 225px;
+    h1 {
+      margin-bottom: 50px;
     }
-    /* 1.5x bigger buttons */
-    button {
-      font-size: 3em;
-      padding: 15px 30px;
-      margin: 15px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    #increase {
-      background: #4CAF50;
-      color: white;
-    }
-    #decrease {
-      background: #f44336;
-      color: white;
-    }
-    /* Stop/Reset Button */
-    #stop {
-      background: #555;
-      color: white;
-    }
-    /* Treadmill base container: spanning full width */
-    #beltContainer {
-      width: 100%;
-      margin: 30px auto;
-      height: 150px; /* slightly taller for visual impact */
-      background: #333;
-      border-radius: 8px;
-      overflow: hidden;
-      position: relative;
-    }
-    /* Treadmill belt style: 300% wide with updated dark/gray repeating gradient */
-    #belt {
-      width: 300%;
-      height: 100%;
-      background: repeating-linear-gradient(
-        90deg,
-        #666,
-        #666 80px,
-        #555 80px,
-        #555 160px
-      );
-      position: absolute;
-      top: 0;
-      left: 0;
-      animation: moveBelt 2s linear infinite;
-      animation-play-state: paused;
-    }
-    @keyframes moveBelt {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-33.33%); }
-      /* With a 300% wide belt, shifting by 33.33% moves one "screen width" */
+    .choice {
+      display: block;
+      margin: 20px auto;
+      font-size: 2em;
+      text-decoration: none;
+      padding: 20px;
+      border: 2px solid #000;
+      border-radius: 10px;
+      width: 300px;
+      color: #333;
+      background: #eee;
     }
   </style>
 </head>
 <body>
-
-  <!-- Counter display -->
-  <div id="counter">0.0</div>
-  <br>
-  <!-- Button order: decrease, stop, increase -->
-  <button id="decrease">–</button>
-  <button id="stop">Stop</button>
-  <button id="increase">+</button>
-
-  <!-- Treadmill base with belt view below the counter -->
-  <div id="beltContainer">
-    <div id="belt"></div>
-  </div>
-
-  <script>
-    let counter = 0.0;
-    const counterElement = document.getElementById("counter");
-    const increaseBtn = document.getElementById("increase");
-    const decreaseBtn = document.getElementById("decrease");
-    const stopBtn = document.getElementById("stop");
-    const belt = document.getElementById("belt");
-
-    let holdInterval;
-
-    // Update counter display and adjust belt animation speed
-    function updateCounter() {
-      counterElement.innerText = counter.toFixed(1);
-      if (counter <= 0) {
-        counter = 0; // ensure counter does not go negative
-        belt.style.animationPlayState = "paused";
-      } else {
-        belt.style.animationPlayState = "running";
-        // Calculate animation duration inversely proportional to counter
-        // Clamp at a minimum of 0.01 seconds so that the belt speeds up further for high counter values.
-        let duration = 2 / counter;
-        duration = Math.max(duration, 0.01);
-        belt.style.animationDuration = duration + "s";
-      }
-    }
-
-    // Function to start auto-changing the counter continuously.
-    function startAutoChange(amount, delay = 50) {
-      // Prevent decrementing below 0.
-      if (amount < 0 && counter <= 0) return;
-      counter += amount;
-      if (counter < 0) counter = 0;
-      updateCounter();
-      holdInterval = setInterval(() => {
-        if (amount < 0 && counter <= 0) {
-          clearInterval(holdInterval);
-          return;
-        }
-        counter += amount;
-        if (counter < 0) counter = 0;
-        updateCounter();
-      }, delay);
-    }
-
-    function stopAutoChange() {
-      clearInterval(holdInterval);
-    }
-
-    // Mouse event listeners for desktop devices.
-    increaseBtn.addEventListener("mousedown", () => startAutoChange(0.1));
-    increaseBtn.addEventListener("mouseup", stopAutoChange);
-    increaseBtn.addEventListener("mouseleave", stopAutoChange);
-    
-    decreaseBtn.addEventListener("mousedown", () => startAutoChange(-0.1));
-    decreaseBtn.addEventListener("mouseup", stopAutoChange);
-    decreaseBtn.addEventListener("mouseleave", stopAutoChange);
-
-    // Touch event listeners for mobile devices.
-    increaseBtn.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      startAutoChange(0.1);
-    });
-    increaseBtn.addEventListener("touchend", (e) => {
-      e.preventDefault();
-      stopAutoChange();
-    });
-    increaseBtn.addEventListener("touchcancel", (e) => {
-      e.preventDefault();
-      stopAutoChange();
-    });
-    
-    decreaseBtn.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      startAutoChange(-0.1);
-    });
-    decreaseBtn.addEventListener("touchend", (e) => {
-      e.preventDefault();
-      stopAutoChange();
-    });
-    decreaseBtn.addEventListener("touchcancel", (e) => {
-      e.preventDefault();
-      stopAutoChange();
-    });
-
-    // Optional single-click functionality.
-    increaseBtn.addEventListener("click", () => {
-      counter += 0.1;
-      updateCounter();
-    });
-    decreaseBtn.addEventListener("click", () => {
-      if (counter > 0) {
-        counter -= 0.1;
-        if (counter < 0) counter = 0;
-        updateCounter();
-      }
-    });
-
-    // Stop button: reset counter to 0.0, update display, and pause belt animation.
-    stopBtn.addEventListener("click", () => {
-      counter = 0.0;
-      updateCounter();
-      stopAutoChange();
-    });
-  </script>
+  <h1>Select Treadmill Version</h1>
+  <a class="choice" href="treadmill1.html">Treadmill ver 1</a>
+  <a class="choice" href="treadmill2.html">Treadmill ver 2</a>
 </body>
 </html>
-

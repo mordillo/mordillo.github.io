@@ -9,9 +9,9 @@
       text-align: center;
       margin-top: 50px;
       background: #f2f2f2;
-      position: relative; /* Enables positioning of the back link */
+      position: relative;
     }
-    /* Back-link in the top left */
+    /* Back link style */
     .back-link {
       position: absolute;
       top: 10px;
@@ -20,7 +20,7 @@
       text-decoration: none;
       color: #000;
     }
-    /* 1.5x bigger counter display */
+    /* Counter display (no decimals) */
     #counter {
       font-size: 6em;
       margin: 30px;
@@ -48,7 +48,6 @@
       background: #f44336;
       color: white;
     }
-    /* Stop/Reset Button */
     #stop {
       background: #555;
       color: white;
@@ -63,7 +62,7 @@
       overflow: hidden;
       position: relative;
     }
-    /* Treadmill belt with dark/gray gradient (each stripe 80px wide) */
+    /* Treadmill belt style using a dark/gray repeating gradient */
     #belt {
       width: 300%;
       height: 100%;
@@ -87,34 +86,35 @@
   </style>
 </head>
 <body>
-  <!-- Back link to the main page -->
+  <!-- Back link -->
   <a class="back-link" href="index.html">&larr; Back</a>
-  
-  <!-- Counter display -->
-  <div id="counter">0.0</div>
+
+  <!-- Counter display (integer only) -->
+  <div id="counter">0</div>
   <br>
   <!-- Buttons: decrease, stop, increase -->
   <button id="decrease">–</button>
   <button id="stop">Stop</button>
   <button id="increase">+</button>
 
-  <!-- Treadmill base with belt -->
+  <!-- Treadmill base container -->
   <div id="beltContainer">
     <div id="belt"></div>
   </div>
 
   <script>
-    let counter = 0.0;
+    // Integer counter (no decimals)
+    let counter = 0;
     const counterElement = document.getElementById("counter");
     const increaseBtn = document.getElementById("increase");
     const decreaseBtn = document.getElementById("decrease");
     const stopBtn = document.getElementById("stop");
     const belt = document.getElementById("belt");
-
     let holdInterval;
 
+    // Update display and belt animation speed based on the integer counter.
     function updateCounter() {
-      counterElement.innerText = counter.toFixed(1);
+      counterElement.innerText = counter;
       if (counter <= 0) {
         counter = 0;
         belt.style.animationPlayState = "paused";
@@ -146,19 +146,19 @@
       clearInterval(holdInterval);
     }
 
-    // Mouse events
-    increaseBtn.addEventListener("mousedown", () => startAutoChange(0.1));
+    // Mouse event listeners
+    increaseBtn.addEventListener("mousedown", () => startAutoChange(1));
     increaseBtn.addEventListener("mouseup", stopAutoChange);
     increaseBtn.addEventListener("mouseleave", stopAutoChange);
-    
-    decreaseBtn.addEventListener("mousedown", () => startAutoChange(-0.1));
+
+    decreaseBtn.addEventListener("mousedown", () => startAutoChange(-1));
     decreaseBtn.addEventListener("mouseup", stopAutoChange);
     decreaseBtn.addEventListener("mouseleave", stopAutoChange);
 
-    // Touch events
+    // Touch event listeners for mobile support.
     increaseBtn.addEventListener("touchstart", (e) => {
       e.preventDefault();
-      startAutoChange(0.1);
+      startAutoChange(1);
     });
     increaseBtn.addEventListener("touchend", (e) => {
       e.preventDefault();
@@ -171,7 +171,7 @@
     
     decreaseBtn.addEventListener("touchstart", (e) => {
       e.preventDefault();
-      startAutoChange(-0.1);
+      startAutoChange(-1);
     });
     decreaseBtn.addEventListener("touchend", (e) => {
       e.preventDefault();
@@ -182,22 +182,22 @@
       stopAutoChange();
     });
 
-    // Optional single-click functionality
+    // Single-click functionality.
     increaseBtn.addEventListener("click", () => {
-      counter += 0.1;
+      counter += 1;
       updateCounter();
     });
     decreaseBtn.addEventListener("click", () => {
       if (counter > 0) {
-        counter -= 0.1;
+        counter -= 1;
         if (counter < 0) counter = 0;
         updateCounter();
       }
     });
 
-    // Stop button: resets counter and stops the belt animation
+    // Stop button resets the counter and pauses the animation.
     stopBtn.addEventListener("click", () => {
-      counter = 0.0;
+      counter = 0;
       updateCounter();
       stopAutoChange();
     });

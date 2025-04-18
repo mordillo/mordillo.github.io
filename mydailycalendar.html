@@ -72,6 +72,7 @@
     }
     .value.dropzone.empty { border: 2px dashed #fff; }
     .value.dropzone.filled { border: none; }
+    .value.dropzone.over   { border: 2px dashed #ff0; }
 
     /* -------- POOLS -------- */
     ul.pool {
@@ -96,8 +97,9 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      transition: transform .1s ease;
     }
-    li.draggable-tile:active { cursor: grabbing; }
+    li.draggable-tile:active { cursor: grabbing; transform: scale(1.05); }
 
     /* -------- GRID POSITIONS -------- */
     .day-today      { grid-column: 1 / 2; }
@@ -127,7 +129,7 @@
   <div class="calendar-board">
     <h1 class="board-title">My Daily Calendar</h1>
 
-    <!-- TOP ROW - DROP ZONES -->
+    <!-- TOP DROP ZONES -->
     <div class="tile day-today">
       <div class="label">Day</div>
       <div class="value dropzone empty" data-category="day" id="dayDrop">Day</div>
@@ -150,75 +152,79 @@
 
     <div class="spacer"></div>
 
-    <!-- POOLS -->
-    <div class="tile weekday-pool">
+    <!-- POOLS (each tile wrapper is also a drop target) -->
+    <div class="tile weekday-pool" data-category="day">
       <div class="label">Days</div>
-      <ul class="pool" id="weekdayPool" data-category="day">
-        <li id="day-sun" class="sun draggable-tile" draggable="true" data-category="day">Sunday</li>
-        <li id="day-mon" class="mon draggable-tile" draggable="true" data-category="day">Monday</li>
-        <li id="day-tue" class="tue draggable-tile" draggable="true" data-category="day">Tuesday</li>
-        <li id="day-wed" class="wed draggable-tile" draggable="true" data-category="day">Wednesday</li>
-        <li id="day-thu" class="thu draggable-tile" draggable="true" data-category="day">Thursday</li>
-        <li id="day-fri" class="fri draggable-tile" draggable="true" data-category="day">Friday</li>
-        <li id="day-sat" class="sat draggable-tile" draggable="true" data-category="day">Saturday</li>
-      </ul>
+      <ul class="pool" id="weekdayPool"></ul>
     </div>
 
-    <div class="tile date-pool">
+    <div class="tile date-pool" data-category="date">
       <div class="label">Dates</div>
-      <ul class="pool" id="datePool" data-category="date"></ul>
+      <ul class="pool" id="datePool"></ul>
     </div>
 
-    <div class="tile month-pool">
+    <div class="tile month-pool" data-category="month">
       <div class="label">Months</div>
-      <ul class="pool" id="monthPool" data-category="month"></ul>
+      <ul class="pool" id="monthPool"></ul>
     </div>
 
-    <div class="tile year-pool">
+    <div class="tile year-pool" data-category="year">
       <div class="label">Years</div>
-      <ul class="pool" id="yearPool" data-category="year"></ul>
+      <ul class="pool" id="yearPool"></ul>
     </div>
   </div>
 
   <script>
-    /* -------- Helper: attach drag events -------- */
+    /* -------- DRAG HELPERS -------- */
     function attachDragEvents(el) {
-      el.addEventListener('dragstart', (e) => {
+      el.addEventListener('dragstart', e => {
+        e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('tile-id', el.id);
         e.dataTransfer.setData('category', el.dataset.category);
       });
     }
 
-    /* -------- Generate Date tiles -------- */
+    /* -------- Build Tiles -------- */
+    const weekdayPool = document.getElementById('weekdayPool');
+    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    dayNames.forEach((d, idx) => {
+      const li = document.createElement('li');
+      li.id = `day-${idx}`;
+      li.textContent = d;
+      li.className = `draggable-tile ${['sun','mon','tue','wed','thu','fri','sat'][idx]}`;
+      li.dataset.category = 'day';
+      li.draggable = true;
+      attachDragEvents(li);
+      weekdayPool.appendChild(li);
+    });
+
     const datePool = document.getElementById('datePool');
     for (let i = 1; i <= 31; i++) {
       const li = document.createElement('li');
       li.id = `date-${i}`;
       li.textContent = i;
       li.className = 'draggable-tile';
-      li.setAttribute('draggable', 'true');
       li.dataset.category = 'date';
+      li.draggable = true;
       li.style.backgroundColor = `hsl(${i * 11.6}, 70%, 55%)`;
       attachDragEvents(li);
       datePool.appendChild(li);
     }
 
-    /* -------- Generate Month tiles -------- */
-    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const monthPool = document.getElementById('monthPool');
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     months.forEach((m, idx) => {
       const li = document.createElement('li');
-      li.id = `month-${m.toLowerCase()}`;
+      li.id = `month-${idx}`;
       li.textContent = m;
       li.className = 'draggable-tile';
-      li.setAttribute('draggable', 'true');
       li.dataset.category = 'month';
+      li.draggable = true;
       li.style.backgroundColor = `hsl(${idx * 30}, 70%, 50%)`;
       attachDragEvents(li);
       monthPool.appendChild(li);
     });
 
-    /* -------- Generate Year tiles -------- */
     const yearPool = document.getElementById('yearPool');
     const currentYear = new Date().getFullYear();
     for (let y = currentYear - 2; y <= currentYear + 12; y++) {
@@ -226,62 +232,60 @@
       li.id = `year-${y}`;
       li.textContent = y;
       li.className = 'draggable-tile';
-      li.setAttribute('draggable', 'true');
       li.dataset.category = 'year';
+      li.draggable = true;
       li.style.backgroundColor = `hsl(${(y - (currentYear - 2)) * 22}, 60%, 55%)`;
       attachDragEvents(li);
       yearPool.appendChild(li);
     }
 
-    /* -------- Attach drag events to weekday tiles -------- */
-    document.querySelectorAll('#weekdayPool li').forEach(attachDragEvents);
-
-    /* -------- Drop handling for top drop‑zones -------- */
-    document.querySelectorAll('.value.dropzone').forEach(zone => {
-      zone.addEventListener('dragover', e => e.preventDefault());
-      zone.addEventListener('drop', e => {
+    /* -------- Drag‑and‑drop logic -------- */
+    function registerDropTarget(el, category) {
+      el.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+      el.addEventListener('dragenter', () => el.classList.add('over'));
+      el.addEventListener('dragleave', () => el.classList.remove('over'));
+      el.addEventListener('drop', e => {
         e.preventDefault();
+        el.classList.remove('over');
         const tileId = e.dataTransfer.getData('tile-id');
         const cat = e.dataTransfer.getData('category');
-        if (zone.dataset.category !== cat) return;
+        if (cat !== category) return;
         const tile = document.getElementById(tileId);
         if (!tile) return;
 
-                // If zone already filled, move existing tile back to its pool
-        if (zone.querySelector('.draggable-tile')) {
-          const existing = zone.querySelector('.draggable-tile');
-          const pool = document.querySelector(`ul.pool[data-category="${existing.dataset.category}"]`);
-          pool.appendChild(existing);
-        }
-
-        // Clear zone, append new tile
-        zone.textContent = '';
-        zone.appendChild(tile);
-        zone.classList.remove('empty');
-        zone.classList.add('filled');
-      });
-    });
-
-    /* -------- Drop handling for pools -------- */
-    document.querySelectorAll('ul.pool').forEach(pool => {
-      pool.addEventListener('dragover', e => e.preventDefault());
-      pool.addEventListener('drop', e => {
-        e.preventDefault();
-        const tileId = e.dataTransfer.getData('tile-id');
-        const cat = e.dataTransfer.getData('category');
-        if (pool.dataset.category !== cat) return;
-        const tile = document.getElementById(tileId);
-        if (!tile) return;
-        pool.appendChild(tile);
-
-        // If tile came from a drop zone, mark that zone empty again
-        document.querySelectorAll('.value.dropzone').forEach(z => {
-          if (!z.querySelector('.draggable-tile')) {
-            z.classList.remove('filled');
-            z.classList.add('empty');
-            z.textContent = z.dataset.category.charAt(0).toUpperCase() + z.dataset.category.slice(1);
+        // if dropping into top zone
+        if (el.classList.contains('dropzone')) {
+          // move existing back if any
+          if (el.firstElementChild && el.firstElementChild.classList.contains('draggable-tile')) {
+            const existing = el.firstElementChild;
+            const poolTile = document.querySelector(`.tile[data-category="${existing.dataset.category}"] ul.pool`);
+            poolTile.appendChild(existing);
           }
-        });
-      });
-    });
+          el.textContent = '';
+          el.appendChild(tile);
+          el.classList.remove('empty');
+          el.classList.add('filled');
+        } else {
+          // dropping into pool tile wrapper (.tile)
+          const ul = el.querySelector('ul.pool');
+          ul.appendChild(tile);
 
+          // clear corresponding top zone if now empty
+          const topZone = document.querySelector(`.value.dropzone[data-category="${category}"]`);
+          if (topZone && !topZone.querySelector('.draggable-tile')) {
+            topZone.classList.remove('filled');
+            topZone.classList.add('empty');
+            topZone.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+          }
+        }
+      });
+    }
+
+    // Register top zones
+    document.querySelectorAll('.value.dropzone').forEach(z => registerDropTarget(z, z.dataset.category));
+
+    // Register pool wrappers (.tile) as drop targets
+    document.querySelectorAll('.tile[data-category]').forEach(t => registerDropTarget(t, t.dataset.category));
+  </script>
+</body>
+</html>

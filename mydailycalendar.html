@@ -1,298 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Daily Calendar – Drag & Drop (Desktop + Mobile)</title>
-  <style>
-    :root {
-      --board-bg: #0b1f49;
-      --border: #ffffff;
-      font-family: "Segoe UI", Arial, sans-serif;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>My Daily Calendar – Responsive Drag & Drop</title>
+<style>
+:root {
+  --board-bg:#0b1f49;
+  --border:#fff;
+  font-family:"Segoe UI",Arial,sans-serif;
+}
+body{
+  margin:0;
+  background:#e9e9e9;
+  display:flex;
+  justify-content:center;
+  padding:24px 8px;
+  -webkit-user-select:none;
+  user-select:none;
+  touch-action:manipulation;
+}
+/* -------- BOARD LAYOUT -------- */
+.calendar-board{
+  width:100%;
+  max-width:1280px;
+  background:var(--board-bg);
+  color:#fff;
+  padding:20px 16px;
+  border-radius:12px;
+  box-shadow:0 6px 30px rgba(0,0,0,.35);
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  grid-template-areas:
+    "title  title   title  title"
+    "day    date    month  year"
+    "days   dates   months years";
+  gap:14px;
+}
+@media(max-width:700px){
+  .calendar-board{
+    grid-template-columns:1fr 1fr;
+    grid-template-areas:
+      "title  title"
+      "day    date"
+      "month  year"
+      "days   days"
+      "dates  dates"
+      "months months"
+      "years  years";
+  }
+}
+@media(max-width:480px){
+  .calendar-board{
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "title"
+      "day"
+      "date"
+      "month"
+      "year"
+      "days"
+      "dates"
+      "months"
+      "years";
+  }
+}
+/* -------- TITLE -------- */
+h1.board-title{
+  grid-area:title;
+  text-align:center;
+  font-size:clamp(1.6rem,4vw,2.6rem);
+  margin:0 0 6px;
+}
+/* -------- TILE -------- */
+.tile{
+  border:4px solid var(--border);
+  border-radius:8px;
+  padding:10px 8px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.tile .label{
+  font-weight:600;
+  font-size:1rem;
+  margin-bottom:4px;
+  text-align:center;
+}
+/* -------- ZONES & POOLS -------- */
+.value.dropzone{
+  min-width:110px;
+  min-height:46px;
+  border-radius:6px;
+  font-size:1.3rem;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:4px 6px;
+  transition:border .2s;
+  touch-action:none;
+}
+.value.dropzone.empty{border:2px dashed #fff;}
+.value.dropzone.filled{border:none;}
+.value.dropzone.over{border:2px dashed #ff0;}
 
-    body {
-      margin: 0;
-      background: #e9e9e9;
-      display: flex;
-      justify-content: center;
-      padding: 40px 8px;
-      -webkit-user-select: none; /* Safari */
-      user-select: none;
-      touch-action: manipulation;
-    }
-
-    /* -------- BOARD -------- */
-    .calendar-board {
-      width: min(1280px, 100%);
-      background: var(--board-bg);
-      color: #fff;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      grid-auto-rows: minmax(90px, auto);
-      gap: 18px;
-    }
-
-    h1.board-title {
-      grid-column: 1 / -1;
-      text-align: center;
-      font-size: clamp(1.8rem, 4vw, 3rem);
-      margin: 0 0 10px;
-    }
-
-    /* -------- TILE -------- */
-    .tile {
-      border: 4px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .tile .label {
-      font-weight: 600;
-      font-size: 1.1rem;
-      margin-bottom: 6px;
-      text-align: center;
-    }
-
-    /* -------- DROP ZONES -------- */
-    .value.dropzone {
-      min-width: 110px;
-      min-height: 46px;
-      border-radius: 6px;
-      font-size: 1.4rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 4px 6px;
-      transition: border .2s;
-      touch-action: none; /* prevent iOS long‑press save */
-    }
-    .value.dropzone.empty { border: 2px dashed #fff; }
-    .value.dropzone.filled { border: none; }
-    .value.dropzone.over   { border: 2px dashed #ff0; }
-
-    /* -------- POOLS -------- */
-    ul.pool {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      justify-content: center;
-    }
-
-    /* -------- DRAGGABLE TILE -------- */
-    li.draggable-tile {
-      padding: 4px 8px;
-      border: 2px solid #fff;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: grab;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform .1s ease;
-      touch-action: none; /* disable double‑tap zoom + callout */
-    }
-    li.draggable-tile:active { cursor: grabbing; transform: scale(1.05); }
-
-    /* weekday colours */
-    .sun { background: #ff5050; }
-    .mon { background: #ffb400; }
-    .tue { background: #ffc300; }
-    .wed { background: #7030a0; }
-    .thu { background: #00b050; }
-    .fri { background: #00b0f0; }
-    .sat { background: #7030a0; }
-  </style>
+ul.pool{
+  list-style:none;
+  margin:0;
+  padding:0;
+  width:100%;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  justify-content:center;
+}
+li.draggable-tile{
+  padding:4px 8px;
+  border:2px solid #fff;
+  border-radius:6px;
+  font-weight:600;
+  cursor:grab;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transition:transform .1s ease;
+  touch-action:none;
+}
+li.draggable-tile:active{cursor:grabbing;transform:scale(1.05);}
+/* weekday colours */
+.sun{background:#ff5050;}.mon{background:#ffb400;}.tue{background:#ffc300;}.wed{background:#7030a0;}.thu{background:#00b050;}.fri{background:#00b0f0;}.sat{background:#7030a0;}
+/* Assign grid areas */
+.area-day{grid-area:day;}
+.area-date{grid-area:date;}
+.area-month{grid-area:month;}
+.area-year{grid-area:year;}
+.area-days{grid-area:days;}
+.area-dates{grid-area:dates;}
+.area-months{grid-area:months;}
+.area-years{grid-area:years;}
+</style>
 </head>
 <body>
-  <div class="calendar-board">
-    <h1 class="board-title">My Daily Calendar</h1>
-
-    <!-- TOP DROP ZONES -->
-    <div class="tile" data-category="day"><div class="label">Day</div><div class="value dropzone empty" data-category="day">Day</div></div>
-    <div class="tile" data-category="date"><div class="label">Date</div><div class="value dropzone empty" data-category="date">Date</div></div>
-    <div class="tile" data-category="month"><div class="label">Month</div><div class="value dropzone empty" data-category="month">Month</div></div>
-    <div class="tile" data-category="year"><div class="label">Year</div><div class="value dropzone empty" data-category="year">Year</div></div>
-
-    <!-- POOLS -->
-    <div class="tile weekday-pool" data-category="day"><div class="label">Days</div><ul class="pool" id="weekdayPool"></ul></div>
-    <div class="tile date-pool" data-category="date"><div class="label">Dates</div><ul class="pool" id="datePool"></ul></div>
-    <div class="tile month-pool" data-category="month"><div class="label">Months</div><ul class="pool" id="monthPool"></ul></div>
-    <div class="tile year-pool" data-category="year"><div class="label">Years</div><ul class="pool" id="yearPool"></ul></div>
-  </div>
-
+<div class="calendar-board">
+  <h1 class="board-title">My Daily Calendar</h1>
+  <!-- TOP DROP ZONES -->
+  <div class="tile area-day" data-category="day"><div class="label">Day</div><div class="value dropzone empty" data-category="day">Day</div></div>
+  <div class="tile area-date" data-category="date"><div class="label">Date</div><div class="value dropzone empty" data-category="date">Date</div></div>
+  <div class="tile area-month" data-category="month"><div class="label">Month</div><div class="value dropzone empty" data-category="month">Month</div></div>
+  <div class="tile area-year" data-category="year"><div class="label">Year</div><div class="value dropzone empty" data-category="year">Year</div></div>
+  <!-- POOLS -->
+  <div class="tile area-days" data-category="day"><div class="label">Days</div><ul class="pool" id="weekdayPool"></ul></div>
+  <div class="tile area-dates" data-category="date"><div class="label">Dates</div><ul class="pool" id="datePool"></ul></div>
+  <div class="tile area-months" data-category="month"><div class="label">Months</div><ul class="pool" id="monthPool"></ul></div>
+  <div class="tile area-years" data-category="year"><div class="label">Years</div><ul class="pool" id="yearPool"></ul></div>
+</div>
 <script>
-/*************************
-  Utility Functions
-*************************/
-const qs = (sel, el=document)=>el.querySelector(sel);
-const qsa = (sel, el=document)=>[...el.querySelectorAll(sel)];
-
-/*************************
-  Build Tiles
-*************************/
-function build() {
-  const weekdayPool = qs('#weekdayPool');
-  ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].forEach((d,i)=>{
-    const li=document.createElement('li');
-    li.id=`day-${i}`;
-    li.textContent=d;
-    li.className=`draggable-tile ${['sun','mon','tue','wed','thu','fri','sat'][i]}`;
-    li.dataset.category='day';
-    makeDraggable(li);
-    weekdayPool.appendChild(li);
-  });
-
-  const datePool=qs('#datePool');
-  for(let i=1;i<=31;i++){
-    const li=document.createElement('li');
-    li.id=`date-${i}`;
-    li.textContent=i;
-    li.className='draggable-tile';
-    li.dataset.category='date';
-    li.style.backgroundColor=`hsl(${i*11.6},70%,55%)`;
-    makeDraggable(li);
-    datePool.appendChild(li);
-  }
-
-  const monthPool=qs('#monthPool');
-  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  months.forEach((m,i)=>{
-    const li=document.createElement('li');
-    li.id=`month-${i}`;
-    li.textContent=m;
-    li.className='draggable-tile';
-    li.dataset.category='month';
-    li.style.backgroundColor=`hsl(${i*30},70%,50%)`;
-    makeDraggable(li);
-    monthPool.appendChild(li);
-  });
-
-  const yearPool=qs('#yearPool');
-  const base=new Date().getFullYear()-2;
-  for(let y=base;y<=base+14;y++){
-    const li=document.createElement('li');
-    li.id=`year-${y}`;
-    li.textContent=y;
-    li.className='draggable-tile';
-    li.dataset.category='year';
-    li.style.backgroundColor=`hsl(${(y-base)*22},60%,55%)`;
-    makeDraggable(li);
-    yearPool.appendChild(li);
-  }
-}
-
-/*************************
-  Drag & Touch Handling
-*************************/
-let dragItem=null; // element being dragged on touch devices
-let dragStartX=0, dragStartY=0;
-
-function makeDraggable(el){
-  /* Desktop drag */
-  el.setAttribute('draggable','true');
-  el.addEventListener('dragstart',e=>{
-    e.dataTransfer.setData('tile-id',el.id);
-    e.dataTransfer.setData('category',el.dataset.category);
-    dragItem=null;
-  });
-  /* Mobile touch */
-  el.addEventListener('touchstart',e=>{
-    dragItem=el;
-    const t=e.touches[0];
-    dragStartX=t.clientX;dragStartY=t.clientY;
-  },{passive:true});
-  el.addEventListener('touchmove',e=>{
-    if(!dragItem)return;
-    const t=e.touches[0];
-    dragItem.style.position='fixed';
-    dragItem.style.zIndex=1000;
-    dragItem.style.left=t.clientX-30+'px';
-    dragItem.style.top=t.clientY-20+'px';
-  },{passive:true});
-  el.addEventListener('touchend',e=>{
-    if(!dragItem)return;
-    dragItem.style.position='';
-    dragItem.style.left='';dragItem.style.top='';dragItem.style.zIndex='';
-    const t=e.changedTouches[0];
-    const dropTarget=document.elementFromPoint(t.clientX,t.clientY);
-    processDrop(dragItem,dropTarget);
-    dragItem=null;
-  });
-}
-
-/*************************
-  Drop processing (shared)
-*************************/
-function nearestZone(el){
-  if(!el) return null;
-  return el.closest('.value.dropzone, .tile[data-category]');
-}
-
-function processDrop(tile,target){
-  const zone=nearestZone(target);
-  if(!zone) return;
-  const cat=tile.dataset.category;
-  if(zone.classList.contains('value')){
-    if(zone.dataset.category!==cat) return;
-    // move back existing
-    if(zone.querySelector('.draggable-tile')){
-      const existing=zone.querySelector('.draggable-tile');
-      qs(`.tile[data-category="${cat}"] ul.pool`).appendChild(existing);
-    }
-    zone.textContent='';
-    zone.appendChild(tile);
-    zone.classList.remove('empty');zone.classList.add('filled');
-  }else{ // pool wrapper
-    if(zone.dataset.category!==cat) return;
-    qs('ul.pool',zone).appendChild(tile);
-    const top=qs(`.value.dropzone[data-category="${cat}"]`);
-    if(top&&!top.querySelector('.draggable-tile')){
-      top.classList.remove('filled');top.classList.add('empty');top.textContent=cat.charAt(0).toUpperCase()+cat.slice(1);
-    }
-  }
-}
-
-/*************************
-  Register desktop drop listeners
-*************************/
-function registerDesktop(){
-  // top zones
-  qsa('.value.dropzone').forEach(z=>{
-    z.addEventListener('dragover',e=>{e.preventDefault();});
-    z.addEventListener('drop',e=>{
-      e.preventDefault();
-      const tile=document.getElementById(e.dataTransfer.getData('tile-id'));
-      processDrop(tile,z);
-    });
-  });
-  // pool wrappers
-  qsa('.tile[data-category]').forEach(t=>{
-    t.addEventListener('dragover',e=>{e.preventDefault();});
-    t.addEventListener('drop',e=>{
-      e.preventDefault();
-      const tile=document.getElementById(e.dataTransfer.getData('tile-id'));
-      processDrop(tile,t);
-    });
-  });
-}
-
-/*************************
-  Init
-*************************/
-build();
-registerDesktop();
+/* util */const qs=(s,e=document)=>e.querySelector(s),qsa=(s,e=document)=>[...e.querySelectorAll(s)];
+/* build tiles */function makeTile(id,text,cat,clr){const li=document.createElement('li');li.id=id;li.textContent=text;li.className='draggable-tile';li.dataset.category=cat;if(clr)li.style.backgroundColor=clr;makeDraggable(li);return li;}
+function build(){
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];const wPool=qs('#weekdayPool');days.forEach((d,i)=>{const li=makeTile(`day-${i}`,d,'day');li.classList.add(['sun','mon','tue','wed','thu','fri','sat'][i]);wPool.appendChild(li);});
+  const dPool=qs('#datePool');for(let i=1;i<=31;i++){dPool.appendChild(makeTile(`date-${i}`,i,'date',`hsl(${i*11.6},70%,55%)`));}
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];const mPool=qs('#monthPool');months.forEach((m,i)=>mPool.appendChild(makeTile(`month-${i}`,m,'month',`hsl(${i*30},70%,50%)`)));
+  const yPool=qs('#yearPool');const base=new Date().getFullYear()-2;for(let y=base;y<=base+14;y++){yPool.appendChild(makeTile(`year-${y}`,y,'year',`hsl(${(y-base)*22},60%,55%)`));}}
+/* drag/touch */let dragItem=null;function makeDraggable(el){el.draggable=true;el.addEventListener('dragstart',e=>{e.dataTransfer.setData('id',el.id);e.dataTransfer.setData('cat',el.dataset.category);dragItem=null;});el.addEventListener('touchstart',e=>{dragItem=el;},{passive:true});el.addEventListener('touchmove',e=>{if(!dragItem)return;const t=e.touches[0];dragItem.style.position='fixed';dragItem.style.zIndex=9999;dragItem.style.left=t.clientX-30+'px';dragItem.style.top=t.clientY-20+'px';},{passive:true});el.addEventListener('touchend',e=>{if(!dragItem)return;const t=e.changedTouches[0];dragItem.style.position='';dragItem.style.zIndex='';const target=document.elementFromPoint(t.clientX,t.clientY);handleDrop(dragItem,target);dragItem=null;});}
+function closestZone(el){return el?el.closest('.value.dropzone,.tile[data-category]'):null;}
+function handleDrop(tile,target){const zone=closestZone(target);if(!zone)return;const cat=tile.dataset.category;if(zone.classList.contains('value')){if(zone.dataset.category!==cat)return;if(zone.querySelector('.draggable-tile')){qs(`.tile[data-category="${cat}"] ul.pool`).appendChild(zone.querySelector('.draggable-tile'));}zone.textContent='';zone.appendChild(tile);zone.classList.remove('empty');zone.classList.add('filled');}
+else{if(zone.dataset.category!==cat)return;qs('ul.pool',zone).appendChild(tile);const top=qs(`.value.dropzone[data-category="${cat}"]`);if(top&&!top.querySelector('.draggable-tile')){top.classList.remove('filled');top.classList.add('empty');top.textContent=cat.charAt(0).toUpperCase()+cat.slice(1);}}}
+function registerDesktop(){qsa('.value.dropzone').forEach(z=>{z.addEventListener('dragover',e=>e.preventDefault());z.addEventListener('drop',e=>{e.preventDefault();handleDrop(document.getElementById(e.dataTransfer.getData('id')),z);});});qsa('.tile[data-category]').forEach(t=>{t.addEventListener('dragover',e=>e.preventDefault());t.addEventListener('drop',e=>{e.preventDefault();handleDrop(document.getElementById(e.dataTransfer.getData('id')),t);});});}
+build();registerDesktop();
 </script>
 </body>
 </html>

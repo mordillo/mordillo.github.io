@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Daily Calendar – Drag & Drop</title>
+  <title>My Daily Calendar – Drag & Drop (Desktop + Mobile)</title>
   <style>
     :root {
       --board-bg: #0b1f49;
@@ -17,18 +17,21 @@
       display: flex;
       justify-content: center;
       padding: 40px 8px;
+      -webkit-user-select: none; /* Safari */
+      user-select: none;
+      touch-action: manipulation;
     }
 
     /* -------- BOARD -------- */
     .calendar-board {
-      width: 1280px;
+      width: min(1280px, 100%);
       background: var(--board-bg);
       color: #fff;
       padding: 24px;
       border-radius: 12px;
       box-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       grid-auto-rows: minmax(90px, auto);
       gap: 18px;
     }
@@ -36,7 +39,7 @@
     h1.board-title {
       grid-column: 1 / -1;
       text-align: center;
-      font-size: 3rem;
+      font-size: clamp(1.8rem, 4vw, 3rem);
       margin: 0 0 10px;
     }
 
@@ -62,13 +65,14 @@
       min-width: 110px;
       min-height: 46px;
       border-radius: 6px;
-      font-size: 1.6rem;
+      font-size: 1.4rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 4px 6px;
       transition: border .2s;
+      touch-action: none; /* prevent iOS long‑press save */
     }
     .value.dropzone.empty { border: 2px dashed #fff; }
     .value.dropzone.filled { border: none; }
@@ -93,27 +97,13 @@
       border-radius: 6px;
       font-weight: 600;
       cursor: grab;
-      user-select: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       transition: transform .1s ease;
+      touch-action: none; /* disable double‑tap zoom + callout */
     }
     li.draggable-tile:active { cursor: grabbing; transform: scale(1.05); }
-
-    /* -------- GRID POSITIONS -------- */
-    .day-today      { grid-column: 1 / 2; }
-    .date-today     { grid-column: 2 / 3; }
-    .month-current  { grid-column: 3 / 4; }
-    .year-current   { grid-column: 4 / 5; }
-    .spacer         { grid-column: 5 / 7; }
-
-    .weekday-pool   { grid-column: 1 / 2; grid-row: 3 / 7; }
-    .date-pool      { grid-column: 2 / 4; grid-row: 3 / 9; }
-    .month-pool     { grid-column: 4 / 5; grid-row: 3 / 8; }
-    .year-pool      { grid-column: 5 / 7; grid-row: 3 / 8; }
-
-    .date-pool ul { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
 
     /* weekday colours */
     .sun { background: #ff5050; }
@@ -130,162 +120,180 @@
     <h1 class="board-title">My Daily Calendar</h1>
 
     <!-- TOP DROP ZONES -->
-    <div class="tile day-today">
-      <div class="label">Day</div>
-      <div class="value dropzone empty" data-category="day" id="dayDrop">Day</div>
-    </div>
+    <div class="tile" data-category="day"><div class="label">Day</div><div class="value dropzone empty" data-category="day">Day</div></div>
+    <div class="tile" data-category="date"><div class="label">Date</div><div class="value dropzone empty" data-category="date">Date</div></div>
+    <div class="tile" data-category="month"><div class="label">Month</div><div class="value dropzone empty" data-category="month">Month</div></div>
+    <div class="tile" data-category="year"><div class="label">Year</div><div class="value dropzone empty" data-category="year">Year</div></div>
 
-    <div class="tile date-today">
-      <div class="label">Date</div>
-      <div class="value dropzone empty" data-category="date" id="dateDrop">Date</div>
-    </div>
-
-    <div class="tile month-current">
-      <div class="label">Month</div>
-      <div class="value dropzone empty" data-category="month" id="monthDrop">Month</div>
-    </div>
-
-    <div class="tile year-current">
-      <div class="label">Year</div>
-      <div class="value dropzone empty" data-category="year" id="yearDrop">Year</div>
-    </div>
-
-    <div class="spacer"></div>
-
-    <!-- POOLS (each tile wrapper is also a drop target) -->
-    <div class="tile weekday-pool" data-category="day">
-      <div class="label">Days</div>
-      <ul class="pool" id="weekdayPool"></ul>
-    </div>
-
-    <div class="tile date-pool" data-category="date">
-      <div class="label">Dates</div>
-      <ul class="pool" id="datePool"></ul>
-    </div>
-
-    <div class="tile month-pool" data-category="month">
-      <div class="label">Months</div>
-      <ul class="pool" id="monthPool"></ul>
-    </div>
-
-    <div class="tile year-pool" data-category="year">
-      <div class="label">Years</div>
-      <ul class="pool" id="yearPool"></ul>
-    </div>
+    <!-- POOLS -->
+    <div class="tile weekday-pool" data-category="day"><div class="label">Days</div><ul class="pool" id="weekdayPool"></ul></div>
+    <div class="tile date-pool" data-category="date"><div class="label">Dates</div><ul class="pool" id="datePool"></ul></div>
+    <div class="tile month-pool" data-category="month"><div class="label">Months</div><ul class="pool" id="monthPool"></ul></div>
+    <div class="tile year-pool" data-category="year"><div class="label">Years</div><ul class="pool" id="yearPool"></ul></div>
   </div>
 
-  <script>
-    /* -------- DRAG HELPERS -------- */
-    function attachDragEvents(el) {
-      el.addEventListener('dragstart', e => {
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('tile-id', el.id);
-        e.dataTransfer.setData('category', el.dataset.category);
-      });
-    }
+<script>
+/*************************
+  Utility Functions
+*************************/
+const qs = (sel, el=document)=>el.querySelector(sel);
+const qsa = (sel, el=document)=>[...el.querySelectorAll(sel)];
 
-    /* -------- Build Tiles -------- */
-    const weekdayPool = document.getElementById('weekdayPool');
-    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    dayNames.forEach((d, idx) => {
-      const li = document.createElement('li');
-      li.id = `day-${idx}`;
-      li.textContent = d;
-      li.className = `draggable-tile ${['sun','mon','tue','wed','thu','fri','sat'][idx]}`;
-      li.dataset.category = 'day';
-      li.draggable = true;
-      attachDragEvents(li);
-      weekdayPool.appendChild(li);
+/*************************
+  Build Tiles
+*************************/
+function build() {
+  const weekdayPool = qs('#weekdayPool');
+  ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].forEach((d,i)=>{
+    const li=document.createElement('li');
+    li.id=`day-${i}`;
+    li.textContent=d;
+    li.className=`draggable-tile ${['sun','mon','tue','wed','thu','fri','sat'][i]}`;
+    li.dataset.category='day';
+    makeDraggable(li);
+    weekdayPool.appendChild(li);
+  });
+
+  const datePool=qs('#datePool');
+  for(let i=1;i<=31;i++){
+    const li=document.createElement('li');
+    li.id=`date-${i}`;
+    li.textContent=i;
+    li.className='draggable-tile';
+    li.dataset.category='date';
+    li.style.backgroundColor=`hsl(${i*11.6},70%,55%)`;
+    makeDraggable(li);
+    datePool.appendChild(li);
+  }
+
+  const monthPool=qs('#monthPool');
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  months.forEach((m,i)=>{
+    const li=document.createElement('li');
+    li.id=`month-${i}`;
+    li.textContent=m;
+    li.className='draggable-tile';
+    li.dataset.category='month';
+    li.style.backgroundColor=`hsl(${i*30},70%,50%)`;
+    makeDraggable(li);
+    monthPool.appendChild(li);
+  });
+
+  const yearPool=qs('#yearPool');
+  const base=new Date().getFullYear()-2;
+  for(let y=base;y<=base+14;y++){
+    const li=document.createElement('li');
+    li.id=`year-${y}`;
+    li.textContent=y;
+    li.className='draggable-tile';
+    li.dataset.category='year';
+    li.style.backgroundColor=`hsl(${(y-base)*22},60%,55%)`;
+    makeDraggable(li);
+    yearPool.appendChild(li);
+  }
+}
+
+/*************************
+  Drag & Touch Handling
+*************************/
+let dragItem=null; // element being dragged on touch devices
+let dragStartX=0, dragStartY=0;
+
+function makeDraggable(el){
+  /* Desktop drag */
+  el.setAttribute('draggable','true');
+  el.addEventListener('dragstart',e=>{
+    e.dataTransfer.setData('tile-id',el.id);
+    e.dataTransfer.setData('category',el.dataset.category);
+    dragItem=null;
+  });
+  /* Mobile touch */
+  el.addEventListener('touchstart',e=>{
+    dragItem=el;
+    const t=e.touches[0];
+    dragStartX=t.clientX;dragStartY=t.clientY;
+  },{passive:true});
+  el.addEventListener('touchmove',e=>{
+    if(!dragItem)return;
+    const t=e.touches[0];
+    dragItem.style.position='fixed';
+    dragItem.style.zIndex=1000;
+    dragItem.style.left=t.clientX-30+'px';
+    dragItem.style.top=t.clientY-20+'px';
+  },{passive:true});
+  el.addEventListener('touchend',e=>{
+    if(!dragItem)return;
+    dragItem.style.position='';
+    dragItem.style.left='';dragItem.style.top='';dragItem.style.zIndex='';
+    const t=e.changedTouches[0];
+    const dropTarget=document.elementFromPoint(t.clientX,t.clientY);
+    processDrop(dragItem,dropTarget);
+    dragItem=null;
+  });
+}
+
+/*************************
+  Drop processing (shared)
+*************************/
+function nearestZone(el){
+  if(!el) return null;
+  return el.closest('.value.dropzone, .tile[data-category]');
+}
+
+function processDrop(tile,target){
+  const zone=nearestZone(target);
+  if(!zone) return;
+  const cat=tile.dataset.category;
+  if(zone.classList.contains('value')){
+    if(zone.dataset.category!==cat) return;
+    // move back existing
+    if(zone.querySelector('.draggable-tile')){
+      const existing=zone.querySelector('.draggable-tile');
+      qs(`.tile[data-category="${cat}"] ul.pool`).appendChild(existing);
+    }
+    zone.textContent='';
+    zone.appendChild(tile);
+    zone.classList.remove('empty');zone.classList.add('filled');
+  }else{ // pool wrapper
+    if(zone.dataset.category!==cat) return;
+    qs('ul.pool',zone).appendChild(tile);
+    const top=qs(`.value.dropzone[data-category="${cat}"]`);
+    if(top&&!top.querySelector('.draggable-tile')){
+      top.classList.remove('filled');top.classList.add('empty');top.textContent=cat.charAt(0).toUpperCase()+cat.slice(1);
+    }
+  }
+}
+
+/*************************
+  Register desktop drop listeners
+*************************/
+function registerDesktop(){
+  // top zones
+  qsa('.value.dropzone').forEach(z=>{
+    z.addEventListener('dragover',e=>{e.preventDefault();});
+    z.addEventListener('drop',e=>{
+      e.preventDefault();
+      const tile=document.getElementById(e.dataTransfer.getData('tile-id'));
+      processDrop(tile,z);
     });
-
-    const datePool = document.getElementById('datePool');
-    for (let i = 1; i <= 31; i++) {
-      const li = document.createElement('li');
-      li.id = `date-${i}`;
-      li.textContent = i;
-      li.className = 'draggable-tile';
-      li.dataset.category = 'date';
-      li.draggable = true;
-      li.style.backgroundColor = `hsl(${i * 11.6}, 70%, 55%)`;
-      attachDragEvents(li);
-      datePool.appendChild(li);
-    }
-
-    const monthPool = document.getElementById('monthPool');
-    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    months.forEach((m, idx) => {
-      const li = document.createElement('li');
-      li.id = `month-${idx}`;
-      li.textContent = m;
-      li.className = 'draggable-tile';
-      li.dataset.category = 'month';
-      li.draggable = true;
-      li.style.backgroundColor = `hsl(${idx * 30}, 70%, 50%)`;
-      attachDragEvents(li);
-      monthPool.appendChild(li);
+  });
+  // pool wrappers
+  qsa('.tile[data-category]').forEach(t=>{
+    t.addEventListener('dragover',e=>{e.preventDefault();});
+    t.addEventListener('drop',e=>{
+      e.preventDefault();
+      const tile=document.getElementById(e.dataTransfer.getData('tile-id'));
+      processDrop(tile,t);
     });
+  });
+}
 
-    const yearPool = document.getElementById('yearPool');
-    const currentYear = new Date().getFullYear();
-    for (let y = currentYear - 2; y <= currentYear + 12; y++) {
-      const li = document.createElement('li');
-      li.id = `year-${y}`;
-      li.textContent = y;
-      li.className = 'draggable-tile';
-      li.dataset.category = 'year';
-      li.draggable = true;
-      li.style.backgroundColor = `hsl(${(y - (currentYear - 2)) * 22}, 60%, 55%)`;
-      attachDragEvents(li);
-      yearPool.appendChild(li);
-    }
-
-    /* -------- Drag‑and‑drop logic -------- */
-    function registerDropTarget(el, category) {
-      el.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
-      el.addEventListener('dragenter', () => el.classList.add('over'));
-      el.addEventListener('dragleave', () => el.classList.remove('over'));
-      el.addEventListener('drop', e => {
-        e.preventDefault();
-        el.classList.remove('over');
-        const tileId = e.dataTransfer.getData('tile-id');
-        const cat = e.dataTransfer.getData('category');
-        if (cat !== category) return;
-        const tile = document.getElementById(tileId);
-        if (!tile) return;
-
-        // if dropping into top zone
-        if (el.classList.contains('dropzone')) {
-          // move existing back if any
-          if (el.firstElementChild && el.firstElementChild.classList.contains('draggable-tile')) {
-            const existing = el.firstElementChild;
-            const poolTile = document.querySelector(`.tile[data-category="${existing.dataset.category}"] ul.pool`);
-            poolTile.appendChild(existing);
-          }
-          el.textContent = '';
-          el.appendChild(tile);
-          el.classList.remove('empty');
-          el.classList.add('filled');
-        } else {
-          // dropping into pool tile wrapper (.tile)
-          const ul = el.querySelector('ul.pool');
-          ul.appendChild(tile);
-
-          // clear corresponding top zone if now empty
-          const topZone = document.querySelector(`.value.dropzone[data-category="${category}"]`);
-          if (topZone && !topZone.querySelector('.draggable-tile')) {
-            topZone.classList.remove('filled');
-            topZone.classList.add('empty');
-            topZone.textContent = category.charAt(0).toUpperCase() + category.slice(1);
-          }
-        }
-      });
-    }
-
-    // Register top zones
-    document.querySelectorAll('.value.dropzone').forEach(z => registerDropTarget(z, z.dataset.category));
-
-    // Register pool wrappers (.tile) as drop targets
-    document.querySelectorAll('.tile[data-category]').forEach(t => registerDropTarget(t, t.dataset.category));
-  </script>
+/*************************
+  Init
+*************************/
+build();
+registerDesktop();
+</script>
 </body>
 </html>
+

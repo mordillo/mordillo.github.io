@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>3D Tally Counter</title>
+  <style>
+    body {
+      display: flex;
+      height: 100vh;
+      margin: 0;
+      background: #f0f0f0;
+      align-items: center;
+      justify-content: center;
+    }
+    .counter {
+      background: #d32f2f;
+      border-radius: 20px;
+      padding: 20px;
+      width: 260px;
+      box-shadow:
+        inset 0 6px 12px rgba(0,0,0,0.3),
+        0 6px 12px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .display {
+      background: #111;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 2.5rem;
+      padding: 10px 0;
+      border-radius: 6px;
+      box-shadow: inset 0 4px 6px rgba(0,0,0,0.5);
+      margin-bottom: 20px;
+    }
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      border: none;
+      outline: none;
+      border-radius: 50%;
+      background: #e53935;
+      color: #fff;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 6px 8px rgba(0,0,0,0.4),
+        inset 0 2px 0 rgba(255,255,255,0.3);
+      cursor: pointer;
+    }
+    .btn-large {
+      width: 80px;
+      height: 80px;
+      font-size: 2rem;
+    }
+    .btn-small {
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+    }
+    .btn:active {
+      transform: translateY(4px);
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="counter">
+    <div class="display" id="display">0</div>
+    <div class="buttons">
+      <button id="decrement" class="btn btn-small">−</button>
+      <button id="increment" class="btn btn-large">+</button>
+      <button id="reset"     class="btn btn-small">⟲</button>
+    </div>
+  </div>
+
+  <script>
+    const display = document.getElementById('display');
+    let count = 0;
+
+    function updateDisplay() {
+      display.textContent = count;
+    }
+
+    // Utility: attach click+hold behavior
+    function attachHold(button, action) {
+      let timeoutId, intervalId;
+
+      const start = () => {
+        action(); // single step immediately
+        timeoutId = setTimeout(() => {
+          intervalId = setInterval(action, 100);
+        }, 333);
+      };
+      const cancel = () => {
+        clearTimeout(timeoutId);
+        clearInterval(intervalId);
+      };
+
+      button.addEventListener('mousedown', start);
+      button.addEventListener('touchstart', e => { e.preventDefault(); start(); });
+      button.addEventListener('mouseup', cancel);
+      button.addEventListener('mouseleave', cancel);
+      button.addEventListener('touchend', cancel);
+    }
+
+    // Increment
+    attachHold(document.getElementById('increment'), () => {
+      count++;
+      updateDisplay();
+    });
+
+    // Decrement
+    attachHold(document.getElementById('decrement'), () => {
+      count--;
+      updateDisplay();
+    });
+
+    // Reset (single click only)
+    document.getElementById('reset').addEventListener('click', () => {
+      count = 0;
+      updateDisplay();
+    });
+  </script>
+
+</body>
+</html>

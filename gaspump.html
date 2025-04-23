@@ -7,7 +7,6 @@
   <style>
     body {
       margin: 0;
-      /* increase top padding to ensure vehicles and labels aren't cut off */
       padding-top: env(safe-area-inset-top, 40px);
       background: #eef;
       font-family: sans-serif;
@@ -17,7 +16,6 @@
       height: 100vh;
       box-sizing: border-box;
     }
-
     .wrapper {
       display: flex;
       flex-direction: column;
@@ -29,7 +27,6 @@
       overflow-y: auto;
       box-sizing: border-box;
     }
-
     .content {
       display: flex;
       width: 100%;
@@ -43,6 +40,11 @@
       flex-direction: column;
       gap: 16px;
       flex-shrink: 0;
+      transition: opacity .2s;
+    }
+    .vehicles-panel.disabled {
+      opacity: 0.5;
+      pointer-events: none;
     }
     .thumb-container {
       position: relative;
@@ -96,8 +98,6 @@
       width: 100%;
       display: block;
     }
-
-    /* overlay the readouts on the pump */
     .display {
       position: absolute;
       top: 80px;
@@ -113,7 +113,6 @@
       z-index: 3;
     }
     .display .row { margin: 4px 0; font-size: 16px; }
-
     .price-controls {
       display: flex;
       align-items: center;
@@ -136,7 +135,6 @@
       opacity: 0.4;
       cursor: not-allowed;
     }
-
     #startBtn {
       width: 80%;
       max-width: 300px;
@@ -148,11 +146,10 @@
   </style>
 </head>
 <body>
-
   <div class="wrapper">
     <div class="content">
       <!-- VEHICLE SELECTOR -->
-      <div class="vehicles-panel">
+      <div class="vehicles-panel" id="vehiclesPanel">
         <div class="thumb-container" data-max="10.000">
           <div class="label">Max: 10 Gallons</div>
           <img src="Honda Civic - Car.jpeg" alt="Civic" />
@@ -170,11 +167,8 @@
           <img src="Semitrailer - Truck.jpg" alt="Semitrailer" />
         </div>
       </div>
-
       <!-- PUMP + HUD -->
       <div class="pump-panel">
-
-        <!-- 3D‐tilted pump image -->
         <div class="pump-3d">
           <img src="Gas Pump.jpeg" alt="Gas Pump" />
           <div class="display">
@@ -183,21 +177,15 @@
             <div class="row">$/Gal: $<span id="ppu">2.89</span></div>
           </div>
         </div>
-
-        <!-- price‐per‐gallon control -->
         <div class="price-controls">
           <button id="priceDown">–</button>
           <div class="value">$<span id="ppuDisplay">2.89</span></div>
           <button id="priceUp">+</button>
         </div>
-
-        <!-- start/stop/reset pumping -->
         <button id="startBtn" disabled>Start</button>
-
       </div>
     </div>
   </div>
-
   <script>
     const saleEl = document.getElementById('sale');
     const galEl = document.getElementById('gallon');
@@ -206,6 +194,7 @@
     const btnUp = document.getElementById('priceUp');
     const btnDown = document.getElementById('priceDown');
     const startBtn = document.getElementById('startBtn');
+    const vehiclesPanel = document.getElementById('vehiclesPanel');
     const thumbs = document.querySelectorAll('.thumb-container');
 
     let pricePerGal = 2.89,
@@ -224,22 +213,24 @@
     }
 
     function attachHold(btn, fn) {
-      let delayTimer, repeatTimer;
+      let delayTimer, repeatTimer, holdStart;
       const start = () => {
         if (!btn.disabled) {
+          holdStart = Date.now();
           fn();
           delayTimer = setTimeout(() => {
-            repeatTimer = setInterval(fn, 100);
+            repeatTimer = setInterval(() => {
+              const elapsed = (Date.now() - holdStart) / 1000;
+              const factor = Math.pow(2, Math.floor(elapsed));
+              for (let i = 0; i < factor; i++) fn();
+            }, 100);
           }, 300);
         }
       };
-      const end = () => {
-        clearTimeout(delayTimer);
-        clearInterval(repeatTimer);
-      };
+      const end = () => { clearTimeout(delayTimer); clearInterval(repeatTimer); };
       btn.addEventListener('mousedown', start);
       btn.addEventListener('touchstart', start);
-      ['mouseup', 'mouseleave', 'mouseout', 'touchend', 'touchcancel'].forEach(e => btn.addEventListener(e, end));
+      ['mouseup','mouseleave','mouseout','touchend','touchcancel'].forEach(e => btn.addEventListener(e, end));
     }
 
     function incPrice() { if (pricePerGal < 10.00) pricePerGal = +(pricePerGal + 0.01).toFixed(2); refresh(); }
@@ -252,10 +243,10 @@
       tc.classList.add('selected');
       maxGallons = parseFloat(tc.dataset.max);
       saleAmt = galPumped = 0;
+      refresh();
       startBtn.disabled = false;
       startBtn.textContent = 'Start';
       btnUp.disabled = btnDown.disabled = false;
-      refresh();
     }));
 
     startBtn.addEventListener('click', () => {
@@ -264,6 +255,7 @@
         saleAmt = galPumped = 0; refresh();
         startBtn.textContent = 'Stop';
         btnUp.disabled = btnDown.disabled = true;
+        vehiclesPanel.classList.add('disabled');
         pumpTimer = setInterval(() => {
           galPumped += 0.01;
           if (galPumped >= maxGallons) galPumped = maxGallons;
@@ -278,13 +270,12 @@
         saleAmt = galPumped = 0; refresh();
         startBtn.textContent = 'Start';
         btnUp.disabled = btnDown.disabled = false;
+        vehiclesPanel.classList.remove('disabled');
       }
     });
 
-    // initial render
     refresh();
   </script>
-
 </body>
 </html>
 

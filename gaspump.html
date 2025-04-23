@@ -242,7 +242,7 @@
       ['mouseup', 'mouseleave', 'mouseout', 'touchend', 'touchcancel'].forEach(e => btn.addEventListener(e, end));
     }
 
-    function incPrice() { if (pricePerGal < 9.99) pricePerGal = +(pricePerGal + 0.01).toFixed(2); refresh(); }
+    function incPrice() { if (pricePerGal < 10.00) pricePerGal = +(pricePerGal + 0.01).toFixed(2); refresh(); }
     function decPrice() { if (pricePerGal > 1.00) pricePerGal = +(pricePerGal - 0.01).toFixed(2); refresh(); }
     attachHold(btnUp, incPrice);
     attachHold(btnDown, decPrice);

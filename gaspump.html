@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>3D Pump + Vehicle Selector</title>
   <style>
     body {
       margin: 0;
-      padding: 0;
+      padding-top: env(safe-area-inset-top, 20px);
       background: #eef;
       font-family: sans-serif;
       display: flex;
@@ -88,7 +88,7 @@
       max-width: 300px;
       transform-style: preserve-3d;
       transform: rotateY(20deg) rotateX(-5deg);
-      margin: 0 auto 16px;
+      margin: 20px auto 16px;
       position: relative;
     }
     .pump-3d img {
@@ -225,10 +225,12 @@
     function attachHold(btn, fn) {
       let delayTimer, repeatTimer;
       const start = () => {
-        fn();
-        delayTimer = setTimeout(() => {
-          repeatTimer = setInterval(fn, 100);
-        }, 300);
+        if (!btn.disabled) {
+          fn();
+          delayTimer = setTimeout(() => {
+            repeatTimer = setInterval(fn, 100);
+          }, 300);
+        }
       };
       const end = () => {
         clearTimeout(delayTimer);
@@ -277,12 +279,13 @@
         clearInterval(pumpTimer);
         pumpTimer = null;
         startBtn.textContent = 'Reset';
-        btnUp.disabled = btnDown.disabled = false;
+        // leave price buttons disabled until reset
 
       } else if (mode === 'Reset') {
         saleAmt = galPumped = 0;
         refresh();
         startBtn.textContent = 'Start';
+        btnUp.disabled = btnDown.disabled = false;
       }
     });
 

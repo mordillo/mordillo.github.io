@@ -1,0 +1,69 @@
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body { margin:0; padding:0; overflow:hidden; background:#87CEEB; }
+    #coasterCanvas { display:block; }
+    #controls { position:absolute; bottom:20px; width:100%; text-align:center; }
+    #controls button { 
+      font-size:1.2rem; padding: 15px 20px; margin:0 10px; border:none; border-radius:8px;
+      background:#ffca28; min-width:100px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="coasterCanvas"></canvas>
+  <div id="controls">
+    <button id="btn-slow">Slow Down</button>
+    <button id="btn-fast">Speed Up</button>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
+  <script>
+    // Setup Matter.js engine and renderer
+    const Engine = Matter.Engine, World = Matter.World, Bodies = Matter.Bodies, Body = Matter.Body;
+    const engine = Engine.create();
+    const render = Matter.Render.create({
+      canvas: document.getElementById('coasterCanvas'),
+      engine: engine,
+      options: { width: window.innerWidth, height: window.innerHeight, wireframes: false, background: '#87CEEB' }
+    });
+    Engine.run(engine);
+    Matter.Render.run(render);
+    // Adjust gravity for simulation scale
+    engine.world.gravity.y = 0.8;  // tune this value for desired effect (default 1)
+
+    // Create track segments (simple example: flat ground + hill)
+    const ground = Bodies.rectangle(window.innerWidth/2, window.innerHeight - 50, window.innerWidth, 100, 
+                    { isStatic: true, render: { fillStyle: '#8B4513' } });
+    const hill = Bodies.rectangle(window.innerWidth/1.5, window.innerHeight - 150, 300, 20, 
+                    { isStatic: true, angle: -Math.PI/6, render: { fillStyle: '#8B4513' } });
+    World.add(engine.world, [ground, hill]);
+
+    // Create car (chassis + wheels)
+    const chassis = Bodies.rectangle(100, window.innerHeight - 80, 60, 30, { density: 0.004, friction: 0.002, render: { fillStyle: '#e91e63' } });
+    const wheelA = Bodies.circle(80, window.innerHeight - 65, 12, { friction: 0.8, render: { fillStyle: '#555' } });
+    const wheelB = Bodies.circle(120, window.innerHeight - 65, 12, { friction: 0.8, render: { fillStyle: '#555' } });
+    const axelA = Matter.Constraint.create({ bodyA: chassis, pointA: {x:-20,y:10}, bodyB: wheelA, stiffness: 1 });
+    const axelB = Matter.Constraint.create({ bodyA: chassis, pointA: {x: 20,y:10}, bodyB: wheelB, stiffness: 1 });
+    World.add(engine.world, [chassis, wheelA, wheelB, axelA, axelB]);
+
+    // Control handlers
+    const btnFast = document.getElementById('btn-fast');
+    const btnSlow = document.getElementById('btn-slow');
+    function accelerate() {
+      // apply a small forward force
+      Body.applyForce(chassis, chassis.position, { x: 0.005, y: 0 });
+    }
+    function brake() {
+      // reduce velocity (simulate braking)
+      Body.setVelocity(chassis, { x: chassis.velocity.x * 0.5, y: chassis.velocity.y });
+    }
+    btnFast.addEventListener('touchstart', (e)=>{ e.preventDefault(); accelerate(); });
+    btnFast.addEventListener('click', accelerate);
+    btnSlow.addEventListener('touchstart', (e)=>{ e.preventDefault(); brake(); });
+    btnSlow.addEventListener('click', brake);
+  </script>
+</body>
+</html>
+

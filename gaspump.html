@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>3D Pump + Vehicle Selector</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #eef;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .wrapper {
+      display: flex;
+      gap: 40px;
+      align-items: flex-start;
+    }
+
+    /* —— VEHICLE PALETTE —— */
+    .vehicles-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .thumb-container {
+      position: relative;
+      cursor: pointer;
+    }
+    .thumb-container .label {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .thumb-container img {
+      width: 80px;
+      opacity: 0.6;
+      transition: width 0.2s, opacity 0.2s;
+      border: 2px solid transparent;
+      display: block;
+      z-index: 1;
+    }
+    .thumb-container.selected img {
+      width: 140px;
+      opacity: 1;
+      border-color: #08c;
+    }
+
+    /* —— PUMP AREA —— */
+    .pump-panel {
+      perspective: 800px;
+    }
+    .pump-3d {
+      width: 300px; /* increased to fit LCD */
+      transform-style: preserve-3d;
+      transform: rotateY(20deg) rotateX(-5deg);
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .pump-3d img {
+      width: 100%;
+      display: block;
+    }
+
+    /* overlay the readouts on the pump */
+    .display {
+      position: absolute;
+      top: 80px; /* adjusted to align inside LCD */
+      left: 50%;
+      width: 180px; /* wider to fit LCD window */
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: #0f0;
+      padding: 8px;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      border-radius: 4px;
+      z-index: 3;
+    }
+    .display .row { margin: 4px 0; font-size: 14px; }
+
+    .price-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .price-controls button {
+      width: 32px;
+      height: 32px;
+      font-size: 1.2em;
+    }
+    .price-controls .value {
+      flex: 1;
+      text-align: center;
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    #startBtn {
+      width: 100%;
+      padding: 8px;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrapper">
+
+    <!-- VEHICLE SELECTOR -->
+    <div class="vehicles-panel">
+      <div class="thumb-container" data-max="10.000">
+        <div class="label">Max: 10 Gallons</div>
+        <img src="Honda Civic - Car.jpeg" alt="Civic" />
+      </div>
+      <div class="thumb-container" data-max="15.000">
+        <div class="label">Max: 15 Gallons</div>
+        <img src="Ford Explorer - SUV.jpeg" alt="Explorer" />
+      </div>
+      <div class="thumb-container" data-max="20.000">
+        <div class="label">Max: 20 Gallons</div>
+        <img src="Ford E-350 - Van.jpeg" alt="E-350" />
+      </div>
+      <div class="thumb-container" data-max="45.000">
+        <div class="label">Max: 45 Gallons</div>
+        <img src="Semitrailer - Truck.jpg" alt="Semitrailer" />
+      </div>
+    </div>
+
+    <!-- PUMP + HUD -->
+    <div class="pump-panel">
+
+      <!-- 3D‐tilted pump image -->
+      <div class="pump-3d">
+        <img src="Gas Pump.jpeg" alt="Gas Pump" />
+        <div class="display">
+          <div class="row">Sale: $<span id="sale">0.00</span></div>
+          <div class="row">Gal: <span id="gallon">0.000</span></div>
+          <div class="row">$/Gal: $<span id="ppu">2.89</span></div>
+        </div>
+      </div>
+
+      <!-- price‐per‐gallon control -->
+      <div class="price-controls">
+        <button id="priceDown">–</button>
+        <div class="value">$<span id="ppuDisplay">2.89</span></div>
+        <button id="priceUp">+</button>
+      </div>
+
+      <!-- start/stop/reset pumping -->
+      <button id="startBtn" disabled>Start</button>
+
+    </div>
+  </div>
+
+  <script>
+    const saleEl = document.getElementById('sale');
+    const galEl = document.getElementById('gallon');
+    const ppuEl = document.getElementById('ppu');
+    const ppuDisp = document.getElementById('ppuDisplay');
+    const btnUp = document.getElementById('priceUp');
+    const btnDown = document.getElementById('priceDown');
+    const startBtn = document.getElementById('startBtn');
+    const thumbs = document.querySelectorAll('.thumb-container');
+
+    let pricePerGal = 2.89,
+        saleAmt = 0,
+        galPumped = 0,
+        maxGallons = 0,
+        pumpTimer = null;
+
+    function fmt2(x) { return x.toFixed(2); }
+    function fmt3(x) { return x.toFixed(3); }
+    function refresh() {
+      ppuEl.textContent = fmt2(pricePerGal);
+      ppuDisp.textContent = fmt2(pricePerGal);
+      saleEl.textContent = fmt2(saleAmt);
+      galEl.textContent = fmt3(galPumped);
+    }
+
+    function attachHold(btn, fn) {
+      let delayTimer, repeatTimer;
+      btn.addEventListener('mousedown', () => {
+        fn();
+        delayTimer = setTimeout(() => {
+          repeatTimer = setInterval(fn, 100);
+        }, 300);
+      });
+      ['mouseup','mouseleave','mouseout'].forEach(e => {
+        btn.addEventListener(e, () => {
+          clearTimeout(delayTimer);
+          clearInterval(repeatTimer);
+        });
+      });
+    }
+
+    function incPrice() { if(pricePerGal < 9.99) pricePerGal = +(pricePerGal + 0.01).toFixed(2); refresh(); }
+    function decPrice() { if(pricePerGal > 1.00) pricePerGal = +(pricePerGal - 0.01).toFixed(2); refresh(); }
+    attachHold(btnUp, incPrice);
+    attachHold(btnDown, decPrice);
+
+    thumbs.forEach(tc => {
+      tc.addEventListener('click', () => {
+        thumbs.forEach(t => t.classList.remove('selected'));
+        tc.classList.add('selected');
+        maxGallons = parseFloat(tc.dataset.max);
+        saleAmt = galPumped = 0;
+        startBtn.disabled = false;
+        startBtn.textContent = 'Start';
+        btnUp.disabled = btnDown.disabled = false;
+        refresh();
+      });
+    });
+
+    startBtn.addEventListener('click', () => {
+      const mode = startBtn.textContent;
+      if (mode === 'Start') {
+        saleAmt = galPumped = 0; refresh();
+        startBtn.textContent = 'Stop';
+        btnUp.disabled = btnDown.disabled = true;
+        pumpTimer = setInterval(() => {
+          galPumped += 0.01;
+          if (galPumped >= maxGallons) galPumped = maxGallons;
+          saleAmt = galPumped * pricePerGal;
+          refresh();
+          if (galPumped >= maxGallons) startBtn.click();
+        }, 100);
+
+      } else if (mode === 'Stop') {
+        clearInterval(pumpTimer);
+        pumpTimer = null;
+        startBtn.textContent = 'Reset';
+        btnUp.disabled = btnDown.disabled = false;
+
+      } else if (mode === 'Reset') {
+        saleAmt = galPumped = 0;
+        refresh();
+        startBtn.textContent = 'Start';
+      }
+    });
+
+    // initial render
+    refresh();
+  </script>
+
+</body>
+</html>
+

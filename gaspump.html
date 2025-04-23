@@ -7,7 +7,8 @@
   <style>
     body {
       margin: 0;
-      padding-top: env(safe-area-inset-top, 20px);
+      /* increase top padding to ensure vehicles and labels aren't cut off */
+      padding-top: env(safe-area-inset-top, 40px);
       background: #eef;
       font-family: sans-serif;
       display: flex;
@@ -238,9 +239,7 @@
       };
       btn.addEventListener('mousedown', start);
       btn.addEventListener('touchstart', start);
-      ['mouseup', 'mouseleave', 'mouseout', 'touchend', 'touchcancel'].forEach(e => {
-        btn.addEventListener(e, end);
-      });
+      ['mouseup', 'mouseleave', 'mouseout', 'touchend', 'touchcancel'].forEach(e => btn.addEventListener(e, end));
     }
 
     function incPrice() { if (pricePerGal < 9.99) pricePerGal = +(pricePerGal + 0.01).toFixed(2); refresh(); }
@@ -248,18 +247,16 @@
     attachHold(btnUp, incPrice);
     attachHold(btnDown, decPrice);
 
-    thumbs.forEach(tc => {
-      tc.addEventListener('click', () => {
-        thumbs.forEach(t => t.classList.remove('selected'));
-        tc.classList.add('selected');
-        maxGallons = parseFloat(tc.dataset.max);
-        saleAmt = galPumped = 0;
-        startBtn.disabled = false;
-        startBtn.textContent = 'Start';
-        btnUp.disabled = btnDown.disabled = false;
-        refresh();
-      });
-    });
+    thumbs.forEach(tc => tc.addEventListener('click', () => {
+      thumbs.forEach(t => t.classList.remove('selected'));
+      tc.classList.add('selected');
+      maxGallons = parseFloat(tc.dataset.max);
+      saleAmt = galPumped = 0;
+      startBtn.disabled = false;
+      startBtn.textContent = 'Start';
+      btnUp.disabled = btnDown.disabled = false;
+      refresh();
+    }));
 
     startBtn.addEventListener('click', () => {
       const mode = startBtn.textContent;
@@ -274,16 +271,11 @@
           refresh();
           if (galPumped >= maxGallons) startBtn.click();
         }, 100);
-
       } else if (mode === 'Stop') {
-        clearInterval(pumpTimer);
-        pumpTimer = null;
+        clearInterval(pumpTimer); pumpTimer = null;
         startBtn.textContent = 'Reset';
-        // leave price buttons disabled until reset
-
       } else if (mode === 'Reset') {
-        saleAmt = galPumped = 0;
-        refresh();
+        saleAmt = galPumped = 0; refresh();
         startBtn.textContent = 'Start';
         btnUp.disabled = btnDown.disabled = false;
       }

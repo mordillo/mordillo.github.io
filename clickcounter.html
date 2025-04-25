@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Tally Counter</title>
+  <title>3D Tally Counter with Color Picker</title>
   <style>
     body {
       display: flex;
@@ -12,16 +12,33 @@
       background: #f0f0f0;
       align-items: center;
       justify-content: center;
+      font-family: sans-serif;
+    }
+    .wrapper {
+      text-align: center;
+    }
+    .picker {
+      margin-bottom: 15px;
+    }
+    .picker label {
+      font-weight: bold;
+      margin-right: 8px;
+      color: #333;
     }
     .counter {
-      background: #d32f2f;
+      /* CSS variables for theming */
+      --main-color: #d32f2f;
+      --btn-color:  #e53935;
+      --btn-text-color: #fff;
+
+      background: var(--main-color);
       border-radius: 20px;
       padding: 20px;
       width: 260px;
       box-shadow:
         inset 0 6px 12px rgba(0,0,0,0.3),
         0 6px 12px rgba(0,0,0,0.2);
-      text-align: center;
+      color: #fff;
     }
     .display {
       background: #111;
@@ -42,8 +59,8 @@
       border: none;
       outline: none;
       border-radius: 50%;
-      background: #e53935;
-      color: #fff;
+      background: var(--btn-color);
+      color: var(--btn-text-color);
       user-select: none;
       display: flex;
       align-items: center;
@@ -72,64 +89,101 @@
   </style>
 </head>
 <body>
+  <div class="wrapper">
+    <div class="picker">
+      <label for="colorPicker">Choose color:</label>
+      <select id="colorPicker">
+        <option>Red</option>
+        <option>Yellow</option>
+        <option>Blue</option>
+        <option>Green</option>
+        <option>Purple</option>
+        <option>Brown</option>
+        <option>Pink</option>
+        <option>Gold</option>
+        <option>Silver</option>
+        <option>Orange</option>
+        <option>Cyan</option>
+        <option>Magenta</option>
+        <option>White</option>
+        <option>Black</option>
+      </select>
+    </div>
 
-  <div class="counter">
-    <div class="display" id="display">0</div>
-    <div class="buttons">
-      <button id="decrement" class="btn btn-small">−</button>
-      <button id="increment" class="btn btn-large">+</button>
-      <button id="reset"     class="btn btn-small">⟲</button>
+    <div class="counter" id="counter">
+      <div class="display" id="display">0</div>
+      <div class="buttons">
+        <button id="decrement" class="btn btn-small">−</button>
+        <button id="increment" class="btn btn-large">+</button>
+        <button id="reset"     class="btn btn-small">⟲</button>
+      </div>
     </div>
   </div>
 
   <script>
     const display = document.getElementById('display');
+    const counterEl = document.getElementById('counter');
     let count = 0;
 
     function updateDisplay() {
       display.textContent = count;
     }
 
-    // Utility: attach click+hold behavior
+    // hold-to-repeat utility
     function attachHold(button, action) {
-      let timeoutId, intervalId;
-
+      let tId, iId;
       const start = () => {
-        action(); // single step immediately
-        timeoutId = setTimeout(() => {
-          intervalId = setInterval(action, 100);
+        action();
+        tId = setTimeout(() => {
+          iId = setInterval(action, 100);
         }, 333);
       };
       const cancel = () => {
-        clearTimeout(timeoutId);
-        clearInterval(intervalId);
+        clearTimeout(tId);
+        clearInterval(iId);
       };
-
       button.addEventListener('mousedown', start);
       button.addEventListener('touchstart', e => { e.preventDefault(); start(); });
-      button.addEventListener('mouseup', cancel);
-      button.addEventListener('mouseleave', cancel);
-      button.addEventListener('touchend', cancel);
+      ['mouseup','mouseleave','touchend'].forEach(evt => 
+        button.addEventListener(evt, cancel)
+      );
     }
 
-    // Increment
-    attachHold(document.getElementById('increment'), () => {
-      count++;
-      updateDisplay();
-    });
-
-    // Decrement
-    attachHold(document.getElementById('decrement'), () => {
-      count--;
-      updateDisplay();
-    });
-
-    // Reset (single click only)
+    attachHold(document.getElementById('increment'), () => { count++; updateDisplay(); });
+    attachHold(document.getElementById('decrement'), () => { count--; updateDisplay(); });
     document.getElementById('reset').addEventListener('click', () => {
-      count = 0;
-      updateDisplay();
+      count = 0; updateDisplay();
     });
-  </script>
 
+    // color mappings
+    const colorMap = {
+      Red:    { main:'#d32f2f', btn:'#e53935', text:'#fff' },
+      Yellow: { main:'#fbc02d', btn:'#ffee58', text:'#000' },
+      Blue:   { main:'#1976d2', btn:'#42a5f5', text:'#fff' },
+      Green:  { main:'#388e3c', btn:'#66bb6a', text:'#fff' },
+      Purple: { main:'#7b1fa2', btn:'#ab47bc', text:'#fff' },
+      Brown:  { main:'#5d4037', btn:'#8d6e63', text:'#fff' },
+      Pink:   { main:'#c2185b', btn:'#ec407a', text:'#fff' },
+      Gold:   { main:'#f9a825', btn:'#fff176', text:'#000' },
+      Silver: { main:'#9e9e9e', btn:'#e0e0e0', text:'#000' },
+      Orange: { main:'#f57c00', btn:'#ffa726', text:'#fff' },
+      Cyan:   { main:'#0097a7', btn:'#26c6da', text:'#fff' },
+      Magenta:{ main:'#d500f9', btn:'#e040fb', text:'#fff' },
+      White:  { main:'#ffffff', btn:'#f5f5f5', text:'#000' },
+      Black:  { main:'#212121', btn:'#616161', text:'#fff' }
+    };
+
+    const picker = document.getElementById('colorPicker');
+    picker.addEventListener('change', () => {
+      const c = colorMap[picker.value];
+      counterEl.style.setProperty('--main-color',     c.main);
+      counterEl.style.setProperty('--btn-color',      c.btn);
+      counterEl.style.setProperty('--btn-text-color', c.text);
+    });
+
+    // initialize
+    picker.value = 'Red';
+    picker.dispatchEvent(new Event('change'));
+  </script>
 </body>
 </html>

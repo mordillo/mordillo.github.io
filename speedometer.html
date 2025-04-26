@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <title>HUD Speedometer</title>
-  <!-- Preload the Digital-7 font from GitHub Pages for faster loading on iOS -->
-  <link rel="preload" href="https://mordillo.github.io/digital-7.ttf" as="font" type="font/ttf" crossorigin>
+  <!-- Preload the Digital-7 font files for faster loading -->
+  <link rel="preload" href="digital-7.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="digital-7.ttf" as="font" type="font/ttf" crossorigin>
   <style>
-    /* 1) Import Digital-7 font directly from GitHub Pages */
+    /* 1) Import Digital-7 font from same origin */
     @font-face {
       font-family: 'Digital-7';
-      src: url('https://mordillo.github.io/digital-7.ttf') format('truetype');
+      src: url('digital-7.woff2') format('woff2'),
+           url('digital-7.ttf') format('truetype');
       font-weight: normal;
       font-style: normal;
       font-display: swap;
@@ -31,7 +33,6 @@
       transform: translate(-50%, -50%);
       color: #e0ffe0;
       text-align: center;
-      /* glow effect */
       text-shadow:
         0 0 8px rgba(255,255,255,0.8),
         0 0 4px rgba(0,255,0,0.6);
@@ -46,16 +47,14 @@
       margin: 0;
       font-family: 'Digital-7', monospace;
     }
-    .mph {
-      font-size: 8rem;    /* primary size */
-    }
+    .mph { font-size: 8rem; }
     .kmh {
-      font-size: 5rem;    /* secondary size */
-      margin-top: 1rem;   /* space below MPH */
+      font-size: 5rem;
+      margin-top: 1rem;
       opacity: 0.85;
     }
 
-    /* 5) Unit labels with equal spacing */
+    /* 5) Unit labels */
     .unit {
       font-size: 1.5rem;
       opacity: 0.85;
@@ -79,18 +78,12 @@
   <script>
     const speedKmhEl = document.getElementById('speedKmh');
     const speedMphEl = document.getElementById('speedMph');
-
     function updateSpeed(kmh) {
       const mph = Math.round(kmh * 0.621371);
       speedKmhEl.textContent = kmh;
       speedMphEl.textContent = mph;
     }
-
-    // Demo: random speed every second
-    setInterval(() => {
-      const randomKmh = Math.floor(Math.random() * 200);
-      updateSpeed(randomKmh);
-    }, 1000);
+    setInterval(() => updateSpeed(Math.floor(Math.random() * 200)), 1000);
   </script>
 </body>
 </html>

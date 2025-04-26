@@ -4,10 +4,14 @@
   <meta charset="UTF-8" />
   <title>HUD Speedometer</title>
   <style>
-    /* 1) Import Digital-7 segment style font from local file */
+    /* 1) Import Digital-7 font in multiple formats for iOS Safari */
     @font-face {
       font-family: 'Digital-7';
-      src: url('Digital-7.ttf') format('truetype');
+      /* Try local install, then woff2, woff, then ttf */
+      src: local('Digital-7'),
+           url('Digital-7.woff2') format('woff2'),
+           url('Digital-7.woff') format('woff'),
+           url('Digital-7.ttf') format('truetype');
       font-weight: normal;
       font-style: normal;
       font-display: swap;

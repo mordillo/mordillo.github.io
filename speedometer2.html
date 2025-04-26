@@ -2,12 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>HUD Speedometer - Integer Version</title>
+  <title>HUD Speedometer - Commas</title>
   <!-- Preload the Digital-7 font files -->
   <link rel="preload" href="digital-7.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="digital-7.ttf" as="font" type="font/ttf" crossorigin>
   <style>
-    /* Import Digital-7 font */
     @font-face {
       font-family: 'Digital-7';
       src: url('digital-7.woff2') format('woff2'),
@@ -68,21 +67,33 @@
     const modeSelect = document.getElementById('modeSelect');
     const containerMph = document.getElementById('containerMph');
     const containerKmh = document.getElementById('containerKmh');
+
     let currentMph = 0;
-    const maxMph = 1000000000;
+    const maxMph = 1000000000; // no cap effectively, set to a large value
     const baseInc = 1;
     const intervalMs = 50;
     let upInterval, downInterval, intervalStart;
+
     function updateDisplay() {
-      speedMphEl.textContent = currentMph;
-      speedKmhEl.textContent = Math.round(currentMph * 1.609344);
+      // Format with commas
+      speedMphEl.textContent = currentMph.toLocaleString();
+      speedKmhEl.textContent = Math.round(currentMph * 1.609344).toLocaleString();
     }
+
     function updateHighlight() {
-      if (modeSelect.value === 'mph') { containerMph.classList.add('selected'); containerKmh.classList.remove('selected'); }
-      else { containerKmh.classList.add('selected'); containerMph.classList.remove('selected'); }
+      if (modeSelect.value === 'mph') {
+        containerMph.classList.add('selected');
+        containerKmh.classList.remove('selected');
+      } else {
+        containerKmh.classList.add('selected');
+        containerMph.classList.remove('selected');
+      }
     }
+
     modeSelect.addEventListener('change', updateHighlight);
-    updateHighlight(); updateDisplay();
+    updateHighlight();
+    updateDisplay();
+
     function startIncreasing() {
       clearInterval(downInterval);
       intervalStart = Date.now();
@@ -94,6 +105,7 @@
       }, intervalMs);
     }
     function stopIncreasing() { clearInterval(upInterval); }
+
     function startDecreasing() {
       clearInterval(upInterval);
       intervalStart = Date.now();
@@ -105,12 +117,15 @@
       }, intervalMs);
     }
     function stopDecreasing() { clearInterval(downInterval); }
+
+    // Mouse events
     btnUp.addEventListener('mousedown', startIncreasing);
     btnUp.addEventListener('mouseup', stopIncreasing);
     btnUp.addEventListener('mouseleave', stopIncreasing);
     btnDown.addEventListener('mousedown', startDecreasing);
     btnDown.addEventListener('mouseup', stopDecreasing);
     btnDown.addEventListener('mouseleave', stopDecreasing);
+    // Touch events
     btnUp.addEventListener('touchstart', e => { e.preventDefault(); startIncreasing(); });
     btnUp.addEventListener('touchend', stopIncreasing);
     btnDown.addEventListener('touchstart', e => { e.preventDefault(); startDecreasing(); });

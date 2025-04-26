@@ -7,7 +7,7 @@
   <link rel="preload" href="digital-7.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="digital-7.ttf" as="font" type="font/ttf" crossorigin>
   <style>
-    /* 1) Import Digital-7 font */
+    /* Import Digital-7 font */
     @font-face {
       font-family: 'Digital-7';
       src: url('digital-7.woff2') format('woff2'),
@@ -16,8 +16,6 @@
       font-style: normal;
       font-display: swap;
     }
-
-    /* 2) Full-screen “road” background */
     body {
       margin: 0;
       height: 100vh;
@@ -25,13 +23,19 @@
       overflow: hidden;
       position: relative;
     }
-
-    /* 3) HUD container over the road */
-    .hud {
+    /* Container for HUD and controls */
+    .hud-container {
       position: absolute;
       top: 60%;
       left: 50%;
       transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+    /* HUD display */
+    .hud {
       color: #e0ffe0;
       text-align: center;
       text-shadow: 0 0 8px rgba(255,255,255,0.8), 0 0 4px rgba(0,255,0,0.6);
@@ -39,8 +43,6 @@
       flex-direction: column;
       align-items: center;
     }
-
-    /* 4) Speed displays with two decimals */
     .speed {
       margin: 0;
       font-family: 'Digital-7', monospace;
@@ -52,22 +54,27 @@
       margin-top: 1rem;
       opacity: 0.85;
     }
-
     .unit {
       font-size: 1.5rem;
       opacity: 0.85;
       margin-top: 0.5rem;
       font-family: monospace;
     }
-
-    /* 5) Controls */
+    /* Controls styling */
     .controls {
-      position: absolute;
-      bottom: 5%;
-      left: 50%;
-      transform: translateX(-50%);
       display: flex;
       gap: 1rem;
+      align-items: center;
+    }
+    .mode-select {
+      font-family: 'Digital-7', monospace;
+      font-size: 2rem;
+      background: rgba(0,0,0,0.5);
+      color: #e0ffe0;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.5rem;
+      outline: none;
     }
     .controls button {
       font-family: 'Digital-7', monospace;
@@ -87,20 +94,25 @@
   </style>
 </head>
 <body>
-  <div class="hud">
-    <div class="speed mph">
-      <span id="speedMph">0.00</span>
-      <div class="unit">MPH</div>
+  <div class="hud-container">
+    <div class="hud">
+      <div class="speed mph">
+        <span id="speedMph">0.00</span>
+        <div class="unit">MPH</div>
+      </div>
+      <div class="speed kmh">
+        <span id="speedKmh">0.00</span>
+        <div class="unit">Km/h</div>
+      </div>
     </div>
-    <div class="speed kmh">
-      <span id="speedKmh">0.00</span>
-      <div class="unit">Km/h</div>
+    <div class="controls">
+      <select id="modeSelect" class="mode-select">
+        <option value="mph">MPH</option>
+        <option value="kmh">Km/h</option>
+      </select>
+      <button id="speedDown">▼</button>
+      <button id="speedUp">▲</button>
     </div>
-  </div>
-
-  <div class="controls">
-    <button id="speedDown">▼</button>
-    <button id="speedUp">▲</button>
   </div>
 
   <script>
@@ -108,12 +120,14 @@
     const speedKmhEl = document.getElementById('speedKmh');
     const btnUp = document.getElementById('speedUp');
     const btnDown = document.getElementById('speedDown');
+    const modeSelect = document.getElementById('modeSelect');
 
     let currentMph = 0.00;
     const maxMph = 350.00;
-    const increment = 1.00;
+    const baseIncMph = 0.01;
+    const baseIncKmh = 0.01;
     const intervalMs = 50;
-    let upInterval, downInterval;
+    let upInterval, downInterval, intervalStart;
 
     function updateDisplay() {
       speedMphEl.textContent = currentMph.toFixed(2);
@@ -123,11 +137,15 @@
 
     function startIncreasing() {
       clearInterval(downInterval);
+      intervalStart = Date.now();
       upInterval = setInterval(() => {
-        if (currentMph < maxMph) {
-          currentMph = Math.min(maxMph, currentMph + increment);
-          updateDisplay();
-        }
+        const elapsed = (Date.now() - intervalStart) / 1000;
+        const multiplier = Math.pow(2, Math.floor(elapsed));
+        const inc = modeSelect.value === 'mph'
+          ? baseIncMph * multiplier
+          : (baseIncKmh / 1.609344) * multiplier;
+        currentMph = Math.min(maxMph, currentMph + inc);
+        updateDisplay();
       }, intervalMs);
     }
     function stopIncreasing() {
@@ -136,11 +154,15 @@
 
     function startDecreasing() {
       clearInterval(upInterval);
+      intervalStart = Date.now();
       downInterval = setInterval(() => {
-        if (currentMph > 0) {
-          currentMph = Math.max(0, currentMph - increment);
-          updateDisplay();
-        }
+        const elapsed = (Date.now() - intervalStart) / 1000;
+        const multiplier = Math.pow(2, Math.floor(elapsed));
+        const inc = modeSelect.value === 'mph'
+          ? baseIncMph * multiplier
+          : (baseIncKmh / 1.609344) * multiplier;
+        currentMph = Math.max(0, currentMph - inc);
+        updateDisplay();
       }, intervalMs);
     }
     function stopDecreasing() {
@@ -154,7 +176,6 @@
     btnDown.addEventListener('mousedown', startDecreasing);
     btnDown.addEventListener('mouseup', stopDecreasing);
     btnDown.addEventListener('mouseleave', stopDecreasing);
-
     // Touch events
     btnUp.addEventListener('touchstart', e => { e.preventDefault(); startIncreasing(); });
     btnUp.addEventListener('touchend', stopIncreasing);

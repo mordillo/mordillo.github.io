@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <title>HUD Speedometer</title>
+  <!-- Preload the Digital-7 font from GitHub Pages for faster loading on iOS -->
+  <link rel="preload" href="https://mordillo.github.io/digital-7.ttf" as="font" type="font/ttf" crossorigin>
   <style>
-    /* 1) Import Digital-7 font in multiple formats for iOS Safari */
+    /* 1) Import Digital-7 font directly from GitHub Pages */
     @font-face {
       font-family: 'Digital-7';
-      /* Try local install, then woff2, woff, then ttf */
-      src: local('Digital-7'),
-           url('Digital-7.woff2') format('woff2'),
-           url('Digital-7.woff') format('woff'),
-           url('Digital-7.ttf') format('truetype');
+      src: url('https://mordillo.github.io/digital-7.ttf') format('truetype');
       font-weight: normal;
       font-style: normal;
       font-display: swap;

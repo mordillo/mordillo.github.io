@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HUD Speedometer</title>
+  <style>
+    /* 1) Import Digital-7 segment style font from local file */
+    @font-face {
+      font-family: 'Digital-7';
+      src: url('Digital-7.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    /* 2) Full-screen “road” background */
+    body {
+      margin: 0;
+      height: 100vh;
+      background: url('road.jpg') no-repeat center/cover;
+      overflow: hidden;
+    }
+
+    /* 3) HUD container positioned over the road */
+    .hud {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #e0ffe0;
+      text-align: center;
+      /* glow effect */
+      text-shadow:
+        0 0 8px rgba(255,255,255,0.8),
+        0 0 4px rgba(0,255,0,0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* 4) Apply Digital-7 font to speed values */
+    .speed {
+      line-height: 1;
+      margin: 0;
+      font-family: 'Digital-7', monospace;
+    }
+    .mph {
+      font-size: 8rem;    /* primary size */
+    }
+    .kmh {
+      font-size: 5rem;    /* secondary size */
+      margin-top: 1rem;   /* space below MPH */
+      opacity: 0.85;
+    }
+
+    /* 5) Unit labels with equal spacing */
+    .unit {
+      font-size: 1.5rem;
+      opacity: 0.85;
+      margin-top: 0.5rem;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div class="speed mph">
+      <span id="speedMph">75</span>
+      <div class="unit">MPH</div>
+    </div>
+    <div class="speed kmh">
+      <span id="speedKmh">120</span>
+      <div class="unit">Km/h</div>
+    </div>
+  </div>
+
+  <script>
+    const speedKmhEl = document.getElementById('speedKmh');
+    const speedMphEl = document.getElementById('speedMph');
+
+    function updateSpeed(kmh) {
+      const mph = Math.round(kmh * 0.621371);
+      speedKmhEl.textContent = kmh;
+      speedMphEl.textContent = mph;
+    }
+
+    // Demo: random speed every second
+    setInterval(() => {
+      const randomKmh = Math.floor(Math.random() * 200);
+      updateSpeed(randomKmh);
+    }, 1000);
+  </script>
+</body>
+</html>
+

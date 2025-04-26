@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HUD Speedometer - Integer Version</title>
+  <!-- Preload the Digital-7 font files -->
+  <link rel="preload" href="digital-7.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="digital-7.ttf" as="font" type="font/ttf" crossorigin>
+  <style>
+    /* Import Digital-7 font */
+    @font-face {
+      font-family: 'Digital-7';
+      src: url('digital-7.woff2') format('woff2'),
+           url('digital-7.ttf') format('truetype');
+      font-display: swap;
+    }
+    body { margin: 0; height: 100vh; background: url('road.jpg') no-repeat center/cover; overflow: hidden; position: relative; }
+    .hud-container { position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2rem; }
+    .hud { color: #e0ffe0; text-align: center; text-shadow: 0 0 8px rgba(255,255,255,0.8), 0 0 4px rgba(0,255,0,0.6); display: flex; flex-direction: column; align-items: center; }
+    .speed { margin: 0; font-family: 'Digital-7', monospace; line-height: 1; transition: color 0.3s, text-shadow 0.3s; }
+    .selected .speed { color: #fff; text-shadow: 0 0 12px rgba(255,255,255,1), 0 0 6px rgba(0,255,0,0.8); }
+    .mph { font-size: 8rem; }
+    .kmh { font-size: 5rem; margin-top: 1rem; opacity: 0.85; }
+    .unit { font-size: 1.5rem; opacity: 0.85; margin-top: 0.5rem; font-family: monospace; }
+    .controls { display: flex; gap: 1rem; align-items: center; }
+    .mode-select { font-family: 'Digital-7', monospace; font-size: 2rem; background: rgba(0,0,0,0.5); color: #e0ffe0; border: none; border-radius: 0.5rem; padding: 0.5rem; }
+    .controls button { font-family: 'Digital-7', monospace; font-size: 2.5rem; padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; background: rgba(0,0,0,0.5); color: #e0ffe0; cursor: pointer; user-select: none; }
+    .controls button:active { background: rgba(0,255,0,0.3); }
+    @media (orientation: portrait) {
+      .controls button { font-size: 5rem; padding: 1rem 2rem; }
+      .mode-select { font-size: 4rem; padding: 1rem; }
+    }
+    @media (orientation: landscape) {
+      .mph { font-size: 5rem; }
+      .kmh { font-size: 3rem; margin-top: 0.5rem; }
+      .unit { font-size: 1rem; margin-top: 0.25rem; }
+      .hud-container { top: 30%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="hud-container">
+    <div class="hud">
+      <div id="containerMph" class="mph selected">
+        <div class="speed mph"><span id="speedMph">0</span></div>
+        <div class="unit">MPH</div>
+      </div>
+      <div id="containerKmh" class="kmh">
+        <div class="speed kmh"><span id="speedKmh">0</span></div>
+        <div class="unit">Km/h</div>
+      </div>
+    </div>
+    <div class="controls">
+      <select id="modeSelect" class="mode-select">
+        <option value="mph">MPH</option>
+        <option value="kmh">Km/h</option>
+      </select>
+      <button id="speedDown">▼</button>
+      <button id="speedUp">▲</button>
+    </div>
+  </div>
+
+  <script>
+    const speedMphEl = document.getElementById('speedMph');
+    const speedKmhEl = document.getElementById('speedKmh');
+    const btnUp = document.getElementById('speedUp');
+    const btnDown = document.getElementById('speedDown');
+    const modeSelect = document.getElementById('modeSelect');
+    const containerMph = document.getElementById('containerMph');
+    const containerKmh = document.getElementById('containerKmh');
+    let currentMph = 0;
+    const maxMph = 10000;
+    const baseInc = 1;
+    const intervalMs = 50;
+    let upInterval, downInterval, intervalStart;
+    function updateDisplay() {
+      speedMphEl.textContent = currentMph;
+      speedKmhEl.textContent = Math.round(currentMph * 1.609344);
+    }
+    function updateHighlight() {
+      if (modeSelect.value === 'mph') { containerMph.classList.add('selected'); containerKmh.classList.remove('selected'); }
+      else { containerKmh.classList.add('selected'); containerMph.classList.remove('selected'); }
+    }
+    modeSelect.addEventListener('change', updateHighlight);
+    updateHighlight(); updateDisplay();
+    function startIncreasing() {
+      clearInterval(downInterval);
+      intervalStart = Date.now();
+      upInterval = setInterval(() => {
+        const elapsed = (Date.now() - intervalStart) / 1000;
+        const multiplier = Math.pow(2, Math.floor(elapsed));
+        currentMph = Math.min(maxMph, currentMph + baseInc * multiplier);
+        updateDisplay();
+      }, intervalMs);
+    }
+    function stopIncreasing() { clearInterval(upInterval); }
+    function startDecreasing() {
+      clearInterval(upInterval);
+      intervalStart = Date.now();
+      downInterval = setInterval(() => {
+        const elapsed = (Date.now() - intervalStart) / 1000;
+        const multiplier = Math.pow(2, Math.floor(elapsed));
+        currentMph = Math.max(0, currentMph - baseInc * multiplier);
+        updateDisplay();
+      }, intervalMs);
+    }
+    function stopDecreasing() { clearInterval(downInterval); }
+    btnUp.addEventListener('mousedown', startIncreasing);
+    btnUp.addEventListener('mouseup', stopIncreasing);
+    btnUp.addEventListener('mouseleave', stopIncreasing);
+    btnDown.addEventListener('mousedown', startDecreasing);
+    btnDown.addEventListener('mouseup', stopDecreasing);
+    btnDown.addEventListener('mouseleave', stopDecreasing);
+    btnUp.addEventListener('touchstart', e => { e.preventDefault(); startIncreasing(); });
+    btnUp.addEventListener('touchend', stopIncreasing);
+    btnDown.addEventListener('touchstart', e => { e.preventDefault(); startDecreasing(); });
+    btnDown.addEventListener('touchend', stopDecreasing);
+  </script>
+</body>
+</html>

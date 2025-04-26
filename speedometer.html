@@ -47,6 +47,14 @@
       margin: 0;
       font-family: 'Digital-7', monospace;
       line-height: 1;
+      transition: color 0.3s, text-shadow 0.3s;
+    }
+    /* Highlight selected unit */
+    .selected .speed {
+
+      color: #ffffff;
+
+      text-shadow: 0 0 12px rgba(255,255,255,1), 0 0 6px rgba(0,255,0,0.8);
     }
     .mph { font-size: 8rem; }
     .kmh {
@@ -96,12 +104,12 @@
 <body>
   <div class="hud-container">
     <div class="hud">
-      <div class="speed mph">
-        <span id="speedMph">0.00</span>
+      <div id="containerMph" class="mph selected">
+        <div class="speed mph"><span id="speedMph">0.00</span></div>
         <div class="unit">MPH</div>
       </div>
-      <div class="speed kmh">
-        <span id="speedKmh">0.00</span>
+      <div id="containerKmh" class="kmh">
+        <div class="speed kmh"><span id="speedKmh">0.00</span></div>
         <div class="unit">Km/h</div>
       </div>
     </div>
@@ -121,11 +129,11 @@
     const btnUp = document.getElementById('speedUp');
     const btnDown = document.getElementById('speedDown');
     const modeSelect = document.getElementById('modeSelect');
+    const containerMph = document.getElementById('containerMph');
+    const containerKmh = document.getElementById('containerKmh');
 
     let currentMph = 0.00;
-    const maxMph = 10000.00; // updated max MPH
     const baseIncMph = 0.01;
-    const baseIncKmh = 0.01;
     const intervalMs = 50;
     let upInterval, downInterval, intervalStart;
 
@@ -133,6 +141,19 @@
       speedMphEl.textContent = currentMph.toFixed(2);
       speedKmhEl.textContent = (currentMph * 1.609344).toFixed(2);
     }
+
+    function updateHighlight() {
+      if (modeSelect.value === 'mph') {
+        containerMph.classList.add('selected');
+        containerKmh.classList.remove('selected');
+      } else {
+        containerKmh.classList.add('selected');
+        containerMph.classList.remove('selected');
+      }
+    }
+
+    modeSelect.addEventListener('change', updateHighlight);
+    updateHighlight();
     updateDisplay();
 
     function startIncreasing() {
@@ -141,16 +162,12 @@
       upInterval = setInterval(() => {
         const elapsed = (Date.now() - intervalStart) / 1000;
         const multiplier = Math.pow(2, Math.floor(elapsed));
-        const inc = modeSelect.value === 'mph'
-          ? baseIncMph * multiplier
-          : (baseIncKmh / 1.609344) * multiplier;
-        currentMph = Math.min(maxMph, currentMph + inc);
+        const inc = baseIncMph * multiplier;
+        currentMph += inc;
         updateDisplay();
       }, intervalMs);
     }
-    function stopIncreasing() {
-      clearInterval(upInterval);
-    }
+    function stopIncreasing() { clearInterval(upInterval); }
 
     function startDecreasing() {
       clearInterval(upInterval);
@@ -158,16 +175,12 @@
       downInterval = setInterval(() => {
         const elapsed = (Date.now() - intervalStart) / 1000;
         const multiplier = Math.pow(2, Math.floor(elapsed));
-        const inc = modeSelect.value === 'mph'
-          ? baseIncMph * multiplier
-          : (baseIncKmh / 1.609344) * multiplier;
+        const inc = baseIncMph * multiplier;
         currentMph = Math.max(0, currentMph - inc);
         updateDisplay();
       }, intervalMs);
     }
-    function stopDecreasing() {
-      clearInterval(downInterval);
-    }
+    function stopDecreasing() { clearInterval(downInterval); }
 
     // Mouse events
     btnUp.addEventListener('mousedown', startIncreasing);

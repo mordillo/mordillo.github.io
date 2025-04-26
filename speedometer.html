@@ -51,9 +51,7 @@
     }
     /* Highlight selected unit */
     .selected .speed {
-
       color: #ffffff;
-
       text-shadow: 0 0 12px rgba(255,255,255,1), 0 0 6px rgba(0,255,0,0.8);
     }
     .mph { font-size: 8rem; }
@@ -83,6 +81,7 @@
       border-radius: 0.5rem;
       padding: 0.5rem;
       outline: none;
+      transition: font-size 0.3s, padding 0.3s;
     }
     .controls button {
       font-family: 'Digital-7', monospace;
@@ -95,9 +94,28 @@
       cursor: pointer;
       user-select: none;
       outline: none;
+      transition: font-size 0.3s, padding 0.3s;
     }
     .controls button:active {
       background: rgba(0,255,0,0.3);
+    }
+    /* Portrait: larger controls */
+    @media (orientation: portrait) {
+      .controls button {
+        font-size: 5rem;
+        padding: 1rem 2rem;
+      }
+      .mode-select {
+        font-size: 4rem;
+        padding: 1rem;
+      }
+    }
+    /* Landscape: smaller display, move up */
+    @media (orientation: landscape) {
+      .mph { font-size: 5rem; }
+      .kmh { font-size: 3rem; margin-top: 0.5rem; }
+      .unit { font-size: 1rem; margin-top: 0.25rem; }
+      .hud-container { top: 30%; }
     }
   </style>
 </head>
@@ -162,8 +180,7 @@
       upInterval = setInterval(() => {
         const elapsed = (Date.now() - intervalStart) / 1000;
         const multiplier = Math.pow(2, Math.floor(elapsed));
-        const inc = baseIncMph * multiplier;
-        currentMph += inc;
+        currentMph += baseIncMph * multiplier;
         updateDisplay();
       }, intervalMs);
     }
@@ -175,8 +192,7 @@
       downInterval = setInterval(() => {
         const elapsed = (Date.now() - intervalStart) / 1000;
         const multiplier = Math.pow(2, Math.floor(elapsed));
-        const inc = baseIncMph * multiplier;
-        currentMph = Math.max(0, currentMph - inc);
+        currentMph = Math.max(0, currentMph - baseIncMph * multiplier);
         updateDisplay();
       }, intervalMs);
     }

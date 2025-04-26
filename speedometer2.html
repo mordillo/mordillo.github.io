@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>HUD Speedometer - Custom Max Above</title>
+  <title>HUD Speedometer - Custom Max Above</n></title>
   <!-- Preload the Digital-7 font files -->
   <link rel="preload" href="digital-7.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="digital-7.ttf" as="font" type="font/ttf" crossorigin>
@@ -107,13 +107,11 @@
     .controls button:active {
       background: rgba(0,255,0,0.3);
     }
-    /* Portrait: larger controls & input */
     @media (orientation: portrait) {
       .controls button { font-size: 5rem; padding: 1rem 2rem; }
       .mode-select { font-size: 4rem; padding: 1rem; }
       .max-input { font-size: 4rem; padding: 1rem; }
     }
-    /* Landscape: smaller display, move up */
     @media (orientation: landscape) {
       .mph { font-size: 5rem; }
       .kmh { font-size: 3rem; }
@@ -183,12 +181,13 @@
         maxInput.value = '';
       }
     }
-    maxInput.addEventListener('change', () => {
+    // Update max on every input
+    maxInput.addEventListener('input', () => {
       const val = parseInt(maxInput.value.replace(/,/g, ''), 10);
       if (!isNaN(val) && val >= 0) {
-        maxMph = modeSelect.value === 'mph'
-          ? val
-          : val / 1.609344;
+        maxMph = modeSelect.value === 'mph' ? val : val / 1.609344;
+        // clamp current
+        if (currentMph > maxMph) currentMph = maxMph;
       } else {
         maxMph = Infinity;
       }

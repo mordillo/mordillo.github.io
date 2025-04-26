@@ -2,93 +2,132 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>HUD Speedometer - Custom Max</n></title>
+  <title>HUD Speedometer - Custom Max Above</title>
   <!-- Preload the Digital-7 font files -->
   <link rel="preload" href="digital-7.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="digital-7.ttf" as="font" type="font/ttf" crossorigin>
   <style>
     @font-face {
       font-family: 'Digital-7';
-      src: url('digital-7.woff2') format('woff2'), url('digital-7.ttf') format('truetype');
+      src: url('digital-7.woff2') format('woff2'),
+           url('digital-7.ttf') format('truetype');
       font-display: swap;
     }
     body {
-      margin: 0; height: 100vh;
+      margin: 0;
+      height: 100vh;
       background: url('road.jpg') no-repeat center/cover;
-      overflow: hidden; position: relative;
+      overflow: hidden;
+      position: relative;
     }
     .hud-container {
-      position: absolute; top: 60%; left: 50%;
+      position: absolute;
+      top: 60%; left: 50%;
       transform: translate(-50%, -50%);
-      display: flex; flex-direction: column;
-      align-items: center; gap: 2rem;
-    }
-    .hud {
-      color: #e0ffe0; text-align: center;
-      text-shadow: 0 0 8px rgba(255,255,255,0.8), 0 0 4px rgba(0,255,0,0.6);
-      display: flex; flex-direction: column;
+      display: flex;
+      flex-direction: column;
       align-items: center;
+      gap: 1rem;
+    }
+    /* Max input above HUD */
+    .max-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    .max-input {
+      font-family: 'Digital-7', monospace;
+      font-size: 2rem;
+      width: 20rem;
+      max-width: 90vw;
+      background: rgba(0,0,0,0.5);
+      color: #e0ffe0;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.5rem;
+      text-align: center;
+      outline: none;
+    }
+    /* HUD display */
+    .hud {
+      color: #e0ffe0;
+      text-align: center;
+      text-shadow: 0 0 8px rgba(255,255,255,0.8), 0 0 4px rgba(0,255,0,0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
     }
     .speed {
-      margin: 0; font-family: 'Digital-7', monospace;
-      line-height: 1; transition: color 0.3s, text-shadow 0.3s;
+      margin: 0;
+      font-family: 'Digital-7', monospace;
+      line-height: 1;
+      transition: color 0.3s, text-shadow 0.3s;
     }
     .selected .speed {
-      color: #fff; text-shadow: 0 0 12px rgba(255,255,255,1), 0 0 6px rgba(0,255,0,0.8);
+      color: #ffffff;
+      text-shadow: 0 0 12px rgba(255,255,255,1), 0 0 6px rgba(0,255,0,0.8);
     }
     .mph { font-size: 8rem; }
-    .kmh {
-      font-size: 5rem; margin-top: 1rem; opacity: 0.85;
-    }
+    .kmh { font-size: 5rem; opacity: 0.85; }
     .unit {
-      font-size: 1.5rem; opacity: 0.85;
-      margin-top: 0.5rem; font-family: monospace;
+      font-size: 1.5rem;
+      opacity: 0.85;
+      font-family: monospace;
     }
+    /* Controls styling */
     .controls {
-      display: flex; gap: 1rem; align-items: center;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
     }
-    .mode-select, .max-input {
+    .mode-select {
       font-family: 'Digital-7', monospace;
       font-size: 2rem;
       background: rgba(0,0,0,0.5);
       color: #e0ffe0;
-      border: none; border-radius: 0.5rem;
+      border: none;
+      border-radius: 0.5rem;
       padding: 0.5rem;
       text-align: center;
-    }
-    .max-input {
-      width: 8rem;
-      inputmode: numeric;
+      outline: none;
     }
     .controls button {
       font-family: 'Digital-7', monospace;
-      font-size: 2.5rem; padding: 0.5rem 1rem;
-      border: none; border-radius: 0.5rem;
+      font-size: 2.5rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.5rem;
       background: rgba(0,0,0,0.5);
-      color: #e0ffe0; cursor: pointer;
+      color: #e0ffe0;
+      cursor: pointer;
       user-select: none;
+      outline: none;
     }
     .controls button:active {
       background: rgba(0,255,0,0.3);
     }
+    /* Portrait: larger controls & input */
     @media (orientation: portrait) {
-      .controls button {
-        font-size: 5rem; padding: 1rem 2rem;
-      }
-      .mode-select, .max-input {
-        font-size: 4rem; padding: 1rem;
-      }
+      .controls button { font-size: 5rem; padding: 1rem 2rem; }
+      .mode-select { font-size: 4rem; padding: 1rem; }
+      .max-input { font-size: 4rem; padding: 1rem; }
     }
+    /* Landscape: smaller display, move up */
     @media (orientation: landscape) {
       .mph { font-size: 5rem; }
-      .kmh { font-size: 3rem; margin-top: 0.5rem; }
-      .unit { font-size: 1rem; margin-top: 0.25rem; }
+      .kmh { font-size: 3rem; }
+      .unit { font-size: 1rem; }
       .hud-container { top: 30%; }
+      .max-input { font-size: 2rem; width: 12rem; }
     }
   </style>
 </head>
 <body>
   <div class="hud-container">
+    <div class="max-container">
+      <input id="maxSpeedInput" class="max-input" type="number" min="0" step="1" placeholder="Max Speed" inputmode="numeric" />
+    </div>
     <div class="hud">
       <div id="containerMph" class="mph selected">
         <div class="speed mph"><span id="speedMph">0</span></div>
@@ -104,7 +143,6 @@
         <option value="mph">MPH</option>
         <option value="kmh">Km/h</option>
       </select>
-      <input id="maxSpeedInput" class="max-input" type="number" min="0" step="1" placeholder="Max" />
       <button id="speedDown">▼</button>
       <button id="speedUp">▲</button>
     </div>
@@ -123,6 +161,7 @@
     const baseInc = 1;
     const intervalMs = 50;
     let upInterval, downInterval, intervalStart;
+
     function updateDisplay() {
       speedMphEl.textContent = currentMph.toLocaleString();
       speedKmhEl.textContent = Math.round(currentMph * 1.609344).toLocaleString();
@@ -135,28 +174,28 @@
         containerKmh.classList.add('selected');
         containerMph.classList.remove('selected');
       }
-    }
-    modeSelect.addEventListener('change', () => {
-      updateHighlight();
-      // update input to current max in selected unit
+      // reflect existing max in input
       if (isFinite(maxMph)) {
-        if (modeSelect.value === 'mph') maxInput.value = Math.round(maxMph);
-        else maxInput.value = Math.round(maxMph * 1.609344);
+        maxInput.value = modeSelect.value === 'mph'
+          ? Math.round(maxMph)
+          : Math.round(maxMph * 1.609344);
       } else {
         maxInput.value = '';
       }
-    });
+    }
     maxInput.addEventListener('change', () => {
-      const val = parseInt(maxInput.value, 10);
+      const val = parseInt(maxInput.value.replace(/,/g, ''), 10);
       if (!isNaN(val) && val >= 0) {
-        if (modeSelect.value === 'mph') maxMph = val;
-        else maxMph = val / 1.609344;
+        maxMph = modeSelect.value === 'mph'
+          ? val
+          : val / 1.609344;
       } else {
         maxMph = Infinity;
       }
     });
-    updateHighlight();
-    updateDisplay();
+    modeSelect.addEventListener('change', updateHighlight);
+    updateHighlight(); updateDisplay();
+
     function startIncreasing() {
       clearInterval(downInterval);
       intervalStart = Date.now();

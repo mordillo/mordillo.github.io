@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>HUD Speedometer</title>
-  <!-- Preload the Digital-7 font files for faster loading -->
+  <!-- Preload the Digital-7 font files -->
   <link rel="preload" href="digital-7.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="digital-7.ttf" as="font" type="font/ttf" crossorigin>
   <style>
-    /* 1) Import Digital-7 font from same origin */
+    /* 1) Import Digital-7 font */
     @font-face {
       font-family: 'Digital-7';
       src: url('digital-7.woff2') format('woff2'),
@@ -23,9 +23,10 @@
       height: 100vh;
       background: url('road.jpg') no-repeat center/cover;
       overflow: hidden;
+      position: relative;
     }
 
-    /* 3) HUD container positioned over the road */
+    /* 3) HUD container over the road */
     .hud {
       position: absolute;
       top: 60%;
@@ -33,19 +34,17 @@
       transform: translate(-50%, -50%);
       color: #e0ffe0;
       text-align: center;
-      text-shadow:
-        0 0 8px rgba(255,255,255,0.8),
-        0 0 4px rgba(0,255,0,0.6);
+      text-shadow: 0 0 8px rgba(255,255,255,0.8), 0 0 4px rgba(0,255,0,0.6);
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
-    /* 4) Apply Digital-7 font to speed values */
+    /* 4) Speed displays with two decimals */
     .speed {
-      line-height: 1;
       margin: 0;
       font-family: 'Digital-7', monospace;
+      line-height: 1;
     }
     .mph { font-size: 8rem; }
     .kmh {
@@ -54,36 +53,113 @@
       opacity: 0.85;
     }
 
-    /* 5) Unit labels */
     .unit {
       font-size: 1.5rem;
       opacity: 0.85;
       margin-top: 0.5rem;
       font-family: monospace;
     }
+
+    /* 5) Controls */
+    .controls {
+      position: absolute;
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 1rem;
+    }
+    .controls button {
+      font-family: 'Digital-7', monospace;
+      font-size: 2.5rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      background: rgba(0,0,0,0.5);
+      color: #e0ffe0;
+      cursor: pointer;
+      user-select: none;
+      outline: none;
+    }
+    .controls button:active {
+      background: rgba(0,255,0,0.3);
+    }
   </style>
 </head>
 <body>
   <div class="hud">
     <div class="speed mph">
-      <span id="speedMph">75</span>
+      <span id="speedMph">0.00</span>
       <div class="unit">MPH</div>
     </div>
     <div class="speed kmh">
-      <span id="speedKmh">120</span>
+      <span id="speedKmh">0.00</span>
       <div class="unit">Km/h</div>
     </div>
   </div>
 
+  <div class="controls">
+    <button id="speedDown">▼</button>
+    <button id="speedUp">▲</button>
+  </div>
+
   <script>
-    const speedKmhEl = document.getElementById('speedKmh');
     const speedMphEl = document.getElementById('speedMph');
-    function updateSpeed(kmh) {
-      const mph = Math.round(kmh * 0.621371);
-      speedKmhEl.textContent = kmh;
-      speedMphEl.textContent = mph;
+    const speedKmhEl = document.getElementById('speedKmh');
+    const btnUp = document.getElementById('speedUp');
+    const btnDown = document.getElementById('speedDown');
+
+    let currentMph = 0.00;
+    const maxMph = 350.00;
+    const increment = 1.00;
+    const intervalMs = 50;
+    let upInterval, downInterval;
+
+    function updateDisplay() {
+      speedMphEl.textContent = currentMph.toFixed(2);
+      speedKmhEl.textContent = (currentMph * 1.609344).toFixed(2);
     }
-    setInterval(() => updateSpeed(Math.floor(Math.random() * 200)), 1000);
+    updateDisplay();
+
+    function startIncreasing() {
+      clearInterval(downInterval);
+      upInterval = setInterval(() => {
+        if (currentMph < maxMph) {
+          currentMph = Math.min(maxMph, currentMph + increment);
+          updateDisplay();
+        }
+      }, intervalMs);
+    }
+    function stopIncreasing() {
+      clearInterval(upInterval);
+    }
+
+    function startDecreasing() {
+      clearInterval(upInterval);
+      downInterval = setInterval(() => {
+        if (currentMph > 0) {
+          currentMph = Math.max(0, currentMph - increment);
+          updateDisplay();
+        }
+      }, intervalMs);
+    }
+    function stopDecreasing() {
+      clearInterval(downInterval);
+    }
+
+    // Mouse events
+    btnUp.addEventListener('mousedown', startIncreasing);
+    btnUp.addEventListener('mouseup', stopIncreasing);
+    btnUp.addEventListener('mouseleave', stopIncreasing);
+    btnDown.addEventListener('mousedown', startDecreasing);
+    btnDown.addEventListener('mouseup', stopDecreasing);
+    btnDown.addEventListener('mouseleave', stopDecreasing);
+
+    // Touch events
+    btnUp.addEventListener('touchstart', e => { e.preventDefault(); startIncreasing(); });
+    btnUp.addEventListener('touchend', stopIncreasing);
+    btnDown.addEventListener('touchstart', e => { e.preventDefault(); startDecreasing(); });
+    btnDown.addEventListener('touchend', stopDecreasing);
   </script>
 </body>
 </html>

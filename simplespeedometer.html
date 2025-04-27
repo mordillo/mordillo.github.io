@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HUD Speedometer</title>
+  <link rel="preload" href="digital-7.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="digital-7.ttf" as="font" type="font/ttf" crossorigin>
+  <style>
+    @font-face {
+      font-family: 'Digital-7';
+      src: url('digital-7.woff2') format('woff2'),
+           url('digital-7.ttf')  format('truetype');
+      font-display: swap;
+    }
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #111;
+      overflow: hidden;
+      font-family: 'Digital-7', monospace;
+    }
+    .hud-container {
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: url('road.jpg') no-repeat center/cover;
+      box-shadow: 0 0 0 12px #444;
+      position: relative;
+    }
+    .hud {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #5df;
+      text-shadow: 0 0 8px rgba(255,255,255,0.8), 0 0 4px rgba(0,255,0,0.6);
+    }
+    .hud .speed {
+      margin: 0;
+      font-size: 5rem;
+      line-height: 1;
+    }
+    .hud .unit {
+      font-size: 1.25rem;
+      opacity: 0.85;
+      margin-top: 0.25rem;
+    }
+    .bottom-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 1.5rem;
+      gap: 1rem;
+    }
+    .max-input {
+      width: 200px;
+      max-width: 80vw;
+      font-size: 1.5rem;
+      padding: 0.5rem;
+      text-align: center;
+      background: rgba(0,0,0,0.5);
+      border: none;
+      color: #5df;
+      border-radius: 0.25rem;
+      outline: none;
+    }
+    .controls {
+      display: flex;
+      gap: 1rem;
+    }
+    .controls button {
+      font-size: 2rem;
+      padding: 0.5rem 1rem;
+      background: rgba(0,0,0,0.5);
+      border: none;
+      border-radius: 0.25rem;
+      color: #5df;
+      cursor: pointer;
+      user-select: none;
+    }
+    .controls button:active {
+      background: rgba(0,255,0,0.3);
+    }
+    @media (max-width: 600px) {
+      .hud-container { width: 240px; height: 240px; }
+      .hud .speed { font-size: 4rem; }
+      .bottom-container { margin-top: 1rem; }
+      .max-input { width: 160px; font-size: 1.25rem; }
+      .controls button { font-size: 1.75rem; padding: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="hud-container">
+    <div class="hud">
+      <div class="speed"><span id="speedMph">0</span></div>
+      <div class="unit">MPH</div>
+    </div>
+  </div>
+  <div class="bottom-container">
+    <input id="maxSpeedInput" class="max-input" type="number" placeholder="Max Speed" min="0" />
+    <div class="controls">
+      <button id="speedDown">▼</button>
+      <button id="speedUp">▲</button>
+    </div>
+  </div>
+  <script>
+    const speedEl = document.getElementById('speedMph');
+    const btnUp = document.getElementById('speedUp');
+    const btnDown = document.getElementById('speedDown');
+    const maxInput = document.getElementById('maxSpeedInput');
+
+    let current = 0;
+    let maxVal = Infinity;
+    const step = 1;
+    const intervalMs = 50;
+    let changeInterval;
+
+    function updateDisplay() {
+      speedEl.textContent = Math.round(current).toLocaleString();
+    }
+
+    maxInput.addEventListener('input', () => {
+      const v = parseInt(maxInput.value.replace(/,/g, ''), 10);
+      maxVal = (!isNaN(v) && v >= 0) ? v : Infinity;
+      if (current > maxVal) current = maxVal;
+      updateDisplay();
+    });
+
+    function startChange(delta) {
+      clearInterval(changeInterval);
+      changeInterval = setInterval(() => {
+        current = Math.min(maxVal, Math.max(0, current + delta));
+        updateDisplay();
+      }, intervalMs);
+    }
+    function stopChange() {
+      clearInterval(changeInterval);
+    }
+
+    btnUp.addEventListener('mousedown', () => startChange(step));
+    btnUp.addEventListener('mouseup', stopChange);
+    btnUp.addEventListener('mouseleave', stopChange);
+    btnDown.addEventListener('mousedown', () => startChange(-step));
+    btnDown.addEventListener('mouseup', stopChange);
+    btnDown.addEventListener('mouseleave', stopChange);
+    btnUp.addEventListener('touchstart', e => { e.preventDefault(); startChange(step); });
+    btnUp.addEventListener('touchend', stopChange);
+    btnDown.addEventListener('touchstart', e => { e.preventDefault(); startChange(-step); });
+    btnDown.addEventListener('touchend', stopChange);
+
+    updateDisplay();
+  </script>
+</body>
+</html>
+

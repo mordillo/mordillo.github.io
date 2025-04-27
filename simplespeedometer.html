@@ -28,13 +28,15 @@
       height: 360px;
       border-radius: 50%;
       background: #000;
-      /* 3D metallic border with lighting from top-left */
-      border: 12px solid transparent;
-      border-image: linear-gradient(145deg, #f5f5f5, #888888 50%, #dddddd) 1;
+      /* 3D metallic rim via shadows */
       box-shadow:
-        inset 4px 4px 8px rgba(255,255,255,0.2),
-        inset -4px -4px 8px rgba(0,0,0,0.7),
-        4px 4px 12px rgba(0,0,0,0.5);
+        /* top-left outer highlight */
+        -6px -6px 15px rgba(255,255,255,0.2),
+        /* bottom-right outer shadow */
+        6px 6px 15px rgba(0,0,0,0.8),
+        /* inner bevel highlight */
+        inset 4px 4px 6px rgba(255,255,255,0.1),
+        inset -4px -4px 6px rgba(0,0,0,0.7);
       position: relative;
       display: flex;
       align-items: center;

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>HUD Speedometer - Decimal Toggle</title>
+  <title>HUD Speedometer - Decimal Toggle Above Max</title>
   <!-- Preload the Digital-7 font files -->
   <link rel="preload" href="digital-7.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="digital-7.ttf" as="font" type="font/ttf" crossorigin>
@@ -12,52 +12,89 @@
       src: url('digital-7.woff2') format('woff2'), url('digital-7.ttf') format('truetype');
       font-display: swap;
     }
-    body { margin: 0; height: 100vh; background: url('road.jpg') no-repeat center/cover; overflow: hidden; position: relative; }
-    /* Decimal toggle: larger and positioned lower */
-    .decimal-toggle-container {
+    body {
+      margin: 0; height: 100vh;
+      background: url('road.jpg') no-repeat center/cover;
+      overflow: hidden; position: relative;
+    }
+    .hud-container {
       position: absolute;
-      top: 10rem;
-      right: 2rem;
+      top: 60%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex; flex-direction: column;
+      align-items: center; gap: 1rem;
+    }
+    .max-container {
+      width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    }
+    .decimal-toggle-container {
       font-family: 'Digital-7', monospace;
       color: #e0ffe0;
       font-size: 2rem;
       background: rgba(0,0,0,0.5);
       padding: 0.5rem 1rem;
       border-radius: 0.5rem;
+      display: flex; align-items: center;
+      gap: 0.5rem;
     }
-    .decimal-toggle-container input { transform: scale(1.5); margin-right: 0.75rem; }
-    .hud-container { position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 1rem; }
-    .max-container { width: 100%; display: flex; justify-content: center; }
-    /* Allow decimals when inputting max speed */
+    .decimal-toggle-container input {
+      transform: scale(1.5);
+    }
     .max-input {
       font-family: 'Digital-7', monospace;
       font-size: 2rem;
-      width: 20rem;
-      max-width: 90vw;
+      width: 20rem; max-width: 90vw;
       background: rgba(0,0,0,0.5);
       color: #e0ffe0;
-      border: none;
-      border-radius: 0.5rem;
-      padding: 0.5rem;
-      text-align: center;
+      border: none; border-radius: 0.5rem;
+      padding: 0.5rem; text-align: center;
       outline: none;
       inputmode: decimal;
     }
-    .hud { color: #e0ffe0; text-align: center; text-shadow: 0 0 8px rgba(255,255,255,0.8),0 0 4px rgba(0,255,0,0.6); display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
-    .speed { margin: 0; font-family: 'Digital-7', monospace; line-height: 1; transition: color 0.3s,text-shadow 0.3s; }
-    .selected .speed { color: #fff; text-shadow: 0 0 12px rgba(255,255,255,1),0 0 6px rgba(0,255,0,0.8); }
+    .hud {
+      color: #e0ffe0; text-align: center;
+      text-shadow: 0 0 8px rgba(255,255,255,0.8), 0 0 4px rgba(0,255,0,0.6);
+      display: flex; flex-direction: column;
+      align-items: center; gap: 0.5rem;
+    }
+    .speed {
+      margin: 0; font-family: 'Digital-7', monospace;
+      line-height: 1; transition: color 0.3s, text-shadow 0.3s;
+    }
+    .selected .speed {
+      color: #fff; text-shadow: 0 0 12px rgba(255,255,255,1), 0 0 6px rgba(0,255,0,0.8);
+    }
     .mph { font-size: 8rem; }
     .kmh { font-size: 5rem; opacity: 0.85; }
-    .unit { font-size: 1.5rem; opacity: 0.85; font-family: monospace; }
-    .controls { display: flex; gap: 1rem; align-items: center; }
-    .mode-select, .max-input { font-family: 'Digital-7', monospace; font-size: 2rem; background: rgba(0,0,0,0.5); color: #e0ffe0; border: none; border-radius: 0.5rem; padding: 0.5rem; text-align: center; outline: none; }
-    .controls button { font-family: 'Digital-7', monospace; font-size: 2.5rem; padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; background: rgba(0,0,0,0.5); color: #e0ffe0; cursor: pointer; user-select: none; outline: none; }
+    .unit {
+      font-size: 1.5rem; opacity: 0.85;
+      font-family: monospace;
+    }
+    .controls {
+      display: flex; gap: 1rem; align-items: center;
+    }
+    .mode-select {
+      font-family: 'Digital-7', monospace;
+      font-size: 2rem;
+      background: rgba(0,0,0,0.5);
+      color: #e0ffe0;
+      border: none; border-radius: 0.5rem;
+      padding: 0.5rem; text-align: center;
+      outline: none;
+    }
+    .controls button {
+      font-family: 'Digital-7', monospace;
+      font-size: 2.5rem; padding: 0.5rem 1rem;
+      border: none; border-radius: 0.5rem;
+      background: rgba(0,0,0,0.5);
+      color: #e0ffe0; cursor: pointer;
+      user-select: none; outline: none;
+    }
     .controls button:active { background: rgba(0,255,0,0.3); }
     @media (orientation: portrait) {
       .controls button { font-size: 5rem; padding: 1rem 2rem; }
       .mode-select, .max-input { font-size: 4rem; padding: 1rem; }
-      .decimal-toggle-container { font-size: 3rem; top: 8rem; right: 1rem; }
-      .decimal-toggle-container input { transform: scale(1.8); }
+      .decimal-toggle-container { font-size: 3rem; }
     }
     @media (orientation: landscape) {
       .mph { font-size: 5rem; }
@@ -65,17 +102,16 @@
       .unit { font-size: 1rem; }
       .hud-container { top: 30%; }
       .max-input { font-size: 2rem; width: 12rem; }
-      .decimal-toggle-container { font-size: 1.5rem; top: 6rem; right: 1rem; }
+      .decimal-toggle-container { font-size: 1.5rem; }
     }
   </style>
 </head>
 <body>
-  <div class="decimal-toggle-container">
-    <label><input type="checkbox" id="decimalToggle">Decimal Point</label>
-  </div>
   <div class="hud-container">
     <div class="max-container">
-      <!-- Changed to text with decimal inputmode -->
+      <div class="decimal-toggle-container">
+        <input type="checkbox" id="decimalToggle"><label for="decimalToggle">Decimal Point</label>
+      </div>
       <input id="maxSpeedInput" class="max-input" type="text" placeholder="Max Speed" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" />
     </div>
     <div class="hud">
@@ -130,12 +166,8 @@
         containerMph.classList.remove('selected');
       }
       if (isFinite(maxMph)) {
-        const displayMax = modeSelect.value === 'mph'
-          ? maxMph
-          : maxMph * 1.609344;
-        maxInput.value = decimalToggle.checked
-          ? displayMax.toFixed(2)
-          : Math.round(displayMax);
+        const displayMax = modeSelect.value === 'mph'? maxMph : maxMph * 1.609344;
+        maxInput.value = decimalToggle.checked? displayMax.toFixed(2) : Math.round(displayMax);
       } else {
         maxInput.value = '';
       }
@@ -145,8 +177,7 @@
     maxInput.addEventListener('input', () => {
       const val = parseFloat(maxInput.value.replace(/,/g, ''));
       if (!isNaN(val) && val >= 0) {
-        const raw = modeSelect.value === 'mph' ? val : val / 1.609344;
-        maxMph = raw;
+        maxMph = modeSelect.value === 'mph'? val : val / 1.609344;
         if (currentMph > maxMph) currentMph = maxMph;
       } else maxMph = Infinity;
       updateDisplay();
@@ -157,7 +188,7 @@
       upInterval = setInterval(() => {
         const elapsed = (Date.now() - intervalStart) / 1000;
         const multiplier = Math.pow(2, Math.floor(elapsed));
-        const inc = decimalToggle.checked ? baseDec * multiplier : baseInt * multiplier;
+        const inc = decimalToggle.checked? baseDec * multiplier : baseInt * multiplier;
         currentMph = Math.min(maxMph, currentMph + inc);
         updateDisplay();
       }, intervalMs);
@@ -169,7 +200,7 @@
       downInterval = setInterval(() => {
         const elapsed = (Date.now() - intervalStart) / 1000;
         const multiplier = Math.pow(2, Math.floor(elapsed));
-        const dec = decimalToggle.checked ? baseDec * multiplier : baseInt * multiplier;
+        const dec = decimalToggle.checked? baseDec * multiplier : baseInt * multiplier;
         currentMph = Math.max(0, currentMph - dec);
         updateDisplay();
       }, intervalMs);

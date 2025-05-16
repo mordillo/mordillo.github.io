@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flip Clock</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: sans-serif;
+      background: #f0f0f0;
+      padding-top: 50px;
+    }
+    .clock {
+      display: flex;
+      align-items: center;
+      font-size: 0; /* kill whitespace */
+    }
+    .unit {
+      position: relative;
+      width: 100px; height: 140px;
+      margin: 0 10px;
+      perspective: 400px;
+      cursor: pointer;
+    }
+    .card,
+    .card .top, .card .bottom,
+    .flip {
+      position: absolute; left: 0; right: 0;
+      backface-visibility: hidden;
+    }
+    .card {
+      top: 0; bottom: 0;
+    }
+    .top, .bottom {
+      overflow: hidden;
+      line-height: 70px;
+      height: 70px;
+      background: #222;
+      color: #fff;
+      text-align: center;
+      font-size: 4rem;
+      border-radius: 4px;
+    }
+    .top {
+      border-bottom: 1px solid #000;
+      z-index: 3;
+    }
+    .bottom {
+      top: 70px;
+      border-top: 1px solid #000;
+      z-index: 1;
+    }
+    .flip {
+      width: 100%; height: 70px;
+      background: #222;
+      color: #fff;
+      text-align: center;
+      line-height: 70px;
+      font-size: 4rem;
+      border-radius: 4px;
+      z-index: 2;
+    }
+    .top-flip {
+      transform-origin: bottom;
+      transform: rotateX(90deg);
+    }
+    .bottom-flip {
+      top: 70px;
+      transform-origin: top;
+      transform: rotateX(-90deg);
+    }
+    /* Animation */
+    @keyframes fold {
+      0%   { transform: rotateX(0deg); }
+      100% { transform: rotateX(-90deg); }
+    }
+    @keyframes unfold {
+      0%   { transform: rotateX(90deg); }
+      100% { transform: rotateX(0deg); }
+    }
+    .fold .top-flip {
+      animation: fold 0.4s forwards ease-in;
+    }
+    .unfold .bottom-flip {
+      animation: unfold 0.4s forwards ease-out;
+    }
+    .separator {
+      font-size: 4rem;
+      margin: 0 5px;
+      color: #222;
+      line-height: 140px;
+    }
+    .controls {
+      margin-top: 30px;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="clock">
+    <div class="unit" data-type="hours">
+      <div class="card" data-value="00">
+        <div class="top">00</div>
+        <div class="bottom">00</div>
+        <div class="flip top-flip"></div>
+        <div class="flip bottom-flip"></div>
+      </div>
+    </div>
+    <div class="separator">:</div>
+    <div class="unit" data-type="minutes">
+      <div class="card" data-value="00">
+        <div class="top">00</div>
+        <div class="bottom">00</div>
+        <div class="flip top-flip"></div>
+        <div class="flip bottom-flip"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <label><input type="radio" name="dir" value="forward" checked> Forward</label>
+    <label><input type="radio" name="dir" value="backward"> Backward</label>
+  </div>
+
+  <script>
+    // find the two units
+    const units = {
+      hours: document.querySelector('.unit[data-type="hours"] .card'),
+      minutes: document.querySelector('.unit[data-type="minutes"] .card')
+    };
+
+    // format number to 2‑digit
+    function fmt(n){ return String(n).padStart(2, '0'); }
+
+    // perform a flip on a card from oldVal → newVal
+    function flipCard(card, oldVal, newVal) {
+      if (oldVal === newVal) return;
+      const top    = card.querySelector('.top');
+      const bottom = card.querySelector('.bottom');
+      const tf     = card.querySelector('.top-flip');
+      const bf     = card.querySelector('.bottom-flip');
+
+      // setup texts
+      top.textContent        = oldVal;
+      bottom.textContent     = oldVal;
+      tf.textContent         = oldVal;
+      bf.textContent         = newVal;
+
+      // trigger animations
+      card.classList.add('fold');
+      tf.addEventListener('animationend', ()=> {
+        card.classList.remove('fold');
+        bottom.textContent = newVal;
+        card.classList.add('unfold');
+        bf.addEventListener('animationend', ()=>{
+          card.classList.remove('unfold');
+        }, { once: true });
+      }, { once: true });
+
+      card.dataset.value = newVal;
+    }
+
+    // update both cards to given time
+    function updateTime(h, m) {
+      flipCard(units.hours,   units.hours.dataset.value,   fmt(h));
+      flipCard(units.minutes, units.minutes.dataset.value, fmt(m));
+    }
+
+    // read real time and update every minute
+    function syncClock(){
+      const now = new Date();
+      updateTime(now.getHours(), now.getMinutes());
+    }
+    syncClock();
+    // next full minute
+    const msToNext = (60 - new Date().getSeconds())*1000 + 50;
+    setTimeout(()=>{
+      syncClock();
+      setInterval(syncClock, 60*1000);
+    }, msToNext);
+
+    // manual click handling
+    document.querySelectorAll('.unit').forEach(unitEl => {
+      unitEl.addEventListener('click', ()=>{
+        const type = unitEl.dataset.type;
+        const card = unitEl.querySelector('.card');
+        let val = parseInt(card.dataset.value,10);
+        const dir = document.querySelector('input[name=dir]:checked').value;
+        const step = (type==='hours'?1:1);
+        const max  = (type==='hours'?23:59);
+
+        if (dir==='forward') {
+          val = (val + step) % (max+1);
+        } else {
+          val = (val - step + (max+1)) % (max+1);
+        }
+        flipCard(card, fmt(card.dataset.value), fmt(val));
+      });
+    });
+  </script>
+</body>
+</html>
+

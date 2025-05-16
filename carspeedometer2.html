@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Realistic Instrument Cluster</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background: #111; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; }
+    .cluster { display: grid; grid-template-columns: 1fr 220px 1fr; align-items: center; width: 900px; max-width:95vw; height:360px; background:#000; border-radius:180px 180px 60px 60px; overflow:hidden; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 5px 20px rgba(0,0,0,0.8); }
+    .gauge-wrap { width:100%; max-width:300px; height:100%; margin:0 auto; overflow:visible; }
+    .gauge-wrap svg { width:100%; height:100%; display:block; overflow:visible; }
+    .dial-face { fill:#111; stroke:#444; stroke-width:2; }
+    .tick { stroke:#fff; stroke-width:2; }
+    .major { stroke-width:4; }
+    /* Tach labels */
+    #tach-ticks text { fill:#fff; font-size:20px; }
+    /* Speed labels (MPH) */
+    #speed-ticks text { fill:#0ff; font-size:12px; }
+    .needle { stroke:#e22; stroke-width:4; stroke-linecap:round; }
+    .red-zone { stroke:#e22; stroke-width:6; fill:none; }
+    .center { display:flex; flex-direction:column; justify-content:space-between; align-items:center; width:100%; height:100%; background:#111; border:2px solid #333; border-radius:8px; padding:8px; position:relative; overflow:hidden; }
+    .center:before { content:""; position:absolute; inset:0; background-image: repeating-linear-gradient(#222 0,#222 1px,transparent 1px,transparent 20px), repeating-linear-gradient(90deg,#222 0,#222 1px,transparent 1px,transparent 20px); }
+    .center-top, .center-bottom { z-index:1; font-size:16px; color:#fff; display:flex; justify-content:center; align-items:center; }
+    .center-top { font-size:18px; gap:20px; }
+    .center-top .turn { color:#0f0; font-size:24px; }
+    .center-top .time { display:flex; align-items:baseline; gap:4px; }
+    .center-top .time-main, .center-top .am-pm { line-height:1; }
+    .center-middle { z-index:1; flex:1; display:flex; align-items:center; justify-content:center; }
+    .center-car { max-width:50%; height:auto; }
+    .center-bottom { font-size:16px; color:#fff; z-index:1; justify-content:center; align-items:center; }
+    .icon-row { display:flex; align-items:center; gap:6px; font-size:16px; color:#0f0; }
+  </style>
+</head>
+<body>
+  <div class="cluster">
+    <!-- Tachometer -->
+    <div class="gauge-wrap">
+      <svg viewBox="-120 -120 240 240">
+        <circle cx="0" cy="0" r="110" class="dial-face"/>
+        <g id="tach-ticks"></g>
+        <path id="tach-red" class="red-zone" d=""/>
+        <g id="tach-needle" transform="rotate(0)"><line x1="0" y1="0" x2="0" y2="-90" class="needle"/></g>
+      </svg>
+    </div>
+
+    <!-- Center Display -->
+    <div class="center">
+      <div class="center-top">
+        <div class="turn">&larr;</div>
+        <div class="time"><span id="timeMain" class="time-main">--:--</span><span id="ampm" class="am-pm"></span></div>
+        <div class="temp">--&deg;F</div>
+        <div class="turn">&rarr;</div>
+      </div>
+      <div class="center-middle"><img src="197450951-compact-city-crossover-blue-on-a-white-background-3d-rendering.png" class="center-car"/></div>
+      <div class="center-bottom"><div class="icon-row">&#128736; 270 mi</div></div>
+    </div>
+
+    <!-- Speedometer -->
+    <div class="gauge-wrap">
+      <svg viewBox="-120 -120 240 240">
+        <circle cx="0" cy="0" r="110" class="dial-face"/>
+        <g id="speed-ticks"></g>
+        <g id="speed-needle" transform="rotate(0)"><line x1="0" y1="0" x2="0" y2="-90" class="needle"/></g>
+      </svg>
+    </div>
+  </div>
+
+  <script>
+    function makeGauge(group, maxVal, step, innerR, outerR, labelR, isSpeed) {
+      const total = maxVal / step;
+      for (let i = 0; i <= total; i++) {
+        const ang = -120 + (240 * i / total);
+        const rad = ang * Math.PI/180;
+        const x1 = Math.sin(rad)*innerR, y1 = -Math.cos(rad)*innerR;
+        const x2 = Math.sin(rad)*outerR, y2 = -Math.cos(rad)*outerR;
+        // draw tick
+        const tick = document.createElementNS('http://www.w3.org/2000/svg','line');
+        tick.setAttribute('x1',x1); tick.setAttribute('y1',y1);
+        tick.setAttribute('x2',x2); tick.setAttribute('y2',y2);
+        tick.classList.add('tick');
+        if (!isSpeed && i%(total/8)===0) tick.classList.add('major');
+        group.appendChild(tick);
+        // draw label at exact position
+        const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+        lbl.textContent = isSpeed ? i*step : (i%(total/8)===0 ? i : '');
+        // compute label position just outside the dial edge, keep text horizontal
+          const padding = 8;
+          // base radial position + horizontal offset to nudge labels right on left side
+          const baseX = Math.sin(rad) * (outerR + padding);
+          const shiftFactor = 5; // tweak this for horizontal slide
+          const offsetX = -Math.cos(rad) * shiftFactor;
+          const labelX = baseX + offsetX;
+          const labelY = -Math.cos(rad) * (outerR + padding);
+          lbl.setAttribute('x', labelX);
+          lbl.setAttribute('y', labelY);
+        lbl.classList.add('label');
+        if (isSpeed || (!isSpeed && i%(total/8)===0)) group.appendChild(lbl);
+      }
+      // red zone for tach
+      if (!isSpeed) {
+        const arc = document.getElementById('tach-red');
+        const start = -120+(240*7/8), end = -120+(240*8/8), r=100;
+        const xA=Math.sin(start*Math.PI/180)*r, yA=-Math.cos(start*Math.PI/180)*r;
+        const xB=Math.sin(end*Math.PI/180)*r, yB=-Math.cos(end*Math.PI/180)*r;
+        arc.setAttribute('d',`M ${xA} ${yA} A ${r} ${r} 0 0 1 ${xB} ${yB}`);
+      }
+    }
+    makeGauge(document.getElementById('tach-ticks'), 8, 1, 85, 102, 125, false);
+    makeGauge(document.getElementById('speed-ticks'), 360, 20, 85, 102, 125, true);
+
+    function updateTime() {
+      const now=new Date();let hrs=now.getHours();const ampm=hrs>=12?'PM':'AM';hrs=hrs%12||12;
+      const mins=String(now.getMinutes()).padStart(2,'0');
+      document.getElementById('timeMain').textContent=`${hrs}:${mins}`;
+      document.getElementById('ampm').textContent=ampm;
+    }
+    updateTime();setInterval(updateTime,60000);
+    function updateTemp() {
+      // Load API key from external file
+      // fetch the API key text file from server (must be served via HTTP)
+      fetch('weatherapikey.txt')
+        .then(res => res.text())
+        .then(apiKey => {
+          const key = apiKey.trim();
+          const lat = 40.7178, lon = -74.0431;
+          return fetch(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${key}`
+          );
+        })
+        .then(res => res.json())
+        .then(data => {
+          document.querySelector('.temp').textContent = `${Math.round(data.main.temp)}°F`;
+        })
+        .catch(err => console.error('Weather fetch error:', err));
+    }
+    updateTemp();
+    setInterval(updateTemp,300000);
+  </script>
+</body>
+</html>
+

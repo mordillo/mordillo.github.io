@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Tally Counter with Color Picker</title>
+  <title>3D Tally Counter with Exponential Hold</title>
   <style>
     body {
       display: flex;
@@ -129,48 +129,93 @@
       display.textContent = count;
     }
 
-    // hold-to-repeat utility
-    function attachHold(button, action) {
-      let tId, iId;
-      const start = () => {
+    /**
+     * attachExponentialHold:
+     *  - action(): the function to run on each “tick” (increment or decrement).
+     *  - As soon as user mousedown/touchstart:
+     *      • run action() once immediately.
+     *      • wait initialDelay ms, then run step() repeatedly. 
+     *  - In step():
+     *      • run action()
+     *      • recalc nextDelay using an exponential decay formula
+     *      • schedule next step() after nextDelay
+     *  - On mouseup/touchend/mouseleave: clear any pending timeout.
+     */
+    function attachExponentialHold(button, action) {
+      let timerId = null;
+      let startTime = 0;
+      const initialDelay = 300;   // wait 300 ms before first “auto” tick
+      const minDelay     = 30;    // never go below 30 ms between ticks
+      const decayRate    = 0.002; // controls how fast delay shrinks (tweak as needed)
+
+      function step() {
         action();
-        tId = setTimeout(() => {
-          iId = setInterval(action, 100);
-        }, 333);
-      };
-      const cancel = () => {
-        clearTimeout(tId);
-        clearInterval(iId);
-      };
-      button.addEventListener('mousedown', start);
-      button.addEventListener('touchstart', e => { e.preventDefault(); start(); });
-      ['mouseup','mouseleave','touchend'].forEach(evt => 
-        button.addEventListener(evt, cancel)
-      );
+
+        // elapsed since first press
+        const elapsed = Date.now() - startTime;
+
+        // exponential decay: nextDelay = initialDelay * e^(−decayRate * elapsed)
+        let nextDelay = initialDelay * Math.exp(-decayRate * elapsed);
+        if (nextDelay < minDelay) nextDelay = minDelay;
+
+        timerId = setTimeout(step, nextDelay);
+      }
+
+      function onPressStart(e) {
+        e.preventDefault();
+        // run once immediately:
+        action();
+
+        startTime = Date.now();
+        timerId   = setTimeout(step, initialDelay);
+      }
+      function onPressEnd() {
+        clearTimeout(timerId);
+      }
+
+      // mouse events
+      button.addEventListener('mousedown', onPressStart);
+      button.addEventListener('mouseup', onPressEnd);
+      button.addEventListener('mouseleave', onPressEnd);
+
+      // touch events
+      button.addEventListener('touchstart', onPressStart);
+      button.addEventListener('touchend', onPressEnd);
     }
 
-    attachHold(document.getElementById('increment'), () => { count++; updateDisplay(); });
-    attachHold(document.getElementById('decrement'), () => { count--; updateDisplay(); });
+    // Wire up increment (+) and decrement (–) with exponential hold
+    attachExponentialHold(
+      document.getElementById('increment'),
+      () => { count++; updateDisplay(); }
+    );
+    attachExponentialHold(
+      document.getElementById('decrement'),
+      () => { count--; updateDisplay(); }
+    );
+
+    // Reset just sets count = 0 on click
     document.getElementById('reset').addEventListener('click', () => {
-      count = 0; updateDisplay();
+      count = 0;
+      updateDisplay();
     });
 
-    // color mappings
+    // ------------------------------------------------------------------
+    // Color picker logic (same as before)
     const colorMap = {
-      Red:    { main:'#d32f2f', btn:'#e53935', text:'#fff' },
-      Yellow: { main:'#fbc02d', btn:'#ffee58', text:'#000' },
-      Blue:   { main:'#1976d2', btn:'#42a5f5', text:'#fff' },
-      Green:  { main:'#388e3c', btn:'#66bb6a', text:'#fff' },
-      Purple: { main:'#7b1fa2', btn:'#ab47bc', text:'#fff' },
-      Brown:  { main:'#5d4037', btn:'#8d6e63', text:'#fff' },
-      Pink:   { main:'#c2185b', btn:'#ec407a', text:'#fff' },
-      Gold:   { main:'#f9a825', btn:'#fff176', text:'#000' },
-      Silver: { main:'#9e9e9e', btn:'#e0e0e0', text:'#000' },
-      Orange: { main:'#f57c00', btn:'#ffa726', text:'#fff' },
-      Cyan:   { main:'#0097a7', btn:'#26c6da', text:'#fff' },
-      Magenta:{ main:'#d500f9', btn:'#e040fb', text:'#fff' },
-      White:  { main:'#ffffff', btn:'#f5f5f5', text:'#000' },
-      Black:  { main:'#212121', btn:'#616161', text:'#fff' }
+      Red:     { main:'#d32f2f', btn:'#e53935', text:'#fff' },
+      Yellow:  { main:'#fbc02d', btn:'#ffee58', text:'#000' },
+      Blue:    { main:'#1976d2', btn:'#42a5f5', text:'#fff' },
+      Green:   { main:'#388e3c', btn:'#66bb6a', text:'#fff' },
+      Purple:  { main:'#7b1fa2', btn:'#ab47bc', text:'#fff' },
+      Brown:   { main:'#5d4037', btn:'#8d6e63', text:'#fff' },
+      Pink:    { main:'#c2185b', btn:'#ec407a', text:'#fff' },
+      Gold:    { main:'#f9a825', btn:'#fff176', text:'#000' },
+      Silver:  { main:'#9e9e9e', btn:'#e0e0e0', text:'#000' },
+      Orange:  { main:'#f57c00', btn:'#ffa726', text:'#fff' },
+      Cyan:    { main:'#0097a7', btn:'#26c6da', text:'#fff' },
+      Magenta: { main:'#d500f9', btn:'#e040fb', text:'#fff' },
+      White:   { main:'#ffffff', btn:'#f5f5f5', text:'#000' },
+      Black:   { main:'#212121', btn:'#616161', text:'#fff' }
     };
 
     const picker = document.getElementById('colorPicker');
@@ -181,7 +226,7 @@
       counterEl.style.setProperty('--btn-text-color', c.text);
     });
 
-    // initialize
+    // initialize default color
     picker.value = 'Red';
     picker.dispatchEvent(new Event('change'));
   </script>

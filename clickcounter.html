@@ -3,129 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Tally Counter with True Exponential Hold</title>
+  <title>3D Counter with Capped Exponential Hold</title>
   <style>
-    body {
-      display: flex;
-      height: 100vh;
-      margin: 0;
-      background: #f0f0f0;
-      align-items: center;
-      justify-content: center;
-      font-family: sans-serif;
-    }
-    .wrapper { text-align: center; }
-    .picker { margin-bottom: 15px; }
-    .picker label { font-weight: bold; margin-right: 8px; color: #333; }
-
-    .counter {
-      --main-color: #d32f2f;
-      --btn-color:  #e53935;
-      --btn-text:   #fff;
-      background: var(--main-color);
-      border-radius: 20px;
-      padding: 20px;
-      width: 260px;
-      box-shadow:
-        inset 0 6px 12px rgba(0,0,0,0.3),
-        0 6px 12px rgba(0,0,0,0.2);
-    }
-    .display {
-      background: #111;
-      color: #0f0;
-      font-family: monospace;
-      font-size: 2.5rem;
-      padding: 10px 0;
-      border-radius: 6px;
-      box-shadow: inset 0 4px 6px rgba(0,0,0,0.5);
-      margin-bottom: 20px;
-    }
-    .buttons {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .btn {
-      border: none;
-      outline: none;
-      border-radius: 50%;
-      background: var(--btn-color);
-      color: var(--btn-text);
-      user-select: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow:
-        0 6px 8px rgba(0,0,0,0.4),
-        inset 0 2px 0 rgba(255,255,255,0.3);
-      cursor: pointer;
-    }
-    .btn-large { width: 80px; height: 80px; font-size: 2rem; }
-    .btn-small { width: 40px; height: 40px; font-size: 1.2rem; }
-    .btn:active {
-      transform: translateY(4px);
-      box-shadow:
-        0 2px 4px rgba(0,0,0,0.4),
-        inset 0 1px 0 rgba(255,255,255,0.3);
-    }
+    /* …your existing CSS… */
   </style>
 </head>
 <body>
-  <div class="wrapper">
-    <div class="picker">
-      <label for="colorPicker">Choose color:</label>
-      <select id="colorPicker">
-        <option>Red</option><option>Yellow</option><option>Blue</option>
-        <option>Green</option><option>Purple</option><option>Brown</option>
-        <option>Pink</option><option>Gold</option><option>Silver</option>
-        <option>Orange</option><option>Cyan</option><option>Magenta</option>
-        <option>White</option><option>Black</option>
-      </select>
-    </div>
-
-    <div class="counter" id="counter">
-      <div class="display" id="display">0</div>
-      <div class="buttons">
-        <button id="decrement" class="btn btn-small">−</button>
-        <button id="increment" class="btn btn-large">+</button>
-        <button id="reset"     class="btn btn-small">⟲</button>
-      </div>
-    </div>
-  </div>
+  <!-- …your existing HTML (picker + counter)… -->
 
   <script>
-    const display    = document.getElementById('display');
-    const counterEl  = document.getElementById('counter');
-    let   count      = 0;
-    function updateDisplay() { display.textContent = count; }
+    const display   = document.getElementById('display');
+    const counterEl = document.getElementById('counter');
+    let   count     = 0;
+    function updateDisplay() {
+      display.textContent = count;
+    }
 
-    /**
-     * attachExponentialHold(button, action):
-     *  • Fires action() immediately on press.
-     *  • Then uses requestAnimationFrame to run a loop where the
-     *    tick-rate = baseRate * e^(growth * elapsed).
-     *  • You can tweak baseRate (ticks/sec at t=0) and growth (per ms).
-     */
     function attachExponentialHold(button, action) {
-      let holding    = false;
-      let startTime  = 0;
-      let acc        = 0;       // fractional ticks accumulator
-      const baseRate = 1000/300; // ≈3.33 ticks/sec at t=0 (300ms interval)
-      const growth   = 0.002;    // exponent per ms → make this larger to accelerate faster
+      let holding   = false;
+      let startTime = 0;
+      let acc       = 0;       // fractional ticks
+      const baseRate = 1000/300;  // ~3.3 ticks/sec at t=0
+      const growth   = 0.002;     // per ms
+      const maxRate  = 60;        // cap at 60 ticks/sec
 
       function loop(now) {
         if (!holding) return;
-        if (!startTime) startTime = now;
 
-        const elapsed = now - startTime;            // ms since press
-        const cps     = baseRate * Math.exp(growth * elapsed);
-        const delta   = now - (loop.lastTime || now);
+        if (!startTime) {
+          startTime = now;
+          loop.lastTime = now;
+        }
+        const delta   = now - loop.lastTime;
+        const elapsed = now - startTime;
         loop.lastTime = now;
 
-        acc += cps * (delta/1000); // convert to number of ticks
-        while (acc >= 1) {
-          action();
-          acc--;
+        // exponential growth, then clamp
+        let cps = baseRate * Math.exp(growth * elapsed);
+        if (cps > maxRate) cps = maxRate;
+
+        // accumulate fractional ticks
+        acc += cps * (delta/1000);
+
+        // batch the whole-number ticks
+        const ticks = Math.floor(acc);
+        if (ticks > 0) {
+          action(ticks);
+          acc -= ticks;
+          updateDisplay();
         }
         requestAnimationFrame(loop);
       }
@@ -135,8 +60,8 @@
         holding   = true;
         startTime = 0;
         acc       = 0;
-        loop.lastTime = 0;
-        action();                   // initial single step
+        action(1);             // initial single step
+        updateDisplay();
         requestAnimationFrame(loop);
       }
       function stop() {
@@ -145,51 +70,30 @@
 
       button.addEventListener('mousedown', start);
       button.addEventListener('touchstart', start);
-      button.addEventListener('mouseup',   stop);
-      button.addEventListener('mouseleave',stop);
-      button.addEventListener('touchend',  stop);
+      ['mouseup','mouseleave','touchend'].forEach(evt =>
+        button.addEventListener(evt, stop)
+      );
     }
 
-    // wire up + and −
+    // + button: action(n) adds n
     attachExponentialHold(
       document.getElementById('increment'),
-      () => { count++; updateDisplay(); }
+      n => count += n
     );
+    // – button: action(n) subtracts n
     attachExponentialHold(
       document.getElementById('decrement'),
-      () => { count--; updateDisplay(); }
+      n => count -= n
     );
+
     // reset
     document.getElementById('reset').addEventListener('click', () => {
-      count = 0; updateDisplay();
+      count = 0;
+      updateDisplay();
     });
 
-    // color picker (same as before)
-    const colorMap = {
-      Red:    {main:'#d32f2f', btn:'#e53935', text:'#fff'},
-      Yellow: {main:'#fbc02d', btn:'#ffee58', text:'#000'},
-      Blue:   {main:'#1976d2', btn:'#42a5f5', text:'#fff'},
-      Green:  {main:'#388e3c', btn:'#66bb6a', text:'#fff'},
-      Purple: {main:'#7b1fa2', btn:'#ab47bc', text:'#fff'},
-      Brown:  {main:'#5d4037', btn:'#8d6e63', text:'#fff'},
-      Pink:   {main:'#c2185b', btn:'#ec407a', text:'#fff'},
-      Gold:   {main:'#f9a825', btn:'#fff176', text:'#000'},
-      Silver: {main:'#9e9e9e', btn:'#e0e0e0', text:'#000'},
-      Orange: {main:'#f57c00', btn:'#ffa726', text:'#fff'},
-      Cyan:   {main:'#0097a7', btn:'#26c6da', text:'#fff'},
-      Magenta:{main:'#d500f9', btn:'#e040fb', text:'#fff'},
-      White:  {main:'#ffffff', btn:'#f5f5f5', text:'#000'},
-      Black:  {main:'#212121', btn:'#616161', text:'#fff'}
-    };
-    const picker = document.getElementById('colorPicker');
-    picker.addEventListener('change', () => {
-      const c = colorMap[picker.value];
-      counterEl.style.setProperty('--main-color', c.main);
-      counterEl.style.setProperty('--btn-color',  c.btn);
-      counterEl.style.setProperty('--btn-text',   c.text);
-    });
-    picker.value = 'Red';
-    picker.dispatchEvent(new Event('change'));
+    // … your existing color‐picker code …
+
   </script>
 </body>
 </html>

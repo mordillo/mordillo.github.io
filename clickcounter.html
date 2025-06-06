@@ -3,13 +3,104 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Counter with Capped Exponential Hold</title>
+  <title>3D Tally Counter (Capped Exponential Hold)</title>
   <style>
-    /* …your existing CSS… */
+    body {
+      display: flex;
+      height: 100vh;
+      margin: 0;
+      background: #f0f0f0;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+    }
+    .wrapper {
+      text-align: center;
+    }
+    .picker {
+      margin-bottom: 15px;
+    }
+    .picker label {
+      font-weight: bold;
+      margin-right: 8px;
+      color: #333;
+    }
+
+    .counter {
+      --main-color: #d32f2f;
+      --btn-color:  #e53935;
+      --btn-text:   #fff;
+
+      background: var(--main-color);
+      border-radius: 20px;
+      padding: 20px;
+      width: 260px;
+      box-shadow:
+        inset 0 6px 12px rgba(0,0,0,0.3),
+        0 6px 12px rgba(0,0,0,0.2);
+    }
+    .display {
+      background: #111;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 2.5rem;
+      padding: 10px 0;
+      border-radius: 6px;
+      box-shadow: inset 0 4px 6px rgba(0,0,0,0.5);
+      margin-bottom: 20px;
+    }
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      border: none;
+      outline: none;
+      border-radius: 50%;
+      background: var(--btn-color);
+      color: var(--btn-text);
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 6px 8px rgba(0,0,0,0.4),
+        inset 0 2px 0 rgba(255,255,255,0.3);
+      cursor: pointer;
+    }
+    .btn-large { width: 80px; height: 80px; font-size: 2rem; }
+    .btn-small { width: 40px; height: 40px; font-size: 1.2rem; }
+    .btn:active {
+      transform: translateY(4px);
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    }
   </style>
 </head>
 <body>
-  <!-- …your existing HTML (picker + counter)… -->
+  <div class="wrapper">
+    <div class="picker">
+      <label for="colorPicker">Choose color:</label>
+      <select id="colorPicker">
+        <option>Red</option><option>Yellow</option><option>Blue</option>
+        <option>Green</option><option>Purple</option><option>Brown</option>
+        <option>Pink</option><option>Gold</option><option>Silver</option>
+        <option>Orange</option><option>Cyan</option><option>Magenta</option>
+        <option>White</option><option>Black</option>
+      </select>
+    </div>
+
+    <div class="counter" id="counter">
+      <div class="display" id="display">0</div>
+      <div class="buttons">
+        <button id="decrement" class="btn btn-small">−</button>
+        <button id="increment" class="btn btn-large">+</button>
+        <button id="reset"     class="btn btn-small">⟲</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     const display   = document.getElementById('display');
@@ -22,14 +113,13 @@
     function attachExponentialHold(button, action) {
       let holding   = false;
       let startTime = 0;
-      let acc       = 0;       // fractional ticks
+      let acc       = 0;
       const baseRate = 1000/300;  // ~3.3 ticks/sec at t=0
       const growth   = 0.002;     // per ms
       const maxRate  = 60;        // cap at 60 ticks/sec
 
       function loop(now) {
         if (!holding) return;
-
         if (!startTime) {
           startTime = now;
           loop.lastTime = now;
@@ -38,14 +128,14 @@
         const elapsed = now - startTime;
         loop.lastTime = now;
 
-        // exponential growth, then clamp
+        // compute ticks/sec, clamp it
         let cps = baseRate * Math.exp(growth * elapsed);
         if (cps > maxRate) cps = maxRate;
 
         // accumulate fractional ticks
         acc += cps * (delta/1000);
 
-        // batch the whole-number ticks
+        // batch full ticks
         const ticks = Math.floor(acc);
         if (ticks > 0) {
           action(ticks);
@@ -60,7 +150,7 @@
         holding   = true;
         startTime = 0;
         acc       = 0;
-        action(1);             // initial single step
+        action(1);
         updateDisplay();
         requestAnimationFrame(loop);
       }
@@ -75,25 +165,46 @@
       );
     }
 
-    // + button: action(n) adds n
+    // wire up buttons
     attachExponentialHold(
       document.getElementById('increment'),
       n => count += n
     );
-    // – button: action(n) subtracts n
     attachExponentialHold(
       document.getElementById('decrement'),
       n => count -= n
     );
-
-    // reset
     document.getElementById('reset').addEventListener('click', () => {
       count = 0;
       updateDisplay();
     });
 
-    // … your existing color‐picker code …
-
+    // color picker
+    const colorMap = {
+      Red:    {main:'#d32f2f', btn:'#e53935', text:'#fff'},
+      Yellow: {main:'#fbc02d', btn:'#ffee58', text:'#000'},
+      Blue:   {main:'#1976d2', btn:'#42a5f5', text:'#fff'},
+      Green:  {main:'#388e3c', btn:'#66bb6a', text:'#fff'},
+      Purple: {main:'#7b1fa2', btn:'#ab47bc', text:'#fff'},
+      Brown:  {main:'#5d4037', btn:'#8d6e63', text:'#fff'},
+      Pink:   {main:'#c2185b', btn:'#ec407a', text:'#fff'},
+      Gold:   {main:'#f9a825', btn:'#fff176', text:'#000'},
+      Silver: {main:'#9e9e9e', btn:'#e0e0e0', text:'#000'},
+      Orange: {main:'#f57c00', btn:'#ffa726', text:'#fff'},
+      Cyan:   {main:'#0097a7', btn:'#26c6da', text:'#fff'},
+      Magenta:{main:'#d500f9', btn:'#e040fb', text:'#fff'},
+      White:  {main:'#ffffff', btn:'#f5f5f5', text:'#000'},
+      Black:  {main:'#212121', btn:'#616161', text:'#fff'}
+    };
+    const picker = document.getElementById('colorPicker');
+    picker.addEventListener('change', () => {
+      const c = colorMap[picker.value];
+      counterEl.style.setProperty('--main-color', c.main);
+      counterEl.style.setProperty('--btn-color',  c.btn);
+      counterEl.style.setProperty('--btn-text',   c.text);
+    });
+    picker.value = 'Red';
+    picker.dispatchEvent(new Event('change'));
   </script>
 </body>
 </html>

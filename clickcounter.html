@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Click Counter with Adjustable Speed Dial</title>
+  <title>3D Click Counter with Integer Speed Dial</title>
   <style>
     body {
       margin: 0;
@@ -34,7 +34,6 @@
     .top-controls input[type=range] {
       width: 150px;
     }
-
     /* Centered counter + picker */
     .wrapper {
       display: flex;
@@ -51,13 +50,11 @@
       margin-right: 8px;
       color: #333;
     }
-
     /* 3D counter styling */
     .counter {
       --main-color: #d32f2f;
       --btn-color:  #e53935;
       --btn-text:   #fff;
-
       background: var(--main-color);
       border-radius: 20px;
       padding: 20px;
@@ -109,16 +106,17 @@
 </head>
 <body>
 
-  <!-- Top-left: decimal toggle + speed dial -->
+  <!-- Top-left: decimal toggle + integer speed dial -->
   <div class="top-controls">
     <label>
       <input type="checkbox" id="decimalToggle">
       Decimal Points
     </label>
     <label>
-      Speed Rate: <span id="rateValue">2.0</span>
+      Speed Rate: <span id="rateValue">20</span>
     </label>
-    <input type="range" id="rateSlider" min="0.1" max="5" step="0.1" value="2.0">
+    <!-- slider now 1–50 integer; actual speedFactor = value/10 -->
+    <input type="range" id="rateSlider" min="1" max="50" step="1" value="20">
   </div>
 
   <div class="wrapper">
@@ -155,13 +153,14 @@
     const colorPicker   = document.getElementById('colorPicker');
 
     let count = 0;
-    // global rate factor (exponent per second)
-    let speedFactor = parseFloat(rateSlider.value);
+    // speedFactor = sliderValue / 10
+    let speedFactor = rateSlider.value / 10;
 
-    // update shown rateValue
+    // update shown integer and underlying factor
     rateSlider.addEventListener('input', () => {
-      speedFactor = parseFloat(rateSlider.value);
-      rateValue.textContent = speedFactor.toFixed(1);
+      const val = parseInt(rateSlider.value, 10);
+      rateValue.textContent = val;
+      speedFactor = val / 10;
     });
 
     // format display
@@ -175,10 +174,10 @@
     }
     decimalToggle.addEventListener('change', updateDisplay);
 
-    // exponential-hold logic with dynamic speedFactor
+    // exponential-hold logic
     function attachExpHold(btn, isIncrement) {
       let intervalId, startTs;
-      const intervalMs = 20; // keep a fast tick
+      const intervalMs = 20; // tick every 20ms
 
       function start(e) {
         e.preventDefault();
@@ -191,7 +190,7 @@
         clearInterval(intervalId);
       }
       function step() {
-        const elapsed = (Date.now() - startTs) / 1000;    // seconds
+        const elapsed = (Date.now() - startTs) / 1000; // seconds
         const mult    = Math.exp(speedFactor * elapsed);
         const base    = decimalToggle.checked ? 0.01 : 1;
         const delta   = base * mult;
@@ -238,8 +237,10 @@
       counterEl.style.setProperty('--btn-color',  c.btn);
       counterEl.style.setProperty('--btn-text',   c.text);
     });
-    // init
-    rateValue.textContent = speedFactor.toFixed(1);
+
+    // initialize
+    rateValue.textContent = rateSlider.value;
+    speedFactor = rateSlider.value / 10;
     colorPicker.value = 'Red';
     colorPicker.dispatchEvent(new Event('change'));
     updateDisplay();

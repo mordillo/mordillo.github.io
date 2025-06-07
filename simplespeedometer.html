@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>HUD Speedometer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HUD Speedometer with Rate Control</title>
   <link rel="preload" href="digital-7.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="digital-7.ttf" as="font" type="font/ttf" crossorigin>
   <style>
@@ -23,18 +24,42 @@
       overflow: hidden;
       font-family: 'Digital-7', monospace;
     }
+    /* Top-left rate & decimal controls */
+    .top-controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.5);
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: #5df;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 10;
+    }
+    .top-controls label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .top-controls input[type=range] {
+      width: 150px;
+    }
+    .top-controls span {
+      min-width: 30px;
+      display: inline-block;
+      text-align: right;
+    }
     .hud-container {
       width: 360px;
       height: 360px;
       border-radius: 50%;
       background: #000;
-      /* 3D metallic rim via shadows */
       box-shadow:
-        /* top-left outer highlight */
         -6px -6px 15px rgba(255,255,255,0.2),
-        /* bottom-right outer shadow */
         6px 6px 15px rgba(0,0,0,0.8),
-        /* inner bevel highlight */
         inset 4px 4px 6px rgba(255,255,255,0.1),
         inset -4px -4px 6px rgba(0,0,0,0.7);
       position: relative;
@@ -103,10 +128,18 @@
       .bottom-container { margin-top: 1.5rem; }
       .max-input { width: 200px; font-size: 1.5rem; }
       .controls button { font-size: 1.75rem; padding: 0.5rem 1rem; }
+      .top-controls input[type=range] { width: 120px; }
     }
   </style>
 </head>
 <body>
+  <!-- Rate and decimal controls -->
+  <div class="top-controls">
+    <label><input type="checkbox" id="decimalToggle"> Decimal Points</label>
+    <label>Speed Rate: <span id="rateValue">20</span></label>
+    <input type="range" id="rateSlider" min="1" max="50" step="1" value="20">
+  </div>
+
   <div class="hud-container">
     <div class="hud">
       <div class="speed"><span id="speedMph">0</span></div>
@@ -121,20 +154,21 @@
     </div>
   </div>
   <script>
-    const speedEl = document.getElementById('speedMph');
-    const btnUp = document.getElementById('speedUp');
-    const btnDown = document.getElementById('speedDown');
-    const maxInput = document.getElementById('maxSpeedInput');
+    const speedEl       = document.getElementById('speedMph');
+    const btnUp         = document.getElementById('speedUp');
+    const btnDown       = document.getElementById('speedDown');
+    const maxInput      = document.getElementById('maxSpeedInput');
+    const decimalToggle = document.getElementById('decimalToggle');
+    const rateSlider    = document.getElementById('rateSlider');
+    const rateValue     = document.getElementById('rateValue');
 
-    let current = 0;
-    let maxVal = Infinity;
-    const step = 1;
-    const intervalMs = 50;
-    let changeInterval;
+    // Max speed cap
+    const MAX_INT = 99999;
+    const MAX_DEC = 99999;
 
-    function updateDisplay() {
-      speedEl.textContent = Math.round(current).toLocaleString();
-    }
+    let current     = 0;
+    let maxVal      = Infinity;
+    let speedFactor = rateSlider.value / 10;
 
     maxInput.addEventListener('input', () => {
       const v = parseInt(maxInput.value.replace(/,/g, ''), 10);
@@ -143,28 +177,58 @@
       updateDisplay();
     });
 
-    function startChange(delta) {
-      clearInterval(changeInterval);
-      changeInterval = setInterval(() => {
-        current = Math.min(maxVal, Math.max(0, current + delta));
+    function formatVal(val) {
+      return decimalToggle.checked ? val.toFixed(2) : String(Math.round(val));
+    }
+    function updateDisplay() {
+      speedEl.textContent = formatVal(current);
+    }
+
+    rateSlider.addEventListener('input', () => {
+      rateValue.textContent = rateSlider.value;
+      speedFactor = rateSlider.value / 10;
+    });
+
+    function attachExpHold(btn, isIncrement) {
+      let intervalId, startTs;
+      const intervalMs = 20;
+
+      function step() {
+        const elapsed = (Date.now() - startTs) / 1000;
+        const mult    = Math.exp(speedFactor * elapsed);
+        const base    = decimalToggle.checked ? 0.01 : 1;
+        let delta     = base * mult;
+
+        current += isIncrement ? delta : -delta;
+        if (current < 0) current = 0;
+        // apply user-defined max
+        current = Math.min(current, maxVal);
+        // enforce overall cap
+        if (current > (decimalToggle.checked ? MAX_DEC : MAX_INT)) {
+          current = decimalToggle.checked ? MAX_DEC : MAX_INT;
+        }
         updateDisplay();
-      }, intervalMs);
-    }
-    function stopChange() {
-      clearInterval(changeInterval);
+      }
+
+      function start(e) {
+        e.preventDefault();
+        clearInterval(intervalId);
+        startTs = Date.now();
+        step();
+        intervalId = setInterval(step, intervalMs);
+      }
+      function stop() { clearInterval(intervalId); }
+
+      btn.addEventListener('mousedown', start);
+      btn.addEventListener('touchstart', e => { e.preventDefault(); start(e); });
+      ['mouseup','mouseleave','touchend'].forEach(evt => btn.addEventListener(evt, stop));
     }
 
-    btnUp.addEventListener('mousedown', () => startChange(step));
-    btnUp.addEventListener('mouseup', stopChange);
-    btnUp.addEventListener('mouseleave', stopChange);
-    btnDown.addEventListener('mousedown', () => startChange(-step));
-    btnDown.addEventListener('mouseup', stopChange);
-    btnDown.addEventListener('mouseleave', stopChange);
-    btnUp.addEventListener('touchstart', e => { e.preventDefault(); startChange(step); });
-    btnUp.addEventListener('touchend', stopChange);
-    btnDown.addEventListener('touchstart', e => { e.preventDefault(); startChange(-step); });
-    btnDown.addEventListener('touchend', stopChange);
+    attachExpHold(btnUp, true);
+    attachExpHold(btnDown, false);
+    decimalToggle.addEventListener('change', updateDisplay);
 
+    rateValue.textContent = rateSlider.value;
     updateDisplay();
   </script>
 </body>

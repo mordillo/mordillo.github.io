@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Click Counter with Max-Count Input</title>
+  <title>3D Click Counter with Adjustable Dial Max</title>
   <style>
     body {
       margin: 0;
@@ -28,7 +28,7 @@
     .top-controls label {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
     }
     .top-controls input[type=range] {
       width: 150px;
@@ -39,6 +39,21 @@
       border-radius: 4px;
       border: none;
       text-align: right;
+    }
+    .small-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0;
+    }
+    .small-btn:active {
+      background: rgba(255,255,255,0.4);
     }
     .wrapper {
       display: flex;
@@ -116,10 +131,19 @@
       <input type="checkbox" id="decimalToggle">
       Decimal Points
     </label>
+
     <label>
       Speed Rate: <span id="rateValue">20</span>
     </label>
     <input type="range" id="rateSlider" min="1" max="100" step="1" value="20">
+
+    <label>
+      Dial Max:
+      <button id="dialMaxDown" class="small-btn">−</button>
+      <span id="dialMaxValue">100</span>
+      <button id="dialMaxUp"   class="small-btn">+</button>
+    </label>
+
     <label>
       Max Count:
       <input id="maxCountInput" type="text" inputmode="numeric" pattern="\d*" placeholder="None">
@@ -157,34 +181,52 @@
     const decimalToggle  = document.getElementById('decimalToggle');
     const rateSlider     = document.getElementById('rateSlider');
     const rateValue      = document.getElementById('rateValue');
+    const dialMaxDown    = document.getElementById('dialMaxDown');
+    const dialMaxUp      = document.getElementById('dialMaxUp');
+    const dialMaxValue   = document.getElementById('dialMaxValue');
     const maxCountInput  = document.getElementById('maxCountInput');
     const colorPicker    = document.getElementById('colorPicker');
 
-    let count = 0;
-    // map slider (1–100) to speedFactor 0.1–10.0
-    let speedFactor = rateSlider.value / 10;
-    // track user-set max (integer) or Infinity if blank
-    let maxCount = Infinity;
+    let count        = 0;
+    let dialMax      = 100;         // slider.max initial
+    let speedFactor  = rateSlider.value / 10;
+    let maxCount     = Infinity;    // no limit by default
 
-    // sanitize & update maxCount on input
-    maxCountInput.addEventListener('input', () => {
-      // strip non-digits
-      maxCountInput.value = maxCountInput.value.replace(/\D/g, '');
-      if (maxCountInput.value === '') {
-        maxCount = Infinity;
-      } else {
-        maxCount = parseInt(maxCountInput.value, 10);
-      }
+    // update dialMax / slider.max
+    function updateDialMax() {
+      dialMaxValue.textContent = dialMax;
+      rateSlider.max = dialMax;
+      if (+rateSlider.value > dialMax) rateSlider.value = dialMax;
+      const v = +rateSlider.value;
+      rateValue.textContent = v;
+      speedFactor = v / 10;
+    }
+
+    dialMaxUp.addEventListener('click', () => {
+      if (dialMax < 500) dialMax++;
+      updateDialMax();
+    });
+    dialMaxDown.addEventListener('click', () => {
+      if (dialMax > 10) dialMax--;
+      updateDialMax();
     });
 
-    // update shown integer and underlying factor
+    // Speed slider → speedFactor
     rateSlider.addEventListener('input', () => {
-      const val = parseInt(rateSlider.value, 10);
-      rateValue.textContent = val;
-      speedFactor = val / 10;
+      const v = +rateSlider.value;
+      rateValue.textContent = v;
+      speedFactor = v / 10;
     });
 
-    // format display according to decimal mode
+    // Max Count input (integer only)
+    maxCountInput.addEventListener('input', () => {
+      maxCountInput.value = maxCountInput.value.replace(/\D/g, '');
+      maxCount = maxCountInput.value === '' 
+        ? Infinity 
+        : parseInt(maxCountInput.value, 10);
+    });
+
+    // Display formatting
     function format(val) {
       return decimalToggle.checked
         ? val.toFixed(2)
@@ -195,46 +237,40 @@
     }
     decimalToggle.addEventListener('change', updateDisplay);
 
-    // exponential-hold logic with max clamp
-    function attachExpHold(btn, isIncrement) {
-      let intervalId, startTs;
-      const intervalMs = 20; // tick every 20ms
+    // Exponential-hold logic
+    function attachExpHold(btn, isInc) {
+      let id, startTs;
+      const intervalMs = 20;
 
-      function start(e) {
-        e.preventDefault();
-        clearInterval(intervalId);
-        startTs = Date.now();
-        step();
-        intervalId = setInterval(step, intervalMs);
-      }
-      function stop() {
-        clearInterval(intervalId);
-      }
       function step() {
-        const elapsed = (Date.now() - startTs) / 1000; // seconds
+        const elapsed = (Date.now() - startTs) / 1000;
         const mult    = Math.exp(speedFactor * elapsed);
         const base    = decimalToggle.checked ? 0.01 : 1;
         let   delta   = base * mult;
-
-        // apply
-        count = isIncrement ? count + delta : count - delta;
-
-        // clamp floor
+        count = isInc ? count + delta : count - delta;
         if (count < 0) count = 0;
-        // clamp ceiling
         if (count > maxCount) count = maxCount;
-
         updateDisplay();
+      }
+      function start(e) {
+        e.preventDefault();
+        clearInterval(id);
+        startTs = Date.now();
+        step();
+        id = setInterval(step, intervalMs);
+      }
+      function stop() {
+        clearInterval(id);
       }
 
       btn.addEventListener('mousedown', start);
       btn.addEventListener('touchstart', e => { e.preventDefault(); start(e); });
-      ['mouseup','mouseleave','touchend'].forEach(evt =>
+      ['mouseup','mouseleave','touchend'].forEach(evt => 
         btn.addEventListener(evt, stop)
       );
     }
 
-    // wire up
+    // Wire up inc/dec/reset
     attachExpHold(document.getElementById('increment'), true);
     attachExpHold(document.getElementById('decrement'), false);
     document.getElementById('reset').addEventListener('click', () => {
@@ -242,22 +278,22 @@
       updateDisplay();
     });
 
-    // color picker
+    // Color picker
     const colorMap = {
-      Red:     { main:'#d32f2f', btn:'#e53935', text:'#fff' },
-      Yellow:  { main:'#fbc02d', btn:'#ffee58', text:'#000' },
-      Blue:    { main:'#1976d2', btn:'#42a5f5', text:'#fff' },
-      Green:   { main:'#388e3c', btn:'#66bb6a', text:'#fff' },
-      Purple:  { main:'#7b1fa2', btn:'#ab47bc', text:'#fff' },
-      Brown:   { main:'#5d4037', btn:'#8d6e63', text:'#fff' },
-      Pink:    { main:'#c2185b', btn:'#ec407a', text:'#fff' },
-      Gold:    { main:'#f9a825', btn:'#fff176', text:'#000' },
-      Silver:  { main:'#9e9e9e', btn:'#e0e0e0', text:'#000' },
-      Orange:  { main:'#f57c00', btn:'#ffa726', text:'#fff' },
-      Cyan:    { main:'#0097a7', btn:'#26c6da', text:'#fff' },
-      Magenta: { main:'#d500f9', btn:'#e040fb', text:'#fff' },
-      White:   { main:'#ffffff', btn:'#f5f5f5', text:'#000' },
-      Black:   { main:'#212121', btn:'#616161', text:'#fff' }
+      Red:    {main:'#d32f2f', btn:'#e53935', text:'#fff'},
+      Yellow: {main:'#fbc02d', btn:'#ffee58', text:'#000'},
+      Blue:   {main:'#1976d2', btn:'#42a5f5', text:'#fff'},
+      Green:  {main:'#388e3c', btn:'#66bb6a', text:'#fff'},
+      Purple: {main:'#7b1fa2', btn:'#ab47bc', text:'#fff'},
+      Brown:  {main:'#5d4037', btn:'#8d6e63', text:'#fff'},
+      Pink:   {main:'#c2185b', btn:'#ec407a', text:'#fff'},
+      Gold:   {main:'#f9a825', btn:'#fff176', text:'#000'},
+      Silver: {main:'#9e9e9e', btn:'#e0e0e0', text:'#000'},
+      Orange: {main:'#f57c00', btn:'#ffa726', text:'#fff'},
+      Cyan:   {main:'#0097a7', btn:'#26c6da', text:'#fff'},
+      Magenta:{main:'#d500f9', btn:'#e040fb', text:'#fff'},
+      White:  {main:'#ffffff', btn:'#f5f5f5', text:'#000'},
+      Black:  {main:'#212121', btn:'#616161', text:'#fff'}
     };
     colorPicker.addEventListener('change', () => {
       const c = colorMap[colorPicker.value];
@@ -266,8 +302,8 @@
       counterEl.style.setProperty('--btn-text',   c.text);
     });
 
-    // init
-    rateValue.textContent = rateSlider.value;
+    // Initialize
+    updateDialMax();
     colorPicker.value = 'Red';
     colorPicker.dispatchEvent(new Event('change'));
     updateDisplay();

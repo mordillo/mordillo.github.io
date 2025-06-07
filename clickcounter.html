@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Click Counter with Integer Speed Dial</title>
+  <title>3D Click Counter with Caps, Decimal & Speed Dial</title>
   <style>
     body {
       margin: 0;
@@ -12,7 +12,6 @@
       font-family: sans-serif;
       overflow: hidden;
     }
-    /* Top-left controls */
     .top-controls {
       position: absolute;
       top: 10px;
@@ -34,7 +33,6 @@
     .top-controls input[type=range] {
       width: 150px;
     }
-    /* Centered counter + picker */
     .wrapper {
       display: flex;
       flex-direction: column;
@@ -50,7 +48,6 @@
       margin-right: 8px;
       color: #333;
     }
-    /* 3D counter styling */
     .counter {
       --main-color: #d32f2f;
       --btn-color:  #e53935;
@@ -106,7 +103,7 @@
 </head>
 <body>
 
-  <!-- Top-left: decimal toggle + integer speed dial -->
+  <!-- Top-left controls -->
   <div class="top-controls">
     <label>
       <input type="checkbox" id="decimalToggle">
@@ -115,7 +112,6 @@
     <label>
       Speed Rate: <span id="rateValue">20</span>
     </label>
-    <!-- slider now 1–50 integer; actual speedFactor = value/10 -->
     <input type="range" id="rateSlider" min="1" max="50" step="1" value="20">
   </div>
 
@@ -152,32 +148,37 @@
     const rateValue     = document.getElementById('rateValue');
     const colorPicker   = document.getElementById('colorPicker');
 
+    // Constants for caps
+    const MAX_INT = 9999999999;
+    const MAX_DEC = 9999999.99;
+
     let count = 0;
-    // speedFactor = sliderValue / 10
     let speedFactor = rateSlider.value / 10;
 
-    // update shown integer and underlying factor
+    // Update speedFactor when slider moves
     rateSlider.addEventListener('input', () => {
       const val = parseInt(rateSlider.value, 10);
       rateValue.textContent = val;
       speedFactor = val / 10;
     });
 
-    // format display
+    // Format according to decimal toggle
     function format(val) {
-      return decimalToggle.checked
-        ? val.toFixed(2)
-        : String(Math.round(val));
+      if (decimalToggle.checked) {
+        return val.toFixed(2);
+      } else {
+        return String(Math.round(val));
+      }
     }
     function updateDisplay() {
       display.textContent = format(count);
     }
     decimalToggle.addEventListener('change', updateDisplay);
 
-    // exponential-hold logic
+    // Exponential-hold logic with capping
     function attachExpHold(btn, isIncrement) {
       let intervalId, startTs;
-      const intervalMs = 20; // tick every 20ms
+      const intervalMs = 20; // every 20ms
 
       function start(e) {
         e.preventDefault();
@@ -193,9 +194,22 @@
         const elapsed = (Date.now() - startTs) / 1000; // seconds
         const mult    = Math.exp(speedFactor * elapsed);
         const base    = decimalToggle.checked ? 0.01 : 1;
-        const delta   = base * mult;
+        let   delta   = base * mult;
+
+        // apply increment/decrement
         if (isIncrement) count += delta;
-        else             count = Math.max(0, count - delta);
+        else             count -= delta;
+
+        // clamp to ≥0
+        if (count < 0) count = 0;
+
+        // clamp to max based on mode
+        if (decimalToggle.checked) {
+          if (count > MAX_DEC) count = MAX_DEC;
+        } else {
+          if (count > MAX_INT) count = MAX_INT;
+        }
+
         updateDisplay();
       }
 
@@ -206,7 +220,7 @@
       );
     }
 
-    // wire up inc/dec/reset
+    // Wire up buttons
     attachExpHold(document.getElementById('increment'), true);
     attachExpHold(document.getElementById('decrement'), false);
     document.getElementById('reset').addEventListener('click', () => {
@@ -214,7 +228,7 @@
       updateDisplay();
     });
 
-    // color picker
+    // Color picker logic
     const colorMap = {
       Red:     { main:'#d32f2f', btn:'#e53935', text:'#fff' },
       Yellow:  { main:'#fbc02d', btn:'#ffee58', text:'#000' },
@@ -238,7 +252,7 @@
       counterEl.style.setProperty('--btn-text',   c.text);
     });
 
-    // initialize
+    // Initialize
     rateValue.textContent = rateSlider.value;
     speedFactor = rateSlider.value / 10;
     colorPicker.value = 'Red';

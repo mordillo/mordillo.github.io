@@ -154,37 +154,43 @@
 
     // Exponential hold logic (doubling every 1s, tick every 50ms)
     function attachExpHold(btn, isIncrement) {
-      let intervalId, startTs;
+  let intervalId, startTs;
 
-      function start(e) {
-        e.preventDefault();
-        clearInterval(intervalId);
-        startTs = Date.now();
-        // immediate step
-        step();
-        intervalId = setInterval(step, 50);
-      }
-      function stop() {
-        clearInterval(intervalId);
-      }
-      function step() {
-        const elapsed = (Date.now() - startTs) / 1000;       // seconds
-        const multiplier = Math.pow(2, Math.floor(elapsed)); // 1,2,4,8...
-        const base = decimalToggle.checked ? 0.01 : 1;
-        const delta = base * multiplier;
-        count = isIncrement
-          ? count + delta
-          : count - delta;
-        if (count < 0) count = 0;
-        updateDisplay();
-      }
+  // ↓ tweak these for a steeper, faster ramp
+  const intervalMs  = 20;     // fire step() every 20 ms instead of 50
+  const growthRate  = 2.0;    // per second (e.g. e^(2 × t) growth)
+  
+  function start(e) {
+    e.preventDefault();
+    clearInterval(intervalId);
+    startTs = Date.now();
+    step();
+    intervalId = setInterval(step, intervalMs);
+  }
 
-      btn.addEventListener('mousedown', start);
-      btn.addEventListener('touchstart', e => { e.preventDefault(); start(e); });
-      btn.addEventListener('mouseup',   stop);
-      btn.addEventListener('mouseleave',stop);
-      btn.addEventListener('touchend',  stop);
-    }
+  function stop() {
+    clearInterval(intervalId);
+  }
+
+  function step() {
+    const elapsed    = (Date.now() - startTs) / 1000;    // seconds held
+    const multiplier = Math.exp(growthRate * elapsed);  // continuous exponential
+
+    const base = decimalToggle.checked ? 0.01 : 1;
+    const delta = base * multiplier;
+
+    if (isIncrement) count += delta;
+    else             count = Math.max(0, count - delta);
+
+    updateDisplay();
+  }
+
+  btn.addEventListener('mousedown', start);
+  btn.addEventListener('touchstart', e => { e.preventDefault(); start(e); });
+  btn.addEventListener('mouseup',   stop);
+  btn.addEventListener('mouseleave',stop);
+  btn.addEventListener('touchend',  stop);
+}
 
     // Wire up buttons
     attachExpHold(document.getElementById('increment'), true);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Click Counter (Fixed Dial Max & Slider)</title>
+  <title>3D Click Counter (Dial Max up to 1000)</title>
   <style>
     body {
       margin: 0; height: 100vh;
@@ -141,11 +141,11 @@
     let speedFactor = rateSlider.value / 10;
     let maxCount    = Infinity;
 
-    // much faster hold-to-repeat for Dial Max
+    // faster hold-to-repeat for Dial Max
     function attachHold(btn, action) {
       let tId, iId;
-      const initialDelay   = 100;  // ms before repeating
-      const repeatInterval = 25;   // ms between repeats
+      const initialDelay   = 100;
+      const repeatInterval = 25;
       const start = () => {
         action();
         tId = setTimeout(() => {
@@ -171,8 +171,9 @@
       rateValue.textContent = rateSlider.value;
     }
 
-    attachHold(dialMaxUp,   () => { if (dialMax < 500) dialMax++; updateDialMax(); });
-    attachHold(dialMaxDown, () => { if (dialMax > 10)  dialMax--; updateDialMax(); });
+    // ▲ goes up to 1000 now
+    attachHold(dialMaxUp,   () => { if (dialMax < 1000) dialMax++; updateDialMax(); });
+    attachHold(dialMaxDown, () => { if (dialMax > 10)   dialMax--; updateDialMax(); });
 
     rateSlider.addEventListener('input', () => {
       speedFactor = +rateSlider.value / 10;
@@ -181,8 +182,8 @@
 
     maxCountInput.addEventListener('input', () => {
       maxCountInput.value = maxCountInput.value.replace(/\D/g,'');
-      maxCount = maxCountInput.value === '' 
-        ? Infinity 
+      maxCount = maxCountInput.value === ''
+        ? Infinity
         : +maxCountInput.value;
     });
 

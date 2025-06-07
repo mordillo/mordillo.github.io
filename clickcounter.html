@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Click Counter with Caps, Decimal & Speed Dial</title>
+  <title>3D Click Counter with 1–100 Speed Dial</title>
   <style>
     body {
       margin: 0;
@@ -103,7 +103,7 @@
 </head>
 <body>
 
-  <!-- Top-left controls -->
+  <!-- Top-left: decimal toggle + 1–100 speed dial -->
   <div class="top-controls">
     <label>
       <input type="checkbox" id="decimalToggle">
@@ -112,7 +112,8 @@
     <label>
       Speed Rate: <span id="rateValue">20</span>
     </label>
-    <input type="range" id="rateSlider" min="1" max="50" step="1" value="20">
+    <!-- slider now 1–100; speedFactor = sliderValue/10 -->
+    <input type="range" id="rateSlider" min="1" max="100" step="1" value="20">
   </div>
 
   <div class="wrapper">
@@ -148,37 +149,32 @@
     const rateValue     = document.getElementById('rateValue');
     const colorPicker   = document.getElementById('colorPicker');
 
-    // Constants for caps
-    const MAX_INT = 9999999999;
-    const MAX_DEC = 9999999.99;
-
     let count = 0;
+    // map slider (1–100) to speedFactor 0.1–10.0
     let speedFactor = rateSlider.value / 10;
 
-    // Update speedFactor when slider moves
+    // update label & factor when slider moves
     rateSlider.addEventListener('input', () => {
       const val = parseInt(rateSlider.value, 10);
       rateValue.textContent = val;
       speedFactor = val / 10;
     });
 
-    // Format according to decimal toggle
+    // format display
     function format(val) {
-      if (decimalToggle.checked) {
-        return val.toFixed(2);
-      } else {
-        return String(Math.round(val));
-      }
+      return decimalToggle.checked
+        ? val.toFixed(2)
+        : String(Math.round(val));
     }
     function updateDisplay() {
       display.textContent = format(count);
     }
     decimalToggle.addEventListener('change', updateDisplay);
 
-    // Exponential-hold logic with capping
+    // exponential-hold logic
     function attachExpHold(btn, isIncrement) {
       let intervalId, startTs;
-      const intervalMs = 20; // every 20ms
+      const intervalMs = 20;
 
       function start(e) {
         e.preventDefault();
@@ -191,25 +187,11 @@
         clearInterval(intervalId);
       }
       function step() {
-        const elapsed = (Date.now() - startTs) / 1000; // seconds
+        const elapsed = (Date.now() - startTs) / 1000;
         const mult    = Math.exp(speedFactor * elapsed);
         const base    = decimalToggle.checked ? 0.01 : 1;
-        let   delta   = base * mult;
-
-        // apply increment/decrement
-        if (isIncrement) count += delta;
-        else             count -= delta;
-
-        // clamp to ≥0
-        if (count < 0) count = 0;
-
-        // clamp to max based on mode
-        if (decimalToggle.checked) {
-          if (count > MAX_DEC) count = MAX_DEC;
-        } else {
-          if (count > MAX_INT) count = MAX_INT;
-        }
-
+        const delta   = base * mult;
+        count = isIncrement ? count + delta : Math.max(0, count - delta);
         updateDisplay();
       }
 
@@ -220,7 +202,7 @@
       );
     }
 
-    // Wire up buttons
+    // wire up inc/dec/reset
     attachExpHold(document.getElementById('increment'), true);
     attachExpHold(document.getElementById('decrement'), false);
     document.getElementById('reset').addEventListener('click', () => {
@@ -228,7 +210,7 @@
       updateDisplay();
     });
 
-    // Color picker logic
+    // color picker logic
     const colorMap = {
       Red:     { main:'#d32f2f', btn:'#e53935', text:'#fff' },
       Yellow:  { main:'#fbc02d', btn:'#ffee58', text:'#000' },
@@ -252,9 +234,8 @@
       counterEl.style.setProperty('--btn-text',   c.text);
     });
 
-    // Initialize
+    // initialize
     rateValue.textContent = rateSlider.value;
-    speedFactor = rateSlider.value / 10;
     colorPicker.value = 'Red';
     colorPicker.dispatchEvent(new Event('change'));
     updateDisplay();

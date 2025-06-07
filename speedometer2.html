@@ -2,228 +2,229 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Click Counter with Exponential Hold & Decimal Toggle</title>
+  <title>HUD Speedometer - Decimal & Km/h Toggle</title>
+  <!-- Preload the Digital-7 font files -->
+  <link rel="preload" href="digital-7.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="digital-7.ttf" as="font" type="font/ttf" crossorigin>
   <style>
+    @font-face {
+      font-family: 'Digital-7';
+      src: url('digital-7.woff2') format('woff2'), url('digital-7.ttf') format('truetype');
+      font-display: swap;
+    }
     body {
-      margin: 0;
-      height: 100vh;
-      background: #f0f0f0;
-      font-family: sans-serif;
-      overflow: hidden;
+      margin: 0; height: 100vh;
+      background: url('road.jpg') no-repeat center/cover;
+      overflow: hidden; position: relative;
     }
-
-    /* Decimal toggle in top-left */
-    .decimal-container {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.3);
-      padding: 6px 10px;
-      border-radius: 6px;
-      color: #fff;
-      font-size: 0.9rem;
+    .hud-container {
+      position: absolute; top: 60%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
     }
-    .decimal-container input {
-      transform: scale(1.2);
-      margin-right: 4px;
+    .max-container {
+      width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
     }
-
-    /* Centered counter + picker */
-    .wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
+    .toggle-container {
+      font-family: 'Digital-7', monospace;
+      color: #e0ffe0;
+      font-size: 2rem;
+      background: rgba(0,0,0,0.5);
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      display: flex; align-items: center; gap: 0.5rem;
     }
-    .picker {
-      margin-bottom: 15px;
+    .toggle-container input { transform: scale(1.5); }
+    .max-input {
+      font-family: 'Digital-7', monospace;
+      font-size: 2rem;
+      width: 20rem; max-width: 90vw;
+      background: rgba(0,0,0,0.5);
+      color: #e0ffe0; border: none; border-radius: 0.5rem;
+      padding: 0.5rem; text-align: center; outline: none;
     }
-    .picker label {
-      font-weight: bold;
-      margin-right: 8px;
-      color: #333;
+    .hud {
+      color: #e0ffe0; text-align: center;
+      text-shadow: 0 0 8px rgba(255,255,255,0.8),0 0 4px rgba(0,255,0,0.6);
+      display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
     }
-
-    /* 3D counter styling */
-    .counter {
-      --main-color: #d32f2f;
-      --btn-color:  #e53935;
-      --btn-text:   #fff;
-
-      background: var(--main-color);
-      border-radius: 20px;
-      padding: 20px;
-      width: 260px;
-      box-shadow:
-        inset 0 6px 12px rgba(0,0,0,0.3),
-        0 6px 12px rgba(0,0,0,0.2);
+    .speed {
+      margin: 0; font-family: 'Digital-7', monospace; line-height: 1;
+      transition: color 0.3s, text-shadow 0.3s;
     }
-    .display {
-      background: #111;
-      color: #0f0;
-      font-family: monospace;
-      font-size: 2.5rem;
-      padding: 10px 0;
-      border-radius: 6px;
-      box-shadow: inset 0 4px 6px rgba(0,0,0,0.5);
-      margin-bottom: 20px;
-      text-align: center;
+    .selected .speed {
+      color: #fff; text-shadow: 0 0 12px rgba(255,255,255,1),0 0 6px rgba(0,255,0,0.8);
     }
-    .buttons {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .mph { font-size: 8rem; }
+    .kmh { font-size: 5rem; opacity: 0.85; }
+    .unit {
+      font-size: 1.5rem; opacity: 0.85; font-family: monospace;
     }
-    .btn {
-      border: none;
-      outline: none;
-      border-radius: 50%;
-      background: var(--btn-color);
-      color: var(--btn-text);
-      user-select: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow:
-        0 6px 8px rgba(0,0,0,0.4),
-        inset 0 2px 0 rgba(255,255,255,0.3);
-      cursor: pointer;
+    .controls {
+      display: flex; gap: 1rem; align-items: center;
     }
-    .btn-large { width: 80px; height: 80px; font-size: 2rem; }
-    .btn-small { width: 40px; height: 40px; font-size: 1.2rem; }
-    .btn:active {
-      transform: translateY(4px);
-      box-shadow:
-        0 2px 4px rgba(0,0,0,0.4),
-        inset 0 1px 0 rgba(255,255,255,0.3);
+    .mode-select {
+      font-family: 'Digital-7', monospace; font-size: 2rem;
+      background: rgba(0,0,0,0.5); color: #e0ffe0;
+      border: none; border-radius: 0.5rem; padding: 0.5rem;
+      text-align: center; outline: none;
+    }
+    .controls button {
+      font-family: 'Digital-7', monospace; font-size: 2.5rem;
+      padding: 0.5rem 1rem; border: none; border-radius: 0.5rem;
+      background: rgba(0,0,0,0.5); color: #e0ffe0;
+      cursor: pointer; user-select: none; outline: none;
+    }
+    .controls button:active { background: rgba(0,255,0,0.3); }
+    @media (orientation: portrait) {
+      .controls button { font-size: 5rem; padding: 1rem 2rem; }
+      .mode-select, .max-input { font-size: 4rem; padding: 1rem; }
+      .toggle-container { font-size: 3rem; }
+    }
+    @media (orientation: landscape) {
+      .mph { font-size: 5rem; }
+      .kmh { font-size: 3rem; }
+      .unit { font-size: 1rem; }
+      .hud-container { top: 30%; }
+      .max-input { font-size: 2rem; width: 12rem; }
+      .toggle-container { font-size: 1.5rem; }
     }
   </style>
 </head>
 <body>
-
-  <!-- Decimal/integer toggle -->
-  <div class="decimal-container">
-    <input type="checkbox" id="decimalToggle">
-    <label for="decimalToggle">Decimal Points</label>
-  </div>
-
-  <div class="wrapper">
-    <!-- Color picker -->
-    <div class="picker">
-      <label for="colorPicker">Choose color:</label>
-      <select id="colorPicker">
-        <option>Red</option><option>Yellow</option><option>Blue</option>
-        <option>Green</option><option>Purple</option><option>Brown</option>
-        <option>Pink</option><option>Gold</option><option>Silver</option>
-        <option>Orange</option><option>Cyan</option><option>Magenta</option>
-        <option>White</option><option>Black</option>
-      </select>
+  <div class="hud-container">
+    <div class="max-container">
+      <div class="toggle-container">
+        <input type="checkbox" id="showKmh" checked>
+        <label for="showKmh">Show Km/h</label>
+      </div>
+      <div class="toggle-container">
+        <input type="checkbox" id="decimalToggle">
+        <label for="decimalToggle">Decimal Point</label>
+      </div>
+      <input id="maxSpeedInput" class="max-input" type="text" placeholder="Max Speed" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" />
     </div>
-
-    <!-- Counter -->
-    <div class="counter" id="counter">
-      <div class="display" id="display">0</div>
-      <div class="buttons">
-        <button id="decrement" class="btn btn-small">−</button>
-        <button id="increment" class="btn btn-large">+</button>
-        <button id="reset"     class="btn btn-small">⟲</button>
+    <div class="hud">
+      <div id="containerMph" class="mph selected">
+        <div class="speed mph"><span id="speedMph">0</span></div>
+        <div class="unit">MPH</div>
+      </div>
+      <div id="containerKmh" class="kmh">
+        <div class="speed kmh"><span id="speedKmh">0</span></div>
+        <div class="unit">Km/h</div>
       </div>
     </div>
+    <div class="controls">
+      <select id="modeSelect" class="mode-select">
+        <option value="mph">MPH</option>
+        <option value="kmh">Km/h</option>
+      </select>
+      <button id="speedDown">▼</button>
+      <button id="speedUp">▲</button>
+    </div>
   </div>
-
   <script>
-    const display       = document.getElementById('display');
-    const counterEl     = document.getElementById('counter');
+    const speedMphEl = document.getElementById('speedMph');
+    const speedKmhEl = document.getElementById('speedKmh');
+    const btnUp = document.getElementById('speedUp');
+    const btnDown = document.getElementById('speedDown');
+    const modeSelect = document.getElementById('modeSelect');
+    const containerMph = document.getElementById('containerMph');
+    const containerKmh = document.getElementById('containerKmh');
+    const maxInput = document.getElementById('maxSpeedInput');
     const decimalToggle = document.getElementById('decimalToggle');
-    const colorPicker   = document.getElementById('colorPicker');
-    let   count         = 0;
+    const showKmh = document.getElementById('showKmh');
 
-    // Format according to decimal toggle
+    let currentMph = 0;
+    let maxMph = Infinity;
+    const baseInt = 1;
+    const baseDec = 0.01;
+    const intervalMs = 50;
+    let upInterval, downInterval, intervalStart;
+
     function format(val) {
-      if (decimalToggle.checked) {
-        return val.toFixed(2);
-      } else {
-        return String(Math.round(val));
-      }
+      if (decimalToggle.checked) return val.toFixed(2).toLocaleString();
+      else return Math.round(val).toLocaleString();
     }
     function updateDisplay() {
-      display.textContent = format(count);
+      speedMphEl.textContent = format(currentMph);
+      speedKmhEl.textContent = format(currentMph * 1.609344);
+    }
+    function updateHighlight() {
+      if (modeSelect.value === 'mph') {
+        containerMph.classList.add('selected');
+        containerKmh.classList.remove('selected');
+      } else {
+        containerKmh.classList.add('selected');
+        containerMph.classList.remove('selected');
+      }
+    }
+    function updateKmhVisibility() {
+      if (showKmh.checked) {
+        containerKmh.style.display = '';
+        modeSelect.style.display = '';
+      } else {
+        containerKmh.style.display = 'none';
+        modeSelect.style.display = 'none';
+        modeSelect.value = 'mph';
+        containerMph.classList.add('selected');
+      }
+      updateHighlight();
     }
 
-    // Exponential hold logic (doubling every 1s, tick every 50ms)
-    function attachExpHold(btn, isIncrement) {
-      let intervalId, startTs;
+    decimalToggle.addEventListener('change', () => { updateDisplay(); updateKmhVisibility(); });
+    showKmh.addEventListener('change', updateKmhVisibility);
+    modeSelect.addEventListener('change', updateHighlight);
 
-      function start(e) {
-        e.preventDefault();
-        clearInterval(intervalId);
-        startTs = Date.now();
-        // immediate step
-        step();
-        intervalId = setInterval(step, 50);
-      }
-      function stop() {
-        clearInterval(intervalId);
-      }
-      function step() {
-        const elapsed = (Date.now() - startTs) / 1000;       // seconds
-        const multiplier = Math.pow(2, Math.floor(elapsed)); // 1,2,4,8...
-        const base = decimalToggle.checked ? 0.01 : 1;
-        const delta = base * multiplier;
-        count = isIncrement
-          ? count + delta
-          : count - delta;
-        if (count < 0) count = 0;
-        updateDisplay();
-      }
-
-      btn.addEventListener('mousedown', start);
-      btn.addEventListener('touchstart', e => { e.preventDefault(); start(e); });
-      btn.addEventListener('mouseup',   stop);
-      btn.addEventListener('mouseleave',stop);
-      btn.addEventListener('touchend',  stop);
-    }
-
-    // Wire up buttons
-    attachExpHold(document.getElementById('increment'), true);
-    attachExpHold(document.getElementById('decrement'), false);
-    document.getElementById('reset').addEventListener('click', () => {
-      count = 0;
+    maxInput.addEventListener('input', () => {
+      const val = parseFloat(maxInput.value.replace(/,/g, ''));
+      if (!isNaN(val) && val >= 0) {
+        const raw = modeSelect.value === 'mph' ? val : val / 1.609344;
+        maxMph = raw;
+        if (currentMph > maxMph) currentMph = maxMph;
+      } else maxMph = Infinity;
       updateDisplay();
     });
 
-    // Re-format on decimal toggle change
-    decimalToggle.addEventListener('change', updateDisplay);
+    function startIncreasing() {
+      clearInterval(downInterval);
+      intervalStart = Date.now();
+      upInterval = setInterval(() => {
+        const elapsed = (Date.now() - intervalStart) / 1000;
+        const multiplier = Math.pow(2, Math.floor(elapsed));
+        const inc = decimalToggle.checked ? baseDec * multiplier : baseInt * multiplier;
+        currentMph = Math.min(maxMph, currentMph + inc);
+        updateDisplay();
+      }, intervalMs);
+    }
+    function stopIncreasing() { clearInterval(upInterval); }
+    function startDecreasing() {
+      clearInterval(upInterval);
+      intervalStart = Date.now();
+      downInterval = setInterval(() => {
+        const elapsed = (Date.now() - intervalStart) / 1000;
+        const multiplier = Math.pow(2, Math.floor(elapsed));
+        const dec = decimalToggle.checked ? baseDec * multiplier : baseInt * multiplier;
+        currentMph = Math.max(0, currentMph - dec);
+        updateDisplay();
+      }, intervalMs);
+    }
+    function stopDecreasing() { clearInterval(downInterval); }
 
-    // Color picker mapping
-    const colorMap = {
-      Red:     {main:'#d32f2f', btn:'#e53935', text:'#fff'},
-      Yellow:  {main:'#fbc02d', btn:'#ffee58', text:'#000'},
-      Blue:    {main:'#1976d2', btn:'#42a5f5', text:'#fff'},
-      Green:   {main:'#388e3c', btn:'#66bb6a', text:'#fff'},
-      Purple:  {main:'#7b1fa2', btn:'#ab47bc', text:'#fff'},
-      Brown:   {main:'#5d4037', btn:'#8d6e63', text:'#fff'},
-      Pink:    {main:'#c2185b', btn:'#ec407a', text:'#fff'},
-      Gold:    {main:'#f9a825', btn:'#fff176', text:'#000'},
-      Silver:  {main:'#9e9e9e', btn:'#e0e0e0', text:'#000'},
-      Orange:  {main:'#f57c00', btn:'#ffa726', text:'#fff'},
-      Cyan:    {main:'#0097a7', btn:'#26c6da', text:'#fff'},
-      Magenta: {main:'#d500f9', btn:'#e040fb', text:'#fff'},
-      White:   {main:'#ffffff', btn:'#f5f5f5', text:'#000'},
-      Black:   {main:'#212121', btn:'#616161', text:'#fff'}
-    };
-    colorPicker.addEventListener('change', () => {
-      const c = colorMap[colorPicker.value];
-      counterEl.style.setProperty('--main-color', c.main);
-      counterEl.style.setProperty('--btn-color',  c.btn);
-      counterEl.style.setProperty('--btn-text',   c.text);
-    });
-    // init
-    colorPicker.value = 'Red';
-    colorPicker.dispatchEvent(new Event('change'));
+    btnUp.addEventListener('mousedown', startIncreasing);
+    btnUp.addEventListener('mouseup', stopIncreasing);
+    btnUp.addEventListener('mouseleave', stopIncreasing);
+    btnDown.addEventListener('mousedown', startDecreasing);
+    btnDown.addEventListener('mouseup', stopDecreasing);
+    btnDown.addEventListener('mouseleave', stopDecreasing);
+    btnUp.addEventListener('touchstart', e => { e.preventDefault(); startIncreasing(); });
+    btnUp.addEventListener('touchend', stopIncreasing);
+    btnDown.addEventListener('touchstart', e => { e.preventDefault(); startDecreasing(); });
+    btnDown.addEventListener('touchend', stopDecreasing);
+
+    updateKmhVisibility();
     updateDisplay();
   </script>
 </body>
 </html>
+

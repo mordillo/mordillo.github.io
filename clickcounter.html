@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Click Counter with 1–100 Speed Dial</title>
+  <title>3D Click Counter with Max-Count Input</title>
   <style>
     body {
       margin: 0;
@@ -32,6 +32,13 @@
     }
     .top-controls input[type=range] {
       width: 150px;
+    }
+    .top-controls input[type=text] {
+      width: 80px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      border: none;
+      text-align: right;
     }
     .wrapper {
       display: flex;
@@ -103,7 +110,7 @@
 </head>
 <body>
 
-  <!-- Top-left: decimal toggle + 1–100 speed dial -->
+  <!-- Top-left controls -->
   <div class="top-controls">
     <label>
       <input type="checkbox" id="decimalToggle">
@@ -112,8 +119,11 @@
     <label>
       Speed Rate: <span id="rateValue">20</span>
     </label>
-    <!-- slider now 1–100; speedFactor = sliderValue/10 -->
     <input type="range" id="rateSlider" min="1" max="100" step="1" value="20">
+    <label>
+      Max Count:
+      <input id="maxCountInput" type="text" inputmode="numeric" pattern="\d*" placeholder="None">
+    </label>
   </div>
 
   <div class="wrapper">
@@ -142,25 +152,39 @@
 
   <script>
     // DOM refs
-    const display       = document.getElementById('display');
-    const counterEl     = document.getElementById('counter');
-    const decimalToggle = document.getElementById('decimalToggle');
-    const rateSlider    = document.getElementById('rateSlider');
-    const rateValue     = document.getElementById('rateValue');
-    const colorPicker   = document.getElementById('colorPicker');
+    const display        = document.getElementById('display');
+    const counterEl      = document.getElementById('counter');
+    const decimalToggle  = document.getElementById('decimalToggle');
+    const rateSlider     = document.getElementById('rateSlider');
+    const rateValue      = document.getElementById('rateValue');
+    const maxCountInput  = document.getElementById('maxCountInput');
+    const colorPicker    = document.getElementById('colorPicker');
 
     let count = 0;
     // map slider (1–100) to speedFactor 0.1–10.0
     let speedFactor = rateSlider.value / 10;
+    // track user-set max (integer) or Infinity if blank
+    let maxCount = Infinity;
 
-    // update label & factor when slider moves
+    // sanitize & update maxCount on input
+    maxCountInput.addEventListener('input', () => {
+      // strip non-digits
+      maxCountInput.value = maxCountInput.value.replace(/\D/g, '');
+      if (maxCountInput.value === '') {
+        maxCount = Infinity;
+      } else {
+        maxCount = parseInt(maxCountInput.value, 10);
+      }
+    });
+
+    // update shown integer and underlying factor
     rateSlider.addEventListener('input', () => {
       const val = parseInt(rateSlider.value, 10);
       rateValue.textContent = val;
       speedFactor = val / 10;
     });
 
-    // format display
+    // format display according to decimal mode
     function format(val) {
       return decimalToggle.checked
         ? val.toFixed(2)
@@ -171,10 +195,10 @@
     }
     decimalToggle.addEventListener('change', updateDisplay);
 
-    // exponential-hold logic
+    // exponential-hold logic with max clamp
     function attachExpHold(btn, isIncrement) {
       let intervalId, startTs;
-      const intervalMs = 20;
+      const intervalMs = 20; // tick every 20ms
 
       function start(e) {
         e.preventDefault();
@@ -187,11 +211,19 @@
         clearInterval(intervalId);
       }
       function step() {
-        const elapsed = (Date.now() - startTs) / 1000;
+        const elapsed = (Date.now() - startTs) / 1000; // seconds
         const mult    = Math.exp(speedFactor * elapsed);
         const base    = decimalToggle.checked ? 0.01 : 1;
-        const delta   = base * mult;
-        count = isIncrement ? count + delta : Math.max(0, count - delta);
+        let   delta   = base * mult;
+
+        // apply
+        count = isIncrement ? count + delta : count - delta;
+
+        // clamp floor
+        if (count < 0) count = 0;
+        // clamp ceiling
+        if (count > maxCount) count = maxCount;
+
         updateDisplay();
       }
 
@@ -202,7 +234,7 @@
       );
     }
 
-    // wire up inc/dec/reset
+    // wire up
     attachExpHold(document.getElementById('increment'), true);
     attachExpHold(document.getElementById('decrement'), false);
     document.getElementById('reset').addEventListener('click', () => {
@@ -210,7 +242,7 @@
       updateDisplay();
     });
 
-    // color picker logic
+    // color picker
     const colorMap = {
       Red:     { main:'#d32f2f', btn:'#e53935', text:'#fff' },
       Yellow:  { main:'#fbc02d', btn:'#ffee58', text:'#000' },
@@ -234,7 +266,7 @@
       counterEl.style.setProperty('--btn-text',   c.text);
     });
 
-    // initialize
+    // init
     rateValue.textContent = rateSlider.value;
     colorPicker.value = 'Red';
     colorPicker.dispatchEvent(new Event('change'));

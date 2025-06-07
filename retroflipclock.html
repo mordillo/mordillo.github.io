@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Retro Flip Clock</title>
+  <style>
+    body {
+      background: #222;
+      display: flex;
+      height: 100vh;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      font-family: sans-serif;
+    }
+    .clock {
+      display: flex;
+    }
+    .digit {
+      position: relative;
+      width: 80px;
+      height: 100px;
+      margin: 0 5px;
+      perspective: 400px;
+    }
+    .digit .card {
+      position: absolute;
+      width: 100%;
+      height: 50%;
+      line-height: 50px;
+      overflow: hidden;
+      backface-visibility: hidden;
+      color: #fff;
+      background: #333;
+      border-radius: 4px;
+      box-shadow: inset 0 -2px 5px rgba(0,0,0,0.5);
+    }
+    .digit .upper {
+      top: 0;
+      border-bottom: 1px solid #000;
+    }
+    .digit .lower {
+      bottom: 0;
+      transform: translateY(-1px);
+      border-top: 1px solid #000;
+    }
+    .digit .flip {
+      position: absolute;
+      width: 100%;
+      height: 50%;
+      background: #333;
+      left: 0;
+      transform-origin: bottom;
+      backface-visibility: hidden;
+    }
+    .flip.up {
+      top: 0;
+      border-bottom: 1px solid #000;
+      z-index: 2;
+    }
+    .flip.down {
+      bottom: 0;
+      transform-origin: top;
+      border-top: 1px solid #000;
+    }
+    .flip.animate-up {
+      animation: flipUp 0.5s forwards ease-in;
+    }
+    .flip.animate-down {
+      animation: flipDown 0.5s forwards ease-out;
+    }
+    @keyframes flipUp {
+      0%   { transform: rotateX(0deg); }
+      100% { transform: rotateX(-90deg); }
+    }
+    @keyframes flipDown {
+      0%   { transform: rotateX(90deg); }
+      100% { transform: rotateX(0deg); }
+    }
+    .colon {
+      font-size: 80px;
+      color: #fff;
+      line-height: 100px;
+      padding: 0 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="clock" id="clock">
+    <!-- Hours tens -->
+    <div class="digit" data-digit="0"></div>
+    <!-- Hours units -->
+    <div class="digit" data-digit="0"></div>
+    <div class="colon">:</div>
+    <!-- Minutes tens -->
+    <div class="digit" data-digit="0"></div>
+    <!-- Minutes units -->
+    <div class="digit" data-digit="0"></div>
+  </div>
+
+  <script>
+    class FlipDigit {
+      constructor(container) {
+        this.container = container;
+        this.currentValue = container.getAttribute('data-digit');
+        this._build();
+        this._updateDisplay(this.currentValue);
+      }
+
+      _build() {
+        // Upper static card
+        this.upper = document.createElement('div');
+        this.upper.className = 'card upper';
+        this.container.appendChild(this.upper);
+        // Lower static card
+        this.lower = document.createElement('div');
+        this.lower.className = 'card lower';
+        this.container.appendChild(this.lower);
+        // Flip-up and flip-down cards
+        this.flipUp = document.createElement('div');
+        this.flipUp.className = 'flip up';
+        this.container.appendChild(this.flipUp);
+        this.flipDown = document.createElement('div');
+        this.flipDown.className = 'flip down';
+        this.container.appendChild(this.flipDown);
+      }
+
+      _updateDisplay(value) {
+        this.upper.textContent = value;
+        this.lower.textContent = value;
+      }
+
+      flipTo(newValue) {
+        if (newValue === this.currentValue) return;
+        // Set flip cards content
+        this.flipUp.textContent = this.currentValue;
+        this.flipDown.textContent = newValue;
+        // Animate
+        this.flipUp.classList.add('animate-up');
+        this.flipDown.classList.add('animate-down');
+        // After animation, update static cards
+        this.flipUp.addEventListener('animationend', () => {
+          this.currentValue = newValue;
+          this._updateDisplay(newValue);
+          this.flipUp.classList.remove('animate-up');
+          this.flipDown.classList.remove('animate-down');
+        }, { once: true });
+      }
+    }
+
+    // Initialize digits
+    const digitEls = Array.from(document.querySelectorAll('.digit'));
+    const digits = digitEls.map(el => new FlipDigit(el));
+
+    function tick() {
+      const now = new Date();
+      const [h, m] = [
+        String(now.getHours()).padStart(2, '0'),
+        String(now.getMinutes()).padStart(2, '0')
+      ];
+      const timeStr = h + m;
+      for (let i = 0; i < digits.length; i++) {
+        digits[i].flipTo(timeStr[i]);
+      }
+    }
+
+    // First render, then update every minute
+    tick();
+    setInterval(tick, 60*1000);
+  </script>
+</body>
+</html>

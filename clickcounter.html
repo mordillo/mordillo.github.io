@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Click Counter with Exponential Hold & Decimal Toggle</title>
+  <title>3D Click Counter with Adjustable Speed Dial</title>
   <style>
     body {
       margin: 0;
@@ -12,21 +12,27 @@
       font-family: sans-serif;
       overflow: hidden;
     }
-
-    /* Decimal toggle in top-left */
-    .decimal-container {
+    /* Top-left controls */
+    .top-controls {
       position: absolute;
       top: 10px;
       left: 10px;
       background: rgba(0,0,0,0.3);
-      padding: 6px 10px;
+      padding: 8px 12px;
       border-radius: 6px;
       color: #fff;
       font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    .decimal-container input {
-      transform: scale(1.2);
-      margin-right: 4px;
+    .top-controls label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .top-controls input[type=range] {
+      width: 150px;
     }
 
     /* Centered counter + picker */
@@ -103,10 +109,16 @@
 </head>
 <body>
 
-  <!-- Decimal/integer toggle -->
-  <div class="decimal-container">
-    <input type="checkbox" id="decimalToggle">
-    <label for="decimalToggle">Decimal Points</label>
+  <!-- Top-left: decimal toggle + speed dial -->
+  <div class="top-controls">
+    <label>
+      <input type="checkbox" id="decimalToggle">
+      Decimal Points
+    </label>
+    <label>
+      Speed Rate: <span id="rateValue">2.0</span>
+    </label>
+    <input type="range" id="rateSlider" min="0.1" max="5" step="0.1" value="2.0">
   </div>
 
   <div class="wrapper">
@@ -134,65 +146,68 @@
   </div>
 
   <script>
+    // DOM refs
     const display       = document.getElementById('display');
     const counterEl     = document.getElementById('counter');
     const decimalToggle = document.getElementById('decimalToggle');
+    const rateSlider    = document.getElementById('rateSlider');
+    const rateValue     = document.getElementById('rateValue');
     const colorPicker   = document.getElementById('colorPicker');
-    let   count         = 0;
 
-    // Format according to decimal toggle
+    let count = 0;
+    // global rate factor (exponent per second)
+    let speedFactor = parseFloat(rateSlider.value);
+
+    // update shown rateValue
+    rateSlider.addEventListener('input', () => {
+      speedFactor = parseFloat(rateSlider.value);
+      rateValue.textContent = speedFactor.toFixed(1);
+    });
+
+    // format display
     function format(val) {
-      if (decimalToggle.checked) {
-        return val.toFixed(2);
-      } else {
-        return String(Math.round(val));
-      }
+      return decimalToggle.checked
+        ? val.toFixed(2)
+        : String(Math.round(val));
     }
     function updateDisplay() {
       display.textContent = format(count);
     }
+    decimalToggle.addEventListener('change', updateDisplay);
 
-    // Exponential hold logic (doubling every 1s, tick every 50ms)
+    // exponential-hold logic with dynamic speedFactor
     function attachExpHold(btn, isIncrement) {
-  let intervalId, startTs;
+      let intervalId, startTs;
+      const intervalMs = 20; // keep a fast tick
 
-  // ↓ tweak these for a steeper, faster ramp
-  const intervalMs  = 20;     // fire step() every 20 ms instead of 50
-  const growthRate  = 2.0;    // per second (e.g. e^(2 × t) growth)
-  
-  function start(e) {
-    e.preventDefault();
-    clearInterval(intervalId);
-    startTs = Date.now();
-    step();
-    intervalId = setInterval(step, intervalMs);
-  }
+      function start(e) {
+        e.preventDefault();
+        clearInterval(intervalId);
+        startTs = Date.now();
+        step();
+        intervalId = setInterval(step, intervalMs);
+      }
+      function stop() {
+        clearInterval(intervalId);
+      }
+      function step() {
+        const elapsed = (Date.now() - startTs) / 1000;    // seconds
+        const mult    = Math.exp(speedFactor * elapsed);
+        const base    = decimalToggle.checked ? 0.01 : 1;
+        const delta   = base * mult;
+        if (isIncrement) count += delta;
+        else             count = Math.max(0, count - delta);
+        updateDisplay();
+      }
 
-  function stop() {
-    clearInterval(intervalId);
-  }
+      btn.addEventListener('mousedown', start);
+      btn.addEventListener('touchstart', e => { e.preventDefault(); start(e); });
+      ['mouseup','mouseleave','touchend'].forEach(evt =>
+        btn.addEventListener(evt, stop)
+      );
+    }
 
-  function step() {
-    const elapsed    = (Date.now() - startTs) / 1000;    // seconds held
-    const multiplier = Math.exp(growthRate * elapsed);  // continuous exponential
-
-    const base = decimalToggle.checked ? 0.01 : 1;
-    const delta = base * multiplier;
-
-    if (isIncrement) count += delta;
-    else             count = Math.max(0, count - delta);
-
-    updateDisplay();
-  }
-
-  btn.addEventListener('mousedown', start);
-  btn.addEventListener('touchstart', e => { e.preventDefault(); start(e); });
-  btn.addEventListener('mouseup',   stop);
-  btn.addEventListener('mouseleave',stop);
-  btn.addEventListener('touchend',  stop);
-}
-
-    // Wire up buttons
+    // wire up inc/dec/reset
     attachExpHold(document.getElementById('increment'), true);
     attachExpHold(document.getElementById('decrement'), false);
     document.getElementById('reset').addEventListener('click', () => {
@@ -200,25 +215,22 @@
       updateDisplay();
     });
 
-    // Re-format on decimal toggle change
-    decimalToggle.addEventListener('change', updateDisplay);
-
-    // Color picker mapping
+    // color picker
     const colorMap = {
-      Red:     {main:'#d32f2f', btn:'#e53935', text:'#fff'},
-      Yellow:  {main:'#fbc02d', btn:'#ffee58', text:'#000'},
-      Blue:    {main:'#1976d2', btn:'#42a5f5', text:'#fff'},
-      Green:   {main:'#388e3c', btn:'#66bb6a', text:'#fff'},
-      Purple:  {main:'#7b1fa2', btn:'#ab47bc', text:'#fff'},
-      Brown:   {main:'#5d4037', btn:'#8d6e63', text:'#fff'},
-      Pink:    {main:'#c2185b', btn:'#ec407a', text:'#fff'},
-      Gold:    {main:'#f9a825', btn:'#fff176', text:'#000'},
-      Silver:  {main:'#9e9e9e', btn:'#e0e0e0', text:'#000'},
-      Orange:  {main:'#f57c00', btn:'#ffa726', text:'#fff'},
-      Cyan:    {main:'#0097a7', btn:'#26c6da', text:'#fff'},
-      Magenta: {main:'#d500f9', btn:'#e040fb', text:'#fff'},
-      White:   {main:'#ffffff', btn:'#f5f5f5', text:'#000'},
-      Black:   {main:'#212121', btn:'#616161', text:'#fff'}
+      Red:     { main:'#d32f2f', btn:'#e53935', text:'#fff' },
+      Yellow:  { main:'#fbc02d', btn:'#ffee58', text:'#000' },
+      Blue:    { main:'#1976d2', btn:'#42a5f5', text:'#fff' },
+      Green:   { main:'#388e3c', btn:'#66bb6a', text:'#fff' },
+      Purple:  { main:'#7b1fa2', btn:'#ab47bc', text:'#fff' },
+      Brown:   { main:'#5d4037', btn:'#8d6e63', text:'#fff' },
+      Pink:    { main:'#c2185b', btn:'#ec407a', text:'#fff' },
+      Gold:    { main:'#f9a825', btn:'#fff176', text:'#000' },
+      Silver:  { main:'#9e9e9e', btn:'#e0e0e0', text:'#000' },
+      Orange:  { main:'#f57c00', btn:'#ffa726', text:'#fff' },
+      Cyan:    { main:'#0097a7', btn:'#26c6da', text:'#fff' },
+      Magenta: { main:'#d500f9', btn:'#e040fb', text:'#fff' },
+      White:   { main:'#ffffff', btn:'#f5f5f5', text:'#000' },
+      Black:   { main:'#212121', btn:'#616161', text:'#fff' }
     };
     colorPicker.addEventListener('change', () => {
       const c = colorMap[colorPicker.value];
@@ -227,6 +239,7 @@
       counterEl.style.setProperty('--btn-text',   c.text);
     });
     // init
+    rateValue.textContent = speedFactor.toFixed(1);
     colorPicker.value = 'Red';
     colorPicker.dispatchEvent(new Event('change'));
     updateDisplay();

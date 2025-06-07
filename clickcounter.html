@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Click Counter (Faster Dial Max)</title>
+  <title>3D Click Counter (Fixed Dial Max & Slider)</title>
   <style>
     body {
       margin: 0; height: 100vh;
@@ -88,16 +88,19 @@
       Speed Rate: <span id="rateValue">20</span>
     </label>
     <input type="range" id="rateSlider" min="1" max="100" step="1" value="20">
+
     <label>
       Dial Max:
       <button id="dialMaxDown" class="small-btn">▼</button>
       <span id="dialMaxValue">100</span>
       <button id="dialMaxUp"   class="small-btn">▲</button>
     </label>
+
     <label>
       Max Count:
       <input id="maxCountInput" type="text" inputmode="numeric" pattern="\d*" placeholder="None">
     </label>
+
     <label>
       Choose Color:
       <select id="colorPicker">
@@ -138,7 +141,7 @@
     let speedFactor = rateSlider.value / 10;
     let maxCount    = Infinity;
 
-    // much faster hold-to-repeat
+    // much faster hold-to-repeat for Dial Max
     function attachHold(btn, action) {
       let tId, iId;
       const initialDelay   = 100;  // ms before repeating
@@ -177,10 +180,10 @@
     });
 
     maxCountInput.addEventListener('input', () => {
-      maxCountInput.value = maxCountInput.value.replace(/\D/g, '');
-      maxCount = maxCountInput.value === ''
-        ? Infinity
-        : parseInt(maxCountInput.value, 10);
+      maxCountInput.value = maxCountInput.value.replace(/\D/g,'');
+      maxCount = maxCountInput.value === '' 
+        ? Infinity 
+        : +maxCountInput.value;
     });
 
     function format(v) {
@@ -232,20 +235,20 @@
     });
 
     const colorMap = {
-      Red:    {main:'#d32f2f',btn:'#e53935',text:'#fff'},
-      Yellow: {main:'#fbc02d',btn:'#ffee58',text:'#000'},
-      Blue:   {main:'#1976d2',btn:'#42a5f5',text:'#fff'},
-      Green:  {main:'#388e3c',btn:'#66bb6a',text:'#fff'},
-      Purple: {main:'#7b1fa2',btn:'#ab47bc',text:'#fff'},
-      Brown:  {main:'#5d4037',btn:'#8d6e63',text:'#fff'},
-      Pink:   {main('#c2185b',btn:'#ec407a',text:'#fff'},
-      Gold:   {main:'#f9a825',btn:'#fff176',text:'#000'},
-      Silver: {main:'#9e9e9e',btn:'#e0e0e0',text:'#000'},
-      Orange: {main:'#f57c00',btn:'#ffa726',text:'#fff'},
-      Cyan:   {main:'#0097a7',btn:'#26c6da',text:'#fff'},
-      Magenta:{main:'#d500f9',btn:'#e040fb',text:'#fff'},
-      White:  {main:'#ffffff',btn:'#f5f5f5',text:'#000'},
-      Black:  {main:'#212121',btn:'#616161',text:'#fff'}
+      Red:     {main:'#d32f2f',btn:'#e53935',text:'#fff'},
+      Yellow:  {main:'#fbc02d',btn:'#ffee58',text:'#000'},
+      Blue:    {main:'#1976d2',btn:'#42a5f5',text:'#fff'},
+      Green:   {main:'#388e3c',btn:'#66bb6a',text:'#fff'},
+      Purple:  {main:'#7b1fa2',btn:'#ab47bc',text:'#fff'},
+      Brown:   {main:'#5d4037',btn:'#8d6e63',text:'#fff'},
+      Pink:    {main:'#c2185b',btn:'#ec407a',text:'#fff'},
+      Gold:    {main:'#f9a825',btn:'#fff176',text:'#000'},
+      Silver:  {main:'#9e9e9e',btn:'#e0e0e0',text:'#000'},
+      Orange:  {main:'#f57c00',btn:'#ffa726',text:'#fff'},
+      Cyan:    {main:'#0097a7',btn:'#26c6da',text:'#fff'},
+      Magenta: {main:'#d500f9',btn:'#e040fb',text:'#fff'},
+      White:   {main:'#ffffff',btn:'#f5f5f5',text:'#000'},
+      Black:   {main:'#212121',btn:'#616161',text:'#fff'}
     };
     colorPicker.addEventListener('change', () => {
       const c = colorMap[colorPicker.value];

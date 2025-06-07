@@ -162,16 +162,13 @@
     const rateSlider    = document.getElementById('rateSlider');
     const rateValue     = document.getElementById('rateValue');
 
-    // Max speed cap
-    const MAX_INT = 99999;
-    const MAX_DEC = 99999;
-
     let current     = 0;
     let maxVal      = Infinity;
     let speedFactor = rateSlider.value / 10;
 
+    // Update maxVal from input; if empty, maxVal is infinite
     maxInput.addEventListener('input', () => {
-      const v = parseInt(maxInput.value.replace(/,/g, ''), 10);
+      const v = parseFloat(maxInput.value.replace(/,/g, ''), 10);
       maxVal = (!isNaN(v) && v >= 0) ? v : Infinity;
       if (current > maxVal) current = maxVal;
       updateDisplay();
@@ -189,6 +186,7 @@
       speedFactor = rateSlider.value / 10;
     });
 
+    // Exponential-hold logic using only maxVal for cap
     function attachExpHold(btn, isIncrement) {
       let intervalId, startTs;
       const intervalMs = 20;
@@ -201,12 +199,8 @@
 
         current += isIncrement ? delta : -delta;
         if (current < 0) current = 0;
-        // apply user-defined max
-        current = Math.min(current, maxVal);
-        // enforce overall cap
-        if (current > (decimalToggle.checked ? MAX_DEC : MAX_INT)) {
-          current = decimalToggle.checked ? MAX_DEC : MAX_INT;
-        }
+        // cap by user-defined max (or infinite if none)
+        if (current > maxVal) current = maxVal;
         updateDisplay();
       }
 

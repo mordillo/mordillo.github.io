@@ -1,113 +1,47 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Click Counter with Sound</title>
+  <meta charset="UTF-8">
+  <title>Tyler's Game Selector</title>
   <style>
-    :root {
-      --digit-width: 60px;
-      --digit-height: 90px;
-      --digit-bg: #eee;
-      --lever-size: 40px;
-    }
-
     body {
-      display: flex;
-      height: 100vh;
-      margin: 0;
-      align-items: center;
-      justify-content: center;
-      background: #f5f5f5;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+      background: #f2f2f2;
     }
-
-    .counter {
-      display: flex;
-      align-items: center;
-      background: #ccc;
+    h1 {
+      margin-bottom: 50px;
+    }
+    .choice {
+      display: block;
+      margin: 20px auto;
+      font-size: 2em;
+      text-decoration: none;
       padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-      gap: 10px;
-    }
-
-    .digit {
-      width: var(--digit-width);
-      height: var(--digit-height);
-      background: var(--digit-bg);
-      border-radius: 8px;
-      box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.2),
-                  0 2px 4px rgba(0, 0, 0, 0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.5rem;
-      font-family: 'Digital-7', monospace;
-      transition: background 0.2s ease;
-    }
-
-    .digit.updated {
-      background: #ffe;
-    }
-
-    .lever {
-      width: var(--lever-size);
-      height: var(--lever-size);
-      background: #888;
-      border: none;
-      border-radius: 50%;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4),
-                  inset 0 -2px 3px rgba(255, 255, 255, 0.3);
-      cursor: pointer;
-      transform-origin: center bottom;
-      transition: transform 0.15s ease-in-out;
-    }
-    .lever:active {
-      transform: rotate(-25deg);
+      border: 2px solid #000;
+      border-radius: 10px;
+      width: 300px;
+      color: #333;
+      background: #eee;
     }
   </style>
 </head>
 <body>
-
-  <!-- Preload a click sound (replace the URL with your own) -->
-  <audio id="click-sound" src="click.mp3" preload="auto"></audio>
-
-  <div class="counter">
-    <span class="digit">0</span>
-    <span class="digit">0</span>
-    <span class="digit">0</span>
-    <span class="digit">0</span>
-    <button class="lever" aria-label="Increment counter"></button>
-  </div>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const lever = document.querySelector(".lever");
-      const digits = Array.from(document.querySelectorAll(".digit"));
-      const clickSound = document.getElementById("click-sound");  // Select the audio element :contentReference[oaicite:4]{index=4}
-      let count = 0;
-
-      function updateDisplay(n) {
-        const s = String(n).padStart(4, "0");
-        digits.forEach((el, i) => {
-          el.textContent = s[i];
-          el.classList.add("updated");
-          setTimeout(() => el.classList.remove("updated"), 100);
-        });
-      }
-
-      lever.addEventListener("click", () => {
-        // Play sound from the start on every click :contentReference[oaicite:5]{index=5}
-        clickSound.currentTime = 0;
-        clickSound.play().catch(err => {
-          // Handle any playback errors (e.g., autoplay restrictions)
-          console.warn("Audio playback failed:", err);
-        });
-
-        // Increment counter and wrap at 9999 → 0000
-        count = (count + 1) % 10000;
-        updateDisplay(count);
-      });
-    });
-  </script>
+  <h1>Select Game</h1>
+  <a class="choice" href="treadmill1.html">Treadmill ver 1</a>
+  <a class="choice" href="treadmill2.html">Treadmill ver 2</a>
+  <a class="choice" href="treadmill3.html">Treadmill ver 3</a>
+  <a class="choice" href="treadmill4.html">Treadmill ver 4</a>
+  <a class="choice" href="mydailycalendar.html">My Daily Calendar</a>
+  <a class="choice" href="clickcounter.html">Click Counter</a>
+  <a class="choice" href="counter.html">Counter</a>
+  <a class="choice" href="gaspump.html">Gas Pump</a>
+  <a class="choice" href="carspeedometer.html">Car Speedometer</a>
+  <a class="choice" href="simplespeedometer.html">Simple Speedometer</a>
+  <a class="choice" href="speedometer.html">Speedometer</a>
+  <a class="choice" href="speedometer2.html">Speedometer with max Speed</a>
+  <a class="choice" href="flipclock.html">Flip Clock</a>
+  <!-- a class="choice" href="retroflipclock.html">Retro Flip Clock</a -->
 </body>
 </html>

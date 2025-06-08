@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Mechanical-Style Click Counter</title>
+  <title>Click Counter with Sound</title>
   <style>
     :root {
       --digit-width: 60px;
@@ -67,6 +67,10 @@
   </style>
 </head>
 <body>
+
+  <!-- Preload a click sound (replace the URL with your own) -->
+  <audio id="click-sound" src="click.mp3" preload="auto"></audio>
+
   <div class="counter">
     <span class="digit">0</span>
     <span class="digit">0</span>
@@ -79,6 +83,7 @@
     document.addEventListener("DOMContentLoaded", () => {
       const lever = document.querySelector(".lever");
       const digits = Array.from(document.querySelectorAll(".digit"));
+      const clickSound = document.getElementById("click-sound");  // Select the audio element :contentReference[oaicite:4]{index=4}
       let count = 0;
 
       function updateDisplay(n) {
@@ -91,6 +96,14 @@
       }
 
       lever.addEventListener("click", () => {
+        // Play sound from the start on every click :contentReference[oaicite:5]{index=5}
+        clickSound.currentTime = 0;
+        clickSound.play().catch(err => {
+          // Handle any playback errors (e.g., autoplay restrictions)
+          console.warn("Audio playback failed:", err);
+        });
+
+        // Increment counter and wrap at 9999 → 0000
         count = (count + 1) % 10000;
         updateDisplay(count);
       });

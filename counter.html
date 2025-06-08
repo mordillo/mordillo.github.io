@@ -2,167 +2,192 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>15-Digit Counter with Sound and Hold Control</title>
+  <title>15-Digit Counter with Advanced Controls</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    :root {
-      --digit-width: 40px;
-      --digit-height: 60px;
-      --digit-bg: #eee;
-      --plus-size: 200px;
-      --minus-size: 100px;
-      --reset-size: 50px;
-      --button-bg: #888;
-      --button-color: #fff;
+    body {margin:0;height:100vh;background:#f0f0f0;font-family:sans-serif;overflow:hidden;}
+    .top-controls {
+      position:absolute;top:10px;left:10px;
+      background:rgba(0,0,0,0.3);padding:8px 12px;
+      border-radius:6px;color:#fff;font-size:0.9rem;
+      display:flex;flex-direction:column;gap:6px;
     }
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      background: #f5f5f5;
+    .top-controls label {display:flex;align-items:center;gap:6px;}
+    .top-controls input[type=range] {width:150px;}
+    .top-controls input[type=text] {
+      width:80px;padding:2px 4px;border-radius:4px;
+      border:none;text-align:right;
+    }
+    .small-btn {
+      width:24px;height:24px;border:none;border-radius:4px;
+      background:rgba(255,255,255,0.2);color:#fff;cursor:pointer;
+      font-size:1rem;line-height:1;padding:0;
+    }
+    .small-btn:active {background:rgba(255,255,255,0.4);}
+    .wrapper {
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;height:100%;
     }
     .counter {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      background: #ccc;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      gap: 4px;
-      max-width: calc(15 * (var(--digit-width) + 4px) + 40px);
-      overflow-x: auto;
+      --main-color: #d32f2f;
+      --btn-color:  #e53935;
+      --btn-text:   #fff;
+      background: var(--main-color);
+      border-radius:20px;padding:20px;
+      box-shadow: inset 0 6px 12px rgba(0,0,0,0.3), 0 6px 12px rgba(0,0,0,0.2);
     }
-    .digit {
-      width: var(--digit-width);
-      height: var(--digit-height);
-      background: var(--digit-bg);
-      border-radius: 4px;
+    .display {
+      background:#111;color:#0f0;
+      font-family:monospace;font-size:2.5rem;
+      padding:10px 0;border-radius:6px;
+      box-shadow: inset 0 4px 6px rgba(0,0,0,0.5);
+      margin-bottom:20px;text-align:center;
+      display:flex;gap:4px;justify-content:center;overflow-x:auto;
+    }
+    .display .digit {
+      width:40px;height:60px;background:#eee;
+      border-radius:4px;
       box-shadow: inset 0 -2px 4px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      font-family: 'Digital-7', monospace;
-      transition: background 0.2s ease;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.5rem;font-family:'Digital-7',monospace;
+      color:#000;transition:background 0.2s ease;
     }
-    .digit.updated { background: #ffe; }
-    .controls {
-      margin-top: 20px;
-      display: flex;
-      gap: 10px;
-      justify-content: center;
+    .display .digit.updated {background:#ffe;}
+    .buttons {display:flex;justify-content:space-between;align-items:center;}
+    .btn {
+      border:none;outline:none;border-radius:50%;
+      background:var(--btn-color);color:var(--btn-text);
+      user-select:none;display:flex;align-items:center;
+      justify-content:center;
+      box-shadow: 0 6px 8px rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,255,255,0.3);
+      cursor:pointer;
     }
-    .control-button {
-      background: var(--button-bg);
-      color: var(--button-color);
-      border: none;
-      border-radius: 50%;
-      font-size: 1.5rem;
-      cursor: pointer;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.4), inset 0 -2px 3px rgba(255,255,255,0.3);
-      transition: transform 0.1s ease-in-out;
+    .btn-large {width:80px;height:80px;font-size:2rem;}
+    .btn-small {width:40px;height:40px;font-size:1.2rem;}
+    .btn:active {
+      transform:translateY(4px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
     }
-    #increment {
-      width: var(--plus-size);
-      height: var(--plus-size);
-    }
-    #decrement {
-      width: var(--minus-size);
-      height: var(--minus-size);
-    }
-    #reset {
-      width: var(--reset-size);
-      height: var(--reset-size);
-    }
-    .control-button:active { transform: scale(0.9); }
   </style>
 </head>
 <body>
-
-  <!-- Local WAV click sound -->
-  <audio id="click-sound" src="25423__andrewweathers__register.wav" preload="auto"></audio>
-
-  <div class="counter" id="counter"></div>
-  <div class="controls">
-    <button id="decrement" class="control-button" aria-label="Decrement">–</button>
-    <button id="reset"     class="control-button" aria-label="Reset">↺</button>
-    <button id="increment" class="control-button" aria-label="Increment">+</button>
+  <div class="top-controls">
+    <label><input type="checkbox" id="decimalToggle"> Decimal Points</label>
+    <label>Speed Rate: <span id="rateValue">20</span></label>
+    <input type="range" id="rateSlider" min="1" max="100" step="1" value="20">
+    <label>Dial Max: <button id="dialMaxDown" class="small-btn">▼</button> <span id="dialMaxValue">100</span> <button id="dialMaxUp" class="small-btn">▲</button></label>
+    <label>Max Count: <input id="maxCountInput" type="text" inputmode="numeric" pattern="\d*" placeholder="None"></label>
+    <label>Choose Color: <select id="colorPicker">
+        <option>Red</option><option>Yellow</option><option>Blue</option><option>Green</option>
+        <option>Purple</option><option>Brown</option><option>Pink</option><option>Gold</option>
+        <option>Silver</option><option>Orange</option><option>Cyan</option><option>Magenta</option>
+        <option>White</option><option>Black</option>
+    </select></label>
   </div>
-
+  <div class="wrapper">
+    <div class="counter" id="counter">
+      <div class="display" id="display"></div>
+      <div class="buttons">
+        <button id="decrement" class="btn btn-small">−</button>
+        <button id="increment" class="btn btn-large">+</button>
+        <button id="reset" class="btn btn-small">⟲</button>
+      </div>
+    </div>
+  </div>
+  <audio id="click-sound" src="25423__andrewweathers__register.wav" preload="auto"></audio>
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const counterEl = document.getElementById('counter');
-      const digitsCount = 15;
-      const digits = [];
-      let count = 0;
-      const clickSound = document.getElementById('click-sound');
+    const display     = document.getElementById('display');
+    const decimalToggle = document.getElementById('decimalToggle');
+    const rateSlider  = document.getElementById('rateSlider');
+    const rateValue   = document.getElementById('rateValue');
+    const dialMaxDown = document.getElementById('dialMaxDown');
+    const dialMaxUp   = document.getElementById('dialMaxUp');
+    const dialMaxValue= document.getElementById('dialMaxValue');
+    const maxCountInput = document.getElementById('maxCountInput');
+    const colorPicker = document.getElementById('colorPicker');
+    const clickSound  = document.getElementById('click-sound');
 
-      // Create digit panels
-      for (let i = 0; i < digitsCount; i++) {
-        const span = document.createElement('span');
-        span.className = 'digit';
-        span.textContent = '0';
-        counterEl.appendChild(span);
-        digits.push(span);
+    const digitsCount = 15;
+    let count         = 0;
+    let dialMax       = 100;
+    let speedFactor   = rateSlider.value/10;
+    let maxCount      = Infinity;
+
+    // initialize digit spans
+    const initDisplay = () => {
+      display.innerHTML = '';
+      for (let i=0;i<digitsCount;i++){
+        const d = document.createElement('span'); d.className='digit'; d.textContent='0'; display.appendChild(d);
       }
+    };
+    initDisplay();
 
-      // Display update
-      function updateDisplay(n) {
-        const s = String(n).padStart(digitsCount, '0');
-        digits.forEach((el, i) => {
-          el.textContent = s[i];
-          el.classList.add('updated');
-          setTimeout(() => el.classList.remove('updated'), 100);
-        });
-      }
-
-      // Change count with bounds
-      function changeCount(delta) {
-        count = Math.max(0, Math.min(count + delta, Math.pow(10, digitsCount) - 1));
-        updateDisplay(count);
-      }
-
-      // Hold-to-repeat with exponential step growth
-      function setupHold(button, isIncrement) {
-        let timeoutId;
-        let startTime;
-        function tick() {
-          const elapsed = Date.now() - startTime;
-          const exponent = Math.floor(elapsed / 1000);
-          const step = 1 << exponent; // 1,2,4,8,...
-          changeCount(isIncrement ? step : -step);
-          timeoutId = setTimeout(tick, 200);
-        }
-        button.addEventListener('mousedown', () => {
-          startTime = Date.now();
-          tick();
-        });
-        ['mouseup', 'mouseleave'].forEach(evt =>
-          button.addEventListener(evt, () => clearTimeout(timeoutId))
-        );
-      }
-
-      // Setup buttons
-      const incBtn = document.getElementById('increment');
-      const decBtn = document.getElementById('decrement');
-      document.getElementById('reset').addEventListener('click', () => {
-        clickSound.currentTime = 0; clickSound.play().catch(()=>{});
-        count = 0; updateDisplay(count);
+    const format = v => decimalToggle.checked ? v.toFixed(2) : String(Math.round(v));
+    const updateDisplay = () => {
+      const s = format(count).padStart(digitsCount,'0');
+      display.querySelectorAll('.digit').forEach((el,i)=>{
+        el.textContent = s[i]||'0'; el.classList.add('updated');
+        setTimeout(()=>el.classList.remove('updated'),100);
       });
+    };
+    decimalToggle.addEventListener('change', updateDisplay);
 
-      setupHold(incBtn, true);
-      setupHold(decBtn, false);
+    // controls logic
+    rateSlider.addEventListener('input',()=>{ speedFactor=rateSlider.value/10; rateValue.textContent=rateSlider.value; });
+    maxCountInput.addEventListener('input',()=>{ maxCountInput.value=maxCountInput.value.replace(/\D/g,''); maxCount=maxCountInput.value?+maxCountInput.value:Infinity; });
 
-      // Play sound on count change
-      document.querySelectorAll('.control-button').forEach(btn =>
-        btn.addEventListener('click', () => {
-          clickSound.currentTime = 0; clickSound.play().catch(()=>{});
-        })
-      );
+    const updateDialMax = ()=>{
+      dialMaxValue.textContent=dialMax;
+      rateSlider.max=dialMax;
+      if(+rateSlider.value>dialMax) rateSlider.value=dialMax;
+      speedFactor=rateSlider.value/10;
+      rateValue.textContent=rateSlider.value;
+    };
+    const attachHold = (btn,fn)=>{
+      let t,i;
+      btn.addEventListener('mousedown',()=>{ fn(); t=setTimeout(()=> { i=setInterval(fn,20); },100); });
+      ['mouseup','mouseleave'].forEach(e=>btn.addEventListener(e,()=>{clearTimeout(t);clearInterval(i);}));
+    };
+
+    attachHold(dialMaxUp,()=>{ if(dialMax<10000) dialMax=Math.min(10000,dialMax+10); updateDialMax(); });
+    attachHold(dialMaxDown,()=>{ if(dialMax>10) dialMax=Math.max(10,dialMax-10); updateDialMax(); });
+    updateDialMax();
+
+    // exponential hold for increment/decrement
+    const attachExpHold=(btn,isInc)=>{
+      let id, startTs;
+      const stepFn=()=>{
+        const elapsed=(Date.now()-startTs)/1000;
+        const mult=Math.exp(speedFactor*elapsed);
+        const base=decimalToggle.checked?0.01:1;
+        count=isInc?count+base*mult:count-base*mult;
+        if(count<0) count=0;
+        if(count>maxCount) count=maxCount;
+        updateDisplay();
+      };
+      btn.addEventListener('mousedown',e=>{ e.preventDefault(); clearInterval(id); startTs=Date.now(); stepFn(); id=setInterval(stepFn,20); });
+      ['mouseup','mouseleave'].forEach(e=>btn.addEventListener(e,()=>clearInterval(id)));
+    };
+
+    const incBtn=document.getElementById('increment');
+    const decBtn=document.getElementById('decrement');
+    attachExpHold(incBtn,true);
+    attachExpHold(decBtn,false);
+    document.getElementById('reset').addEventListener('click',()=>{ count=0; updateDisplay(); });
+
+    // sound on click
+    document.querySelectorAll('.btn, .small-btn').forEach(b=>b.addEventListener('click',()=>{ clickSound.currentTime=0; clickSound.play().catch(()=>{}); }));
+
+    // color picker mapping
+    const colorMap={Red:{main:'#d32f2f',btn:'#e53935',text:'#fff'},Yellow:{main:'#fbc02d',btn:'#ffee58',text:'#000'},Blue:{main:'#1976d2',btn:'#42a5f5',text:'#fff'},Green:{main:'#388e3c',btn:'#66bb6a',text:'#fff'},Purple:{main:'#7b1fa2',btn:'#ab47bc',text:'#fff'},Brown:{main:'#5d4037',btn:'#8d6e63',text:'#fff'},Pink:{main:'#c2185b',btn:'#ec407a',text:'#fff'},Gold:{main:'#f9a825',btn:'#fff176',text:'#000'},Silver:{main:'#9e9e9e',btn:'#e0e0e0',text:'#000'},Orange:{main:'#f57c00',btn:'#ffa726',text:'#fff'},Cyan:{main:'#0097a7',btn:'#26c6da',text:'#fff'},Magenta:{main:'#d500f9',btn:'#e040fb',text:'#fff'},White:{main:'#ffffff',btn:'#f5f5f5',text:'#000'},Black:{main:'#212121',btn:'#616161',text:'#fff'}};
+    colorPicker.addEventListener('change',()=>{
+      const c=colorMap[colorPicker.value];
+      document.getElementById('counter').style.setProperty('--main-color',c.main);
+      document.getElementById('counter').style.setProperty('--btn-color',c.btn);
+      document.getElementById('counter').style.setProperty('--btn-text',c.text);
     });
+    colorPicker.value='Red'; colorPicker.dispatchEvent(new Event('change'));
+    updateDisplay();
   </script>
 </body>
 </html>

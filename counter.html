@@ -11,7 +11,7 @@
       background:rgba(0,0,0,0.3);padding:8px 12px;
       border-radius:6px;color:#fff;font-size:0.9rem;
       display:flex;flex-direction:column;gap:6px;
-      -webkit-touch-callout: none;
+      -webkit-touch-callout:none;user-select:none;
     }
     .top-controls label {display:flex;align-items:center;gap:6px;}
     .top-controls input[type=range] {width:150px;}
@@ -23,7 +23,7 @@
       width:24px;height:24px;border:none;border-radius:4px;
       background:rgba(255,255,255,0.2);color:#fff;cursor:pointer;
       font-size:1rem;line-height:1;padding:0;
-      user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:none;
+      user-select:none;-webkit-user-select:none;touch-action:none;
     }
     .small-btn:active {background:rgba(255,255,255,0.4);}
     .wrapper {
@@ -31,29 +31,27 @@
       align-items:center;justify-content:center;height:100%;
     }
     .counter {
-      --main-color: #d32f2f;
-      --btn-color:  #e53935;
-      --btn-text:   #fff;
-      background: var(--main-color);
+      --main-color:#d32f2f;--btn-color:#e53935;--btn-text:#fff;
+      background:var(--main-color);
       border-radius:20px;padding:20px;
-      box-shadow: inset 0 6px 12px rgba(0,0,0,0.3), 0 6px 12px rgba(0,0,0,0.2);
-      touch-action: none;
+      box-shadow:inset 0 6px 12px rgba(0,0,0,0.3),0 6px 12px rgba(0,0,0,0.2);
+      touch-action:none;
     }
     .display {
       background:#111;color:#0f0;
-      font-family:monospace;font-size:2.5rem;
-      padding:10px 0;border-radius:6px;
-      box-shadow: inset 0 4px 6px rgba(0,0,0,0.5);
+      font-family:monospace;font-size:1.8rem;
+      padding:6px 0;border-radius:6px;
+      box-shadow:inset 0 4px 6px rgba(0,0,0,0.5);
       margin-bottom:20px;text-align:center;
-      display:flex;gap:4px;justify-content:center;overflow-x:auto;
-      -webkit-user-select:none; user-select:none;
+      display:flex;gap:2px;justify-content:center;overflow-x:auto;
+      -webkit-user-select:none;user-select:none;
     }
     .display .digit {
-      width:40px;height:60px;background:#eee;
+      width:24px;height:48px;background:#eee;
       border-radius:4px;
-      box-shadow: inset 0 -2px 4px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.15);
+      box-shadow:inset 0 -2px 4px rgba(0,0,0,0.2),0 1px 2px rgba(0,0,0,0.15);
       display:flex;align-items:center;justify-content:center;
-      font-size:1.5rem;font-family:'Digital-7',monospace;
+      font-size:1rem;font-family:'Digital-7',monospace;
       color:#000;transition:background 0.2s ease;
       user-select:none;
     }
@@ -63,14 +61,14 @@
       border:none;outline:none;border-radius:50%;
       background:var(--btn-color);color:var(--btn-text);
       display:flex;align-items:center;justify-content:center;
-      box-shadow: 0 6px 8px rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,255,255,0.3);
-      cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:none;
+      box-shadow:0 6px 8px rgba(0,0,0,0.4),inset 0 2px 0 rgba(255,255,255,0.3);
+      cursor:pointer;user-select:none;touch-action:none;
     }
     .btn-large {width:80px;height:80px;font-size:2rem;}
     .btn-small {width:40px;height:40px;font-size:1.2rem;}
     .btn:active {
       transform:translateY(4px);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+      box-shadow:0 2px 4px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.3);
     }
   </style>
 </head>
@@ -82,10 +80,10 @@
     <label>Dial Max: <button id="dialMaxDown" class="small-btn">▼</button> <span id="dialMaxValue">100</span> <button id="dialMaxUp" class="small-btn">▲</button></label>
     <label>Max Count: <input id="maxCountInput" type="text" inputmode="numeric" pattern="\d*" placeholder="None"></label>
     <label>Choose Color: <select id="colorPicker">
-        <option>Red</option><option>Yellow</option><option>Blue</option><option>Green</option>
-        <option>Purple</option><option>Brown</option><option>Pink</option><option>Gold</option>
-        <option>Silver</option><option>Orange</option><option>Cyan</option><option>Magenta</option>
-        <option>White</option><option>Black</option>
+      <option>Red</option><option>Yellow</option><option>Blue</option><option>Green</option>
+      <option>Purple</option><option>Brown</option><option>Pink</option><option>Gold</option>
+      <option>Silver</option><option>Orange</option><option>Cyan</option><option>Magenta</option>
+      <option>White</option><option>Black</option>
     </select></label>
   </div>
   <div class="wrapper">
@@ -98,7 +96,9 @@
       </div>
     </div>
   </div>
-  <audio id="click-sound" src="25423__andrewweathers__register.wav" preload="auto"></audio>
+  <audio id="click-sound" preload="auto">
+    <source src="25423__andrewweathers__register.wav" type="audio/wav">
+  </audio>
   <script>
     const display        = document.getElementById('display');
     const decimalToggle  = document.getElementById('decimalToggle');
@@ -117,88 +117,99 @@
     let speedFactor   = rateSlider.value/10;
     let maxCount      = Infinity;
 
-    // initialize digit spans
-    const initDisplay = () => {
+    function initDisplay() {
       display.innerHTML = '';
-      for (let i=0;i<digitsCount;i++){
-        const d = document.createElement('span'); d.className='digit'; d.textContent='0'; display.appendChild(d);
+      for (let i=0; i<digitsCount; i++) {
+        const d = document.createElement('span');
+        d.className = 'digit';
+        d.textContent = '0';
+        display.appendChild(d);
       }
-    };
+    }
     initDisplay();
 
     const format = v => decimalToggle.checked ? v.toFixed(2) : String(Math.round(v));
-    const updateDisplay = () => {
+    function updateDisplay() {
       const s = format(count).padStart(digitsCount,'0');
-      display.querySelectorAll('.digit').forEach((el,i)=>{ el.textContent = s[i]||'0'; el.classList.add('updated'); setTimeout(()=>el.classList.remove('updated'),100); });
-    };
+      display.querySelectorAll('.digit').forEach((el,i) => {
+        el.textContent = s[i] || '0';
+        el.classList.add('updated');
+        setTimeout(() => el.classList.remove('updated'), 100);
+      });
+    }
     decimalToggle.addEventListener('change', updateDisplay);
 
-    // controls logic
-    rateSlider.addEventListener('input',()=>{ speedFactor = rateSlider.value/10; rateValue.textContent = rateSlider.value; });
-    maxCountInput.addEventListener('input',()=>{ maxCountInput.value = maxCountInput.value.replace(/\D/g,''); maxCount = maxCountInput.value ? +maxCountInput.value : Infinity; });
+    rateSlider.addEventListener('input', () => {
+      speedFactor = rateSlider.value/10;
+      rateValue.textContent = rateSlider.value;
+    });
+    maxCountInput.addEventListener('input', () => {
+      maxCountInput.value = maxCountInput.value.replace(/\D/g,'');
+      maxCount = maxCountInput.value ? +maxCountInput.value : Infinity;
+    });
 
-    const updateDialMax = () => {
+    function updateDialMax() {
       dialMaxValue.textContent = dialMax;
       rateSlider.max = dialMax;
       if (+rateSlider.value > dialMax) rateSlider.value = dialMax;
       speedFactor = rateSlider.value/10;
       rateValue.textContent = rateSlider.value;
-    };
-    const attachHold = (btn, fn) => {
-      let t, i;
+    }
+    function attachHold(btn, fn) {
+      let t,i;
       const stop = () => { clearTimeout(t); clearInterval(i); };
-      btn.addEventListener('mousedown', () => { fn(); t = setTimeout(() => { i = setInterval(fn, 20); }, 100); });
-      btn.addEventListener('touchstart', e => { e.preventDefault(); fn(); t = setTimeout(() => { i = setInterval(fn, 20); }, 100); });
-      ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(evt => btn.addEventListener(evt, stop));
-    };
-
+      btn.addEventListener('mousedown', () => { fn(); t = setTimeout(() => { i = setInterval(fn,20); },100); });
+      btn.addEventListener('touchstart', e => { e.preventDefault(); fn(); t = setTimeout(() => { i = setInterval(fn,20); },100); });
+      ['mouseup','mouseleave','touchend','touchcancel'].forEach(evt => btn.addEventListener(evt, stop));
+    }
     attachHold(dialMaxUp,   () => { if (dialMax < 10000) dialMax = Math.min(10000, dialMax + 10); updateDialMax(); });
-    attachHold(dialMaxDown, () => { if (dialMax >   10) dialMax = Math.max(10, dialMax - 10); updateDialMax(); });
+    attachHold(dialMaxDown, () => { if (dialMax > 10)    dialMax = Math.max(10, dialMax - 10); updateDialMax(); });
     updateDialMax();
 
-    // exponential hold for increment/decrement
-    const attachExpHold = (btn, isInc) => {
+    function attachExpHold(btn, isInc) {
       let id, startTs;
       const stepFn = () => {
-        const elapsed = (Date.now() - startTs) / 1000;
-        const mult    = Math.exp(speedFactor * elapsed);
+        const elapsed = (Date.now() - startTs)/1000;
+        const mult    = Math.exp(speedFactor*elapsed);
         const base    = decimalToggle.checked ? 0.01 : 1;
-        count = isInc ? count + base * mult : count - base * mult;
+        count = isInc ? count + base*mult : count - base*mult;
         count = Math.max(0, Math.min(count, maxCount));
         updateDisplay();
       };
-      const start = e => { e.preventDefault(); clearInterval(id); startTs = Date.now(); stepFn(); id = setInterval(stepFn, 20); };
+      const start = e => { e.preventDefault(); clearInterval(id); startTs = Date.now(); stepFn(); id = setInterval(stepFn,20); };
       const stop  = () => clearInterval(id);
       btn.addEventListener('mousedown', start);
       btn.addEventListener('touchstart', start);
       ['mouseup','mouseleave','touchend','touchcancel'].forEach(evt => btn.addEventListener(evt, stop));
-    };
-
+    }
     const incBtn = document.getElementById('increment');
     const decBtn = document.getElementById('decrement');
     attachExpHold(incBtn, true);
     attachExpHold(decBtn, false);
     document.getElementById('reset').addEventListener('click', () => { count = 0; updateDisplay(); });
 
-    // sound on click
-    document.querySelectorAll('.btn, .small-btn').forEach(b => b.addEventListener('click', () => { clickSound.currentTime = 0; clickSound.play().catch(() => {}); }));
+    document.querySelectorAll('.btn, .small-btn').forEach(b =>
+      b.addEventListener('click', () => {
+        clickSound.currentTime = 0;
+        clickSound.play().catch(() => {});
+      })
+    );
 
-    // color picker mapping
     const colorMap = {
-      Red:     { main:'#d32f2f', btn:'#e53935', text:'#fff' },
-      Yellow:  { main:'#fbc02d', btn:'#ffee58', text:'#000' },
-      Blue:    { main:'#1976d2', btn:'#42a5f5', text:'#fff' },
-      Green:   { main:'#388e3c', btn:'#66bb6a', text:'#fff' },
-      Purple:  { main:'#7b1fa2', btn:'#ab47bc', text:'#fff' },
-      Brown:   { main:'#5d4037', btn:'#8d6e63', text:'#fff' },
-      Pink:    { main:'#c2185b', btn:'#ec407a', text:'#fff' },
-      Gold:    { main:'#f9a825', btn:'#fff176', text:'#000' },
-      Silver:  { main:'#9e9e9e', btn:'#e0e0e0', text:'#000' },
-      Orange:  { main:'#f57c00', btn:'#ffa726', text:'#fff' },
-      Cyan:    { main:'#0097a7', btn:'#26c6da', text:'#fff' },
-      Magenta: { main:'#d500f9', btn:'#e040fb', text:'#fff' },
-      White:   { main:'#ffffff', btn:'#f5f5f5', text:'#000' },
-      Black:   { main:'#212121', btn:'#616161', text:'#fff' }
+      Red:     {main:'#d32f2f',btn:'#e53935',text:'#fff'},
+      Yellow:  {main:'#fbc02d',btn:'#ffee58',text:'#000'},
+      Blue:    {main:'#1976d2',btn:'#42a5f5',text:'#fff'},
+      Green:   {main:'#388e3c',btn:'#66bb6a',text:'#fff'},
+      Purple:  {main:'#7b1fa2',btn:'#ab47bc',text:'#fff'},
+      Brown:   {main:'#5d4037',btn:'#8d6e63',text:'#fff'},
+      Pink:    {main:'#c2185b',btn:'#ec407a',text:'#fff'},
+      Gold:    {main:'#f9a825',btn:'#fff176',text:'#000'},
+      Silver:  {main:'#9e9e9e',btn:'#e0e0e0',text:'#000'},
+      Orange:  {main:'#f57c00',btn:'#ffa726',text:'#fff'},
+      Cyan:    {main:'#0097a7',btn:'#26c6da',text:'#fff'},
+      Magenta: {main:'#d500f9',btn:'#e040fb',text:'#fff'},
+      White:   {main:'#ffffff',btn:'#f5f5f5',text:'#000'},
+      Black:   {main:'#212121',btn:'#616161',text:'#fff'}
     };
     colorPicker.addEventListener('change', () => {
       const c = colorMap[colorPicker.value];

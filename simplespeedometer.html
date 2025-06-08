@@ -48,7 +48,7 @@
       width: 150px;
     }
     .top-controls span {
-      min-width: 30px;
+      min-width: 40px;
       display: inline-block;
       text-align: right;
     }
@@ -136,16 +136,15 @@
   <!-- Rate and decimal controls -->
   <div class="top-controls">
     <label><input type="checkbox" id="decimalToggle"> Decimal Points</label>
-    <label>Speed Rate: <span id="rateValue">20</span></label>
-    <input type="range" id="rateSlider" min="1" max="50" step="1" value="20">
+    <label>Speed Rate: <span id="rateValue">1000</span></label>
+    <input type="range" id="rateSlider" min="1" max="10000" step="1" value="1000">
   </div>
 
   <div class="hud-container">
     <div class="hud">
       <div class="speed"><span id="speedMph">0</span></div>
       <div class="unit">MPH</div>
-    </div>
-  </div>
+    </n<div>
   <div class="bottom-container">
     <input id="maxSpeedInput" class="max-input" type="number" placeholder="Max Speed" min="0" />
     <div class="controls">

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>3D Click Counter (Dial Max up to 1000)</title>
+  <title>3D Click Counter (Dial Max 10–10 000 Fast Hold)</title>
   <style>
     body {
       margin: 0; height: 100vh;
@@ -93,7 +93,7 @@
       Dial Max:
       <button id="dialMaxDown" class="small-btn">▼</button>
       <span id="dialMaxValue">100</span>
-      <button id="dialMaxUp"   class="small-btn">▲</button>
+      <button id="dialMaxUp" class="small-btn">▲</button>
     </label>
 
     <label>
@@ -125,27 +125,27 @@
   </div>
 
   <script>
-    const display       = document.getElementById('display');
-    const counterEl     = document.getElementById('counter');
-    const decimalToggle = document.getElementById('decimalToggle');
-    const rateSlider    = document.getElementById('rateSlider');
-    const rateValue     = document.getElementById('rateValue');
-    const dialMaxDown   = document.getElementById('dialMaxDown');
-    const dialMaxUp     = document.getElementById('dialMaxUp');
-    const dialMaxValue  = document.getElementById('dialMaxValue');
-    const maxCountInput = document.getElementById('maxCountInput');
-    const colorPicker   = document.getElementById('colorPicker');
+    const display        = document.getElementById('display');
+    const counterEl      = document.getElementById('counter');
+    const decimalToggle  = document.getElementById('decimalToggle');
+    const rateSlider     = document.getElementById('rateSlider');
+    const rateValue      = document.getElementById('rateValue');
+    const dialMaxDown    = document.getElementById('dialMaxDown');
+    const dialMaxUp      = document.getElementById('dialMaxUp');
+    const dialMaxValue   = document.getElementById('dialMaxValue');
+    const maxCountInput  = document.getElementById('maxCountInput');
+    const colorPicker    = document.getElementById('colorPicker');
 
     let count       = 0;
     let dialMax     = 100;
     let speedFactor = rateSlider.value / 10;
     let maxCount    = Infinity;
 
-    // faster hold-to-repeat for Dial Max
+    // hold-to-repeat stepping by 10 every 20ms
     function attachHold(btn, action) {
       let tId, iId;
       const initialDelay   = 100;
-      const repeatInterval = 25;
+      const repeatInterval = 20;
       const start = () => {
         action();
         tId = setTimeout(() => {
@@ -167,26 +167,36 @@
       dialMaxValue.textContent = dialMax;
       rateSlider.max = dialMax;
       if (+rateSlider.value > dialMax) rateSlider.value = dialMax;
-      speedFactor = +rateSlider.value / 10;
+      speedFactor = rateSlider.value / 10;
       rateValue.textContent = rateSlider.value;
     }
 
-    // ▲ goes up to 1000 now
-    attachHold(dialMaxUp,   () => { if (dialMax < 1000) dialMax++; updateDialMax(); });
-    attachHold(dialMaxDown, () => { if (dialMax > 10)   dialMax--; updateDialMax(); });
+    // ▲ increments by 10 up to 10 000
+    attachHold(dialMaxUp,   () => {
+      if (dialMax < 10000) dialMax = Math.min(10000, dialMax + 10);
+      updateDialMax();
+    });
+    // ▼ decrements by 10 down to 10
+    attachHold(dialMaxDown, () => {
+      if (dialMax > 10) dialMax = Math.max(10, dialMax - 10);
+      updateDialMax();
+    });
 
+    // speed slider → speedFactor
     rateSlider.addEventListener('input', () => {
-      speedFactor = +rateSlider.value / 10;
+      speedFactor = rateSlider.value / 10;
       rateValue.textContent = rateSlider.value;
     });
 
+    // maxCount input sanitization
     maxCountInput.addEventListener('input', () => {
-      maxCountInput.value = maxCountInput.value.replace(/\D/g,'');
+      maxCountInput.value = maxCountInput.value.replace(/\D/g, '');
       maxCount = maxCountInput.value === ''
         ? Infinity
         : +maxCountInput.value;
     });
 
+    // display formatting
     function format(v) {
       return decimalToggle.checked
         ? v.toFixed(2)
@@ -197,16 +207,17 @@
     }
     decimalToggle.addEventListener('change', updateDisplay);
 
+    // exponential-hold for counter buttons
     function attachExpHold(btn, isInc) {
       let id, startTs;
       const intervalMs = 20;
       function step() {
-        const elapsed = (Date.now() - startTs)/1000;
+        const elapsed = (Date.now() - startTs) / 1000;
         const mult    = Math.exp(speedFactor * elapsed);
         const base    = decimalToggle.checked ? 0.01 : 1;
         count = isInc
-          ? count + base*mult
-          : count - base*mult;
+          ? count + base * mult
+          : count - base * mult;
         if (count < 0) count = 0;
         if (count > maxCount) count = maxCount;
         updateDisplay();
@@ -222,7 +233,7 @@
         clearInterval(id);
       }
       btn.addEventListener('mousedown', start);
-      btn.addEventListener('touchstart', e=>{e.preventDefault();start(e);});
+      btn.addEventListener('touchstart', e => { e.preventDefault(); start(e); });
       ['mouseup','mouseleave','touchend'].forEach(evt =>
         btn.addEventListener(evt, stop)
       );
@@ -235,6 +246,7 @@
       updateDisplay();
     });
 
+    // color picker
     const colorMap = {
       Red:     {main:'#d32f2f',btn:'#e53935',text:'#fff'},
       Yellow:  {main:'#fbc02d',btn:'#ffee58',text:'#000'},

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mechanical Tally Counter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      user-select: none;
+    }
+    /* Control panel styling */
+    .top-controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.6);
+      padding: 10px 14px;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      user-select: none;
+      z-index: 10;
+    }
+    .top-controls label { display: flex; align-items: center; gap: 6px; }
+    .top-controls input[type=range] { width: 140px; }
+    .top-controls input[type=text] { width: 60px; padding: 2px 4px; border-radius: 4px; border: none; text-align: right; }
+    .top-controls .small-btn { width: 20px; height: 20px; border: none; border-radius: 3px; background: rgba(255,255,255,0.2); color: #fff; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; }
+    .top-controls .small-btn:active { background: rgba(255,255,255,0.4); }
+    /* Counter styling */
+    .counter {
+      --main-bg: #f2f2f2;
+      --case-border: #999;
+      --dial-bg: #eee;
+      --knob-bg-start: #444;
+      --knob-bg-end: #222;
+      background: linear-gradient(145deg, var(--main-bg), #c8c8c8);
+      border: 4px solid var(--case-border);
+      border-radius: 12px;
+      padding: 80px 40px 40px 40px;
+      box-shadow: inset 0 6px 10px rgba(255,255,255,0.7), 0 6px 12px rgba(0,0,0,0.5);
+      width: 680px;
+      height: 360px;
+      position: relative;
+    }
+    .display {
+      position: absolute;
+      top: 50%; left: 50%; transform: translate(-50%, -20%);
+      background: #111; border: 6px inset #333; border-radius: 6px;
+      padding: 10px; display: flex; gap: 4px; overflow: hidden;
+    }
+    .digit {
+      width: 32px; height: 64px;
+      background: #222; border: 2px solid #555; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Digital-7', monospace; font-size: 2rem; color: #fff;
+      text-shadow: 0 0 4px rgba(255,255,255,0.5);
+      user-select: none;
+    }
+    /* Lever (increment) */
+    .lever { position: absolute; top: 0; left: 50%; transform: translate(-50%, -60%); display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+    .lever .handle { width: 64px; height: 64px; background: var(--dial-bg); border: 4px solid var(--case-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.5); }
+    .lever .shaft { margin-top: -8px; width: 16px; height: 80px; background: linear-gradient(180deg, #ccc, #888); border-radius: 4px; box-shadow: inset 0 1px 2px rgba(255,255,255,0.6), 0 2px 4px rgba(0,0,0,0.5); }
+    .lever .label { margin-top: 8px; color: #0f0; font-size: 1.2rem; font-weight: bold; }
+    /* Knob (decrement) */
+    .knob { position: absolute; top: 50%; right: -48px; transform: translateY(-50%); width: 64px; height: 64px; background: linear-gradient(145deg, var(--knob-bg-start), var(--knob-bg-end)); border: 4px solid #333; border-radius: 8px; box-shadow: inset 0 1px 2px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-direction: column; }
+    .knob .face { width: 48px; height: 48px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+    .knob .label { margin-top: 4px; color: #f00; font-size: 1rem; font-weight: bold; }
+    /* Reset button */
+    .reset { position: absolute; top: 50%; left: -48px; transform: translateY(-50%); width: 64px; height: 64px; background: linear-gradient(145deg, #888, #666); border: 4px solid #444; border-radius: 8px; box-shadow: inset 0 1px 2px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-direction: column; }
+    .reset .face { width: 48px; height: 48px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+    .reset .label { margin-top: 4px; color: #fff; font-size: 1rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="top-controls">
+    <label><input type="checkbox" id="decimalToggle"> Decimal Points</label>
+    <label>Speed Rate: <span id="rateValue">20</span></label>
+    <input type="range" id="rateSlider" min="1" max="100" step="1" value="20">
+    <label>Dial Max: <button id="dialMaxDown" class="small-btn">▼</button> <span id="dialMaxValue">100</span> <button id="dialMaxUp" class="small-btn">▲</button></label>
+    <label>Max Count: <input id="maxCountInput" type="text" inputmode="numeric" pattern="\d*" placeholder="None"></label>
+    <label>Choose Color: <select id="colorPicker"><option>Red</option><option>Yellow</option><option>Blue</option><option>Green</option><option>Purple</option><option>Brown</option><option>Pink</option><option>Gold</option><option>Silver</option><option>Orange</option><option>Cyan</option><option>Magenta</option><option>White</option><option>Black</option></select></label>
+  </div>
+  <div class="counter" id="counter">
+    <div class="reset" id="reset"><div class="face">⟲</div><div class="label">Reset</div></div>
+    <div class="lever" id="lever"><div class="handle">👍</div><div class="shaft"></div><div class="label">Up!</div></div>
+    <div class="knob" id="knob"><div class="face">👎</div><div class="label">Down</div></div>
+    <div class="display" id="display"></div>
+  </div>
+  <audio id="click-sound" preload="auto"><source src="25423__andrewweathers__register.wav" type="audio/wav"></audio>
+  <script>
+    const display = document.getElementById('display');
+    const clickSound = document.getElementById('click-sound');
+    const lever = document.getElementById('lever');
+    const knob = document.getElementById('knob');
+    const resetBtn = document.getElementById('reset');
+    const decimalToggle = document.getElementById('decimalToggle');
+    const rateSlider = document.getElementById('rateSlider');
+    const rateValue = document.getElementById('rateValue');
+    const dialMaxDown = document.getElementById('dialMaxDown');
+    const dialMaxUp = document.getElementById('dialMaxUp');
+    const dialMaxValue = document.getElementById('dialMaxValue');
+    const maxCountInput = document.getElementById('maxCountInput');
+    const colorPicker = document.getElementById('colorPicker');
+
+    const digitsCount = 15;
+    let count = 0;
+    let speedFactor = rateSlider.value / 10;
+    let dialMax = 100;
+    let maxCount = Infinity;
+
+    function initDisplay() {
+      display.innerHTML = '';
+      for (let i = 0; i < digitsCount; i++) {
+        const d = document.createElement('span'); d.className = 'digit'; d.textContent = '0'; display.appendChild(d);
+      }
+    }
+    initDisplay();
+
+    function updateDisplay() {
+      const s = decimalToggle.checked ? count.toFixed(2) : String(Math.round(count));
+      const str = s.padStart(digitsCount, '0');
+      display.querySelectorAll('.digit').forEach((el,i)=> el.textContent = str[i] || '0');
+    }
+
+    decimalToggle.addEventListener('change', updateDisplay);
+    rateSlider.addEventListener('input', ()=>{ speedFactor = rateSlider.value/10; rateValue.textContent = rateSlider.value; });
+    maxCountInput.addEventListener('input', ()=>{ maxCountInput.value = maxCountInput.value.replace(/\D/g,''); maxCount = maxCountInput.value?+maxCountInput.value:Infinity; });
+
+    function updateDialMax(){ dialMaxValue.textContent = dialMax; rateSlider.max = dialMax; if(rateSlider.value>dialMax)rateSlider.value=dialMax; speedFactor=rateSlider.value/10; rateValue.textContent=rateSlider.value; }
+    function attachHold(btn,fn){ let t,i; const stop=()=>{clearTimeout(t);clearInterval(i)}; btn.addEventListener('mousedown',()=>{fn(); t=setTimeout(()=>{i=setInterval(fn,20)},100)});
+      btn.addEventListener('touchstart',e=>{e.preventDefault();fn(); t=setTimeout(()=>{i=setInterval(fn,20)},100)});
+      ['mouseup','mouseleave','touchend','touchcancel'].forEach(evt=>btn.addEventListener(evt,stop));
+    }
+    attachHold(dialMaxUp,()=>{dialMax=Math.min(10000,dialMax+10);updateDialMax();});
+    attachHold(dialMaxDown,()=>{dialMax=Math.max(10,dialMax-10);updateDialMax();});
+    updateDialMax();
+
+    const colorMap={Red:{main:'#f2f2f2',case:'#999',dial:'#eee',knob1:'#444',knob2:'#222'},Yellow:{main:'#fff9c4',case:'#fbc02d',dial:'#fff176',knob1:'#f9a825',knob2:'#fff176'},Blue:{main:'#bbdefb',case:'#1976d2',dial:'#42a5f5',knob1:'#1976d2',knob2:'#42a5f5'},Green:{main:'#c8e6c9',case:'#388e3c',dial:'#66bb6a',knob1:'#388e3c',knob2:'#66bb6a'},Purple:{main:'#e1bee7',case:'#7b1fa2',dial:'#ab47bc',knob1:'#7b1fa2',knob2:'#ab47bc'},Brown:{main:'#d7ccc8',case:'#5d4037',dial:'#8d6e63',knob1:'#5d4037',knob2:'#8d6e63'},Pink:{main:'#f8bbd0',case:'#c2185b',dial:'#ec407a',knob1:'#c2185b',knob2:'#ec407a'},Gold:{main:'#fff8e1',case:'#f9a825',dial:'#fff176',knob1:'#f9a825',knob2:'#fff176'},Silver:{main:'#f5f5f5',case:'#9e9e9e',dial:'#e0e0e0',knob1:'#9e9e9e',knob2:'#e0e0e0'},Orange:{main:'#ffe0b2',case:'#f57c00',dial:'#ffa726',knob1:'#f57c00',knob2:'#ffa726'},Cyan:{main:'#b2ebf2',case:'#0097a7',dial:'#26c6da',knob1:'#0097a7',knob2:'#26c6da'},Magenta:{main:'#f3e5f5',case:'#d500f9',dial:'#e040fb',knob1:'#d500f9',knob2:'#e040fb'},White:{main:'#ffffff',case:'#212121',dial:'#f5f5f5',knob1:'#616161',knob2:'#f5f5f5'},Black:{main:'#c7c7c7',case:'#212121',dial:'#616161',knob1:'#212121',knob2:'#616161'}};
+    colorPicker.addEventListener('change',()=>{
+      const c=colorMap[colorPicker.value];
+      document.querySelector('.counter').style.setProperty('--main-bg',c.main);
+      document.querySelector('.counter').style.setProperty('--case-border',c.case);
+      document.querySelector('.lever .handle').style.background=c.dial;
+      document.querySelector('.knob').style.background=`linear-gradient(145deg,${c.knob1},${c.knob2})`;
+    });
+    colorPicker.value='Red';colorPicker.dispatchEvent(new Event('change'));
+
+    function attachExpHold(elem,isInc){let id,startTs;const stepFn=()=>{const elapsed=(Date.now()-startTs)/1000;const mult=Math.exp(speedFactor*elapsed);count=isInc?count+mult:count-mult;count=Math.max(0,Math.min(count,maxCount));updateDisplay();};const start=e=>{e.preventDefault();clickSound.currentTime=0;clickSound.play().catch(()=>{});clearInterval(id);startTs=Date.now();stepFn();id=setInterval(stepFn,50);};const stop=()=>clearInterval(id);['mousedown','touchstart'].forEach(evt=>elem.addEventListener(evt,start));['mouseup','mouseleave','touchend','touchcancel'].forEach(evt=>elem.addEventListener(evt,stop));}
+    attachExpHold(lever,true);
+    lever.addEventListener('dblclick',()=>{count=0;updateDisplay();clickSound.currentTime=0;clickSound.play().catch(()=>{});});
+    attachExpHold(knob,false);
+    resetBtn.addEventListener('click',()=>{count=0;updateDisplay();clickSound.currentTime=0;clickSound.play().catch(()=>{});});
+    updateDisplay();
+  </script>
+</body>
+</html>

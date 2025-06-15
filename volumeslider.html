@@ -6,6 +6,7 @@
   <title>Windows 11 Volume Slider Replica</title>
   <style>
     body {
+      position: relative;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       background: #f3f3f3;
       display: flex;
@@ -13,6 +14,30 @@
       align-items: center;
       height: 100vh;
       margin: 0;
+    }
+
+    .controller {
+      display: flex;
+      align-items: center;
+      background: #ffffff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .controller label {
+      font-size: 0.875rem;
+      color: #333;
+    }
+
+    .controller input {
+      width: 80px;
+      padding: 4px 8px;
+      font-size: 0.875rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
 
     .volume-control {
@@ -51,18 +76,7 @@
       position: relative;
     }
 
-    .volume-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #0078d4;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      transition: background 0.3s;
-    }
-
+    .volume-slider::-webkit-slider-thumb,
     .volume-slider::-moz-range-thumb {
       width: 16px;
       height: 16px;
@@ -71,14 +85,13 @@
       cursor: pointer;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
       transition: background 0.3s;
+      /* Center thumb on track */
+      margin-top: -6px;
+      -webkit-appearance: none;
+      appearance: none;
     }
 
-    /* Fill track before thumb */
-    .volume-slider::-webkit-slider-runnable-track {
-      height: 4px;
-      border-radius: 2px;
-    }
-
+    .volume-slider::-webkit-slider-runnable-track,
     .volume-slider::-moz-range-track {
       height: 4px;
       border-radius: 2px;
@@ -90,9 +103,27 @@
       font-size: 0.875rem;
       color: #333;
     }
+
+    @media (max-width: 600px) {
+      body {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      .controller {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        margin-bottom: 0;
+      }
+    }
   </style>
 </head>
 <body>
+  <div class="controller">
+    <label for="maxVol">Max Volume:</label>
+    <input type="number" id="maxVol" min="100" max="1000" value="100" aria-label="Max volume setting" />
+  </div>
   <div class="volume-control">
     <button class="mute-button" aria-label="Mute toggle">
       <svg id="icon" viewBox="0 0 24 24">
@@ -112,6 +143,7 @@
   </div>
 
   <script>
+    const maxInput = document.getElementById('maxVol');
     const slider = document.getElementById('slider');
     const valueLabel = document.getElementById('value');
     const iconSvg = document.getElementById('icon');
@@ -119,26 +151,44 @@
     function updateIcon(vol) {
       if (vol == 0) {
         iconSvg.innerHTML = '<path d="M16.5 12L19 9.5l-1-1-2.5 2.5L14 9.5l-1 1 2.5 2.5L13 15.5l1 1 2.5-2.5L18 15.5l1-1-2.5-2.5z" /><path d="M5 9v6h4l5 5V4L9 9H5z" />';
-      } else if (vol <= 50) {
+      } else if (vol <= slider.max / 2) {
         iconSvg.innerHTML = '<path d="M5 9v6h4l5 5V4L9 9H5z" /><path d="M14.5 12c0-1.77-.77-3.36-2-4.47v8.94c1.23-1.11 2-2.7 2-4.47z" />';
       } else {
         iconSvg.innerHTML = '<path d="M5 9v6h4l5 5V4L9 9H5z" /><path d="M14.5 12c0-1.77-.77-3.36-2-4.47v8.94c1.23-1.11 2-2.7 2-4.47z" /><path d="M16.5 3.5v17c2.3-1.2 3.5-3.65 3.5-7s-1.2-5.8-3.5-7z" />';
       }
     }
 
-    slider.addEventListener('input', (e) => {
-      const vol = e.target.value;
-      valueLabel.textContent = vol;
-      updateIcon(vol);
-
-      // Update track fill
+    function updateTrack(vol) {
       const percent = (vol - slider.min) / (slider.max - slider.min) * 100;
       slider.style.background = `linear-gradient(to right, #0078d4 0%, #0078d4 ${percent}%, #e1e1e1 ${percent}%, #e1e1e1 100%)`;
-    });
+    }
+
+    function updateSlider() {
+      let vol = parseInt(slider.value, 10);
+      valueLabel.textContent = vol;
+      updateIcon(vol);
+      updateTrack(vol);
+    }
+
+    function updateMax() {
+      let newMax = parseInt(maxInput.value, 10);
+      if (isNaN(newMax) || newMax < parseInt(maxInput.min) || newMax > parseInt(maxInput.max)) {
+        return;
+      }
+      slider.max = newMax;
+      if (parseInt(slider.value, 10) > newMax) {
+        slider.value = newMax;
+      }
+      updateSlider();
+    }
+
+    maxInput.addEventListener('input', updateMax);
+    slider.addEventListener('input', updateSlider);
 
     // Initialize
-    updateIcon(slider.value);
-    slider.dispatchEvent(new Event('input'));
+    updateMax();
+    slider.value = Math.min(parseInt(slider.value,10), slider.max);
+    updateSlider();
   </script>
 </body>
 </html>

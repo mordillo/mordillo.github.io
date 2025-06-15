@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Windows 11 Volume Slider Replica</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f3f3f3;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .volume-control {
+      display: flex;
+      align-items: center;
+      background: #ffffff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      gap: 12px;
+    }
+
+    .mute-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .mute-button svg {
+      width: 20px;
+      height: 20px;
+      fill: #606060;
+    }
+
+    .volume-slider {
+      -webkit-appearance: none;
+      width: 200px;
+      height: 4px;
+      background: #e1e1e1;
+      border-radius: 2px;
+      outline: none;
+      transition: background 0.3s;
+      position: relative;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #0078d4;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transition: background 0.3s;
+    }
+
+    .volume-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #0078d4;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transition: background 0.3s;
+    }
+
+    /* Fill track before thumb */
+    .volume-slider::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    .volume-slider::-moz-range-track {
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    .volume-value {
+      min-width: 24px;
+      text-align: center;
+      font-size: 0.875rem;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="volume-control">
+    <button class="mute-button" aria-label="Mute toggle">
+      <svg id="icon" viewBox="0 0 24 24">
+        <path d="M5 9v6h4l5 5V4L9 9H5z" />
+      </svg>
+    </button>
+    <input
+      type="range"
+      min="0"
+      max="100"
+      value="50"
+      class="volume-slider"
+      id="slider"
+      aria-label="Volume control"
+    />
+    <span class="volume-value" id="value">50</span>
+  </div>
+
+  <script>
+    const slider = document.getElementById('slider');
+    const valueLabel = document.getElementById('value');
+    const iconSvg = document.getElementById('icon');
+
+    function updateIcon(vol) {
+      if (vol == 0) {
+        iconSvg.innerHTML = '<path d="M16.5 12L19 9.5l-1-1-2.5 2.5L14 9.5l-1 1 2.5 2.5L13 15.5l1 1 2.5-2.5L18 15.5l1-1-2.5-2.5z" /><path d="M5 9v6h4l5 5V4L9 9H5z" />';
+      } else if (vol <= 50) {
+        iconSvg.innerHTML = '<path d="M5 9v6h4l5 5V4L9 9H5z" /><path d="M14.5 12c0-1.77-.77-3.36-2-4.47v8.94c1.23-1.11 2-2.7 2-4.47z" />';
+      } else {
+        iconSvg.innerHTML = '<path d="M5 9v6h4l5 5V4L9 9H5z" /><path d="M14.5 12c0-1.77-.77-3.36-2-4.47v8.94c1.23-1.11 2-2.7 2-4.47z" /><path d="M16.5 3.5v17c2.3-1.2 3.5-3.65 3.5-7s-1.2-5.8-3.5-7z" />';
+      }
+    }
+
+    slider.addEventListener('input', (e) => {
+      const vol = e.target.value;
+      valueLabel.textContent = vol;
+      updateIcon(vol);
+
+      // Update track fill
+      const percent = (vol - slider.min) / (slider.max - slider.min) * 100;
+      slider.style.background = `linear-gradient(to right, #0078d4 0%, #0078d4 ${percent}%, #e1e1e1 ${percent}%, #e1e1e1 100%)`;
+    });
+
+    // Initialize
+    updateIcon(slider.value);
+    slider.dispatchEvent(new Event('input'));
+  </script>
+</body>
+</html>

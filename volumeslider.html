@@ -27,17 +27,25 @@
       margin-bottom: 16px;
     }
 
-    .controller label {
-      font-size: 0.875rem;
-      color: #333;
+    .controller button {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 6px;
+      background: #e1e1e1;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
     }
 
-    .controller input {
-      width: 80px;
-      padding: 4px 8px;
+    .controller span {
+      min-width: 40px;
+      text-align: center;
       font-size: 0.875rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      color: #333;
     }
 
     .volume-control {
@@ -85,7 +93,6 @@
       cursor: pointer;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
       transition: background 0.3s;
-      /* Center thumb on track */
       margin-top: -6px;
       -webkit-appearance: none;
       appearance: none;
@@ -121,8 +128,9 @@
 </head>
 <body>
   <div class="controller">
-    <label for="maxVol">Max Volume:</label>
-    <input type="number" id="maxVol" min="100" max="1000" value="100" aria-label="Max volume setting" />
+    <button id="decMax" aria-label="Decrease max volume">–</button>
+    <span id="maxValue">100</span>
+    <button id="incMax" aria-label="Increase max volume">+</button>
   </div>
   <div class="volume-control">
     <button class="mute-button" aria-label="Mute toggle">
@@ -143,10 +151,19 @@
   </div>
 
   <script>
-    const maxInput = document.getElementById('maxVol');
+    const decBtn = document.getElementById('decMax');
+    const incBtn = document.getElementById('incMax');
+    const maxDisplay = document.getElementById('maxValue');
     const slider = document.getElementById('slider');
     const valueLabel = document.getElementById('value');
     const iconSvg = document.getElementById('icon');
+
+    let maxVol = 100;
+    const minVol = 100;
+    const absoluteMax = 1000;
+    const accelFactor = 1.2;
+    let step = 1;
+    let holdInterval;
 
     function updateIcon(vol) {
       if (vol == 0) {
@@ -170,24 +187,35 @@
       updateTrack(vol);
     }
 
-    function updateMax() {
-      let newMax = parseInt(maxInput.value, 10);
-      if (isNaN(newMax) || newMax < parseInt(maxInput.min) || newMax > parseInt(maxInput.max)) {
-        return;
-      }
-      slider.max = newMax;
-      if (parseInt(slider.value, 10) > newMax) {
-        slider.value = newMax;
-      }
+    function changeMax(delta) {
+      step = Math.max(1, step * accelFactor);
+      maxVol = Math.min(absoluteMax, Math.max(minVol, maxVol + delta * Math.round(step)));
+      maxDisplay.textContent = maxVol;
+      slider.max = maxVol;
+      if (parseInt(slider.value, 10) > maxVol) slider.value = maxVol;
       updateSlider();
     }
 
-    maxInput.addEventListener('input', updateMax);
-    slider.addEventListener('input', updateSlider);
+    function startHold(delta) {
+      step = 1;
+      clearInterval(holdInterval);
+      holdInterval = setInterval(() => changeMax(delta), 100);
+    }
+
+    function endHold() {
+      clearInterval(holdInterval);
+      step = 1;
+    }
+
+    decBtn.addEventListener('mousedown', () => startHold(-1));
+    incBtn.addEventListener('mousedown', () => startHold(1));
+    document.addEventListener('mouseup', endHold);
+    decBtn.addEventListener('click', () => changeMax(-1));
+    incBtn.addEventListener('click', () => changeMax(1));
 
     // Initialize
-    updateMax();
-    slider.value = Math.min(parseInt(slider.value,10), slider.max);
+    maxDisplay.textContent = maxVol;
+    slider.max = maxVol;
     updateSlider();
   </script>
 </body>

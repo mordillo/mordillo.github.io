@@ -201,13 +201,16 @@
     // Mouse events
     decBtn.addEventListener('mousedown', () => startHold(-1));
     incBtn.addEventListener('mousedown', () => startHold(1));
-    document.addEventListener('mouseup', endHold);
     decBtn.addEventListener('click', () => changeMax(-1));
     incBtn.addEventListener('click', () => changeMax(1));
+
+    // Slider input
+    slider.addEventListener('input', updateSlider);
 
     // Touch events for iOS
     decBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(-1); });
     incBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(1); });
+    document.addEventListener('mouseup', endHold);
     document.addEventListener('touchend', endHold);
     document.addEventListener('touchcancel', endHold);
 

@@ -47,7 +47,7 @@
     }
 
     .controller span {
-      min-width: 40px;
+      min-width: 60px;
       text-align: center;
       font-size: 0.875rem;
       color: #333;
@@ -151,7 +151,7 @@
 
     let maxVol = 100;
     const minVol = 100;
-    const absoluteMax = 1000;
+    const absoluteMax = 1000000000;
     const accelFactor = 1.2;
     let step = 1;
     let holdInterval;
@@ -172,7 +172,7 @@
     }
 
     function updateSlider() {
-      let vol = parseInt(slider.value, 10);
+      const vol = parseInt(slider.value, 10);
       valueLabel.textContent = vol;
       updateIcon(vol);
       updateTrack(vol);
@@ -198,16 +198,12 @@
       step = 1;
     }
 
-    // Mouse events
+    // Events
     decBtn.addEventListener('mousedown', () => startHold(-1));
     incBtn.addEventListener('mousedown', () => startHold(1));
     decBtn.addEventListener('click', () => changeMax(-1));
     incBtn.addEventListener('click', () => changeMax(1));
-
-    // Slider input
     slider.addEventListener('input', updateSlider);
-
-    // Touch events for iOS
     decBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(-1); });
     incBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(1); });
     document.addEventListener('mouseup', endHold);

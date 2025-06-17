@@ -2,56 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Top-Down Treadmill Animation</title>
+  <title>Advanced Treadmill Top-Down View</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      display: flex;
       height: 100vh;
-      align-items: center;
-      justify-content: center;
       background: #e0e0e0;
       font-family: sans-serif;
-    }
-    .treadmill {
-      width: 400px;
-      border: 10px solid #333;
-      border-radius: 8px;
       overflow: hidden;
-      background: #444;
-      box-shadow: 0 4px 10px rgba(0,0,0,.5);
     }
-    /* Control Panel at the top */
-    .control-panel {
-      background: #222;
-      color: #eee;
+
+    /* --- CONTROLS PANEL --- */
+    .top-controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.6);
       padding: 12px;
-      text-align: center;
-    }
-    .control-panel .display {
-      font-size: 1.2rem;
-      margin-bottom: 8px;
-      font-family: 'Courier New', monospace;
-    }
-    .control-panel button {
-      width: 40px;
-      height: 40px;
-      margin: 0 8px;
-      font-size: 1.2rem;
-      border: none;
-      border-radius: 4px;
-      background: #555;
+      border-radius: 8px;
       color: #fff;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      user-select: none;
+      z-index: 10;
+    }
+    .top-controls label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .top-controls input[type=range] {
+      width: 140px;
+    }
+    .top-controls input[type=text] {
+      width: 60px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      border: none;
+      text-align: right;
+    }
+    .small-btn {
+      width: 24px; height: 24px;
+      border: none; border-radius: 4px;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      font-size: 1rem;
       cursor: pointer;
-      transition: background .2s;
+      user-select: none;
+      touch-action: none;
     }
-    .control-panel button:hover {
-      background: #777;
+    .small-btn:active {
+      background: rgba(255,255,255,0.4);
     }
-    /* Belt area */
+    .top-controls select {
+      padding: 2px 4px;
+      border-radius: 4px;
+      border: none;
+      font-size: 0.9rem;
+    }
+
+    /* --- TREADMILL FRAME & BELT --- */
+    .treadmill {
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 360px;
+      height: 300px;
+      border: 12px solid var(--frame-color, #333);
+      border-radius: 8px;
+      background: #444;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,.5);
+    }
     .belt {
       position: relative;
-      height: 250px;
+      width: 100%;
+      height: 100%;
       background: #666;
       overflow: hidden;
     }
@@ -59,15 +88,17 @@
       position: absolute;
       width: 200%;
       height: 200%;
-      /* diagonal stripes to imply movement */
       background: repeating-linear-gradient(
         135deg,
-        #555 0,
-        #555 20px,
-        #777 20px,
-        #777 40px
+        var(--stripe1, #555) 0,
+        var(--stripe1, #555) 20px,
+        var(--stripe2, #777) 20px,
+        var(--stripe2, #777) 40px
       );
       animation: move-belt 1s linear infinite;
+      transform: translate(-50%, -50%);
+      top: 50%;
+      left: 50%;
     }
     @keyframes move-belt {
       to { transform: translate(-50%, -50%) translateY(-100px); }
@@ -76,44 +107,205 @@
 </head>
 <body>
 
-  <div class="treadmill">
-    <div class="control-panel">
-      <div class="display">
-        Speed: <span id="speed">6.0</span> mph
-      </div>
-      <button id="decrease">–</button>
-      <button id="increase">+</button>
+  <div class="top-controls">
+    <label>
+      <input type="checkbox" id="decimalToggle">
+      Show Two Decimals
+    </label>
+    <label>
+      Speed Rate:
+      <span id="rateValue">20</span>
+    </label>
+    <input type="range" id="rateSlider" min="1" max="100" step="1" value="20">
+
+    <label>
+      Dial Max:
+      <button id="dialMaxDown" class="small-btn">▼</button>
+      <span id="dialMaxValue">100</span>
+      <button id="dialMaxUp" class="small-btn">▲</button>
+    </label>
+
+    <label>
+      Max Speed:
+      <input id="maxSpeedInput" type="text" inputmode="numeric" pattern="\d*" placeholder="∞">
+    </label>
+
+    <label>
+      Choose Color:
+      <select id="colorPicker">
+        <option>Red</option><option>Yellow</option><option>Blue</option><option>Green</option>
+        <option>Purple</option><option>Brown</option><option>Pink</option><option>Gold</option>
+        <option>Silver</option><option>Orange</option><option>Cyan</option><option>Magenta</option>
+        <option>White</option><option>Black</option>
+      </select>
+    </label>
+
+    <hr style="border-color:rgba(255,255,255,0.3)">
+
+    <label class="display">
+      Speed: <strong id="speedDisplay">6.0</strong> mph
+    </label>
+    <div style="display:flex;justify-content:center;gap:8px;">
+      <button id="decrease" class="small-btn">−</button>
+      <button id="increase" class="small-btn">+</button>
+      <button id="reset" class="small-btn">⟲</button>
     </div>
+  </div>
+
+  <div class="treadmill">
     <div class="belt">
       <div class="belt-run"></div>
     </div>
   </div>
 
-  <script>
-    (function() {
-      let speed = 6.0; // starting speed in mph
-      const speedDisplay = document.getElementById('speed');
-      const belt = document.querySelector('.belt-run');
-      const MIN_SPEED = 0.5;
-      const MAX_SPEED = 12.0;
-      // Map speed to animation duration: faster speed → shorter duration
-      function updateAnimation() {
-        speedDisplay.textContent = speed.toFixed(1);
-        // at 6 mph → ~1s cycle; adjust constant for different feel
-        const duration = 6 / speed;
-        belt.style.animationDuration = duration + 's';
-      }
-      document.getElementById('increase').addEventListener('click', () => {
-        speed = Math.min(speed + 0.5, MAX_SPEED);
-        updateAnimation();
-      });
-      document.getElementById('decrease').addEventListener('click', () => {
-        speed = Math.max(speed - 0.5, MIN_SPEED);
-        updateAnimation();
-      });
-      updateAnimation();
-    })();
-  </script>
+  <audio id="click-sound" preload="auto">
+    <source src="25423__andrewweathers__register.wav" type="audio/wav">
+  </audio>
 
+  <script>
+    // Grab everything
+    const decimalToggle = document.getElementById('decimalToggle');
+    const rateSlider     = document.getElementById('rateSlider');
+    const rateValue      = document.getElementById('rateValue');
+    const dialMaxDown    = document.getElementById('dialMaxDown');
+    const dialMaxUp      = document.getElementById('dialMaxUp');
+    const dialMaxValue   = document.getElementById('dialMaxValue');
+    const maxSpeedInput  = document.getElementById('maxSpeedInput');
+    const colorPicker    = document.getElementById('colorPicker');
+    const speedDisplay   = document.getElementById('speedDisplay');
+    const belt           = document.querySelector('.belt-run');
+    const incBtn         = document.getElementById('increase');
+    const decBtn         = document.getElementById('decrease');
+    const resetBtn       = document.getElementById('reset');
+    const clickSound     = document.getElementById('click-sound');
+
+    // State
+    let speed       = 6.0;
+    let speedFactor = rateSlider.value/10;
+    let dialMax     = 100;
+    let maxSpeed    = Infinity;
+
+    // Initialize display & controls
+    function updateDialMax() {
+      dialMaxValue.textContent = dialMax;
+      rateSlider.max = dialMax;
+      if (+rateSlider.value > dialMax) rateSlider.value = dialMax;
+      speedFactor = rateSlider.value/10;
+      rateValue.textContent = rateSlider.value;
+    }
+    function updateSpeedDisplay() {
+      speedDisplay.textContent =
+        decimalToggle.checked
+          ? speed.toFixed(2)
+          : speed.toFixed(1);
+    }
+    function updateAnimation() {
+      // faster speed → shorter cycle
+      const dur = Math.max(0.1, 6 / speed);
+      belt.style.animationDuration = dur + 's';
+    }
+
+    // Hold helpers
+    function attachHold(btn, fn) {
+      let t,i;
+      const stop = () => { clearTimeout(t); clearInterval(i); };
+      btn.addEventListener('mousedown', () => {
+        fn(); 
+        t = setTimeout(() => i = setInterval(fn, 50), 300);
+      });
+      btn.addEventListener('touchstart', e => {
+        e.preventDefault();
+        fn();
+        t = setTimeout(() => i = setInterval(fn, 50), 300);
+      });
+      ['mouseup','mouseleave','touchend','touchcancel']
+        .forEach(ev => btn.addEventListener(ev, stop));
+    }
+    function attachExpHold(btn, isInc) {
+      let id, startTs;
+      const stepFn = () => {
+        const elapsed = (Date.now() - startTs)/1000;
+        const mult = Math.exp(speedFactor * elapsed);
+        const base = decimalToggle.checked ? 0.01 : 1;
+        speed = isInc
+          ? Math.min(speed + base * mult, maxSpeed)
+          : Math.max(speed - base * mult, 0);
+        updateSpeedDisplay();
+        updateAnimation();
+      };
+      const start = e => {
+        e.preventDefault();
+        clickSound.currentTime = 0;
+        clickSound.play().catch(()=>{});
+        clearInterval(id);
+        startTs = Date.now();
+        stepFn();
+        id = setInterval(stepFn, 50);
+      };
+      const stop = () => clearInterval(id);
+      btn.addEventListener('mousedown', start);
+      btn.addEventListener('touchstart', start);
+      ['mouseup','mouseleave','touchend','touchcancel']
+        .forEach(ev => btn.addEventListener(ev, stop));
+    }
+
+    // Wiring up events
+    decimalToggle.addEventListener('change', updateSpeedDisplay);
+
+    rateSlider.addEventListener('input', () => {
+      speedFactor = rateSlider.value/10;
+      rateValue.textContent = rateSlider.value;
+    });
+
+    maxSpeedInput.addEventListener('input', () => {
+      maxSpeedInput.value = maxSpeedInput.value.replace(/\D/g,'');
+      maxSpeed = maxSpeedInput.value
+        ? +maxSpeedInput.value
+        : Infinity;
+    });
+
+    attachHold(dialMaxUp,   () => { dialMax = Math.min(10000, dialMax + 10); updateDialMax(); });
+    attachHold(dialMaxDown, () => { dialMax = Math.max(10,    dialMax - 10); updateDialMax(); });
+
+    attachExpHold(incBtn, true);
+    attachExpHold(decBtn, false);
+
+    resetBtn.addEventListener('click', () => {
+      speed = 0;
+      updateSpeedDisplay();
+      updateAnimation();
+      clickSound.currentTime = 0;
+      clickSound.play().catch(()=>{});
+    });
+
+    // color mapping for frame + belt stripes
+    const colorMap = {
+      Red:     { main:'#d32f2f', btn:'#e53935' },
+      Yellow:  { main:'#fbc02d', btn:'#ffee58' },
+      Blue:    { main:'#1976d2', btn:'#42a5f5' },
+      Green:   { main:'#388e3c', btn:'#66bb6a' },
+      Purple:  { main:'#7b1fa2', btn:'#ab47bc' },
+      Brown:   { main:'#5d4037', btn:'#8d6e63' },
+      Pink:    { main:'#c2185b', btn:'#ec407a' },
+      Gold:    { main:'#f9a825', btn:'#fff176' },
+      Silver:  { main:'#9e9e9e', btn:'#e0e0e0' },
+      Orange:  { main:'#f57c00', btn:'#ffa726' },
+      Cyan:    { main:'#0097a7', btn:'#26c6da' },
+      Magenta: { main:'#d500f9', btn:'#e040fb' },
+      White:   { main:'#ffffff', btn:'#f5f5f5' },
+      Black:   { main:'#212121', btn:'#616161' }
+    };
+    colorPicker.addEventListener('change', () => {
+      const c = colorMap[colorPicker.value];
+      document.documentElement.style.setProperty('--frame-color', c.main);
+      document.documentElement.style.setProperty('--stripe1', c.main);
+      document.documentElement.style.setProperty('--stripe2', c.btn);
+    });
+
+    // kick it all off
+    updateDialMax();
+    updateSpeedDisplay();
+    updateAnimation();
+  </script>
 </body>
 </html>

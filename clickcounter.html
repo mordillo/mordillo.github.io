@@ -173,7 +173,7 @@
 
     // ▲ increments by 10 up to 10 000
     attachHold(dialMaxUp,   () => {
-      if (dialMax < 10000) dialMax = Math.min(10000, dialMax + 10);
+      if (dialMax < 100000) dialMax = Math.min(100000, dialMax + 10);
       updateDialMax();
     });
     // ▼ decrements by 10 down to 10

@@ -1,176 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Click Counter (Responsive + Integer Increments)</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 30px; max-width: 500px; width: 100%; text-align: center; }
-        h1 { color: #333; margin-bottom: 30px; font-size: 2.2em; }
-        .counter-display {
-            font-size: 4em;
-            font-weight: bold;
-            color: #2c3e50;
-            background: #ecf0f1;
-            border: 2px solid #bdc3c7;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-            min-height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            word-break: break-all;
-        }
-        .counter-display.clicked { transform: scale(1.05); background: #e8f5e8; border-color: #27ae60; color: #27ae60; }
-        .button-container { display: flex; gap: 20px; justify-content: center; margin: 20px 0; }
-        .click-button { background: #3498db; color: #fff; border: none; padding: 15px 25px; font-size: 2em; border-radius: 8px; cursor: pointer; transition: transform 0.1s ease; user-select: none; }
-        .up-button { background: #27ae60; }
-        .down-button { background: #e74c3c; }
-        .click-button:active { transform: translateY(2px); }
-        .controls { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-        .reset-button, .increment-button { background: #27ae60; color: #fff; border: none; padding: 8px 15px; font-size: 0.9em; border-radius: 5px; cursor: pointer; transition: background 0.2s ease; }
-        .reset-button { background: #e74c3c; font-size: 1em; }
-        .reset-button:hover { background: #c0392b; }
-        .increment-button:hover { background: #219a52; }
-        .stats { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #3498db; }
-        .stats h3 { color: #2c3e50; margin-bottom: 10px; }
-        .stats p { margin: 5px 0; color: #7f8c8d; }
-        @media (max-width: 480px) {
-            .click-button { font-size: 1.2em; padding: 12px 25px; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Click Counter (Smooth Exponential)</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    .container { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 30px; max-width: 500px; width: 100%; text-align: center; }
+    h1 { color: #333; margin-bottom: 30px; font-size: 2.2em; }
+    .counter-display {
+      font-size: 4em;
+      font-weight: bold;
+      color: #2c3e50;
+      background: #ecf0f1;
+      border: 2px solid #bdc3c7;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      word-break: break-all;
+    }
+    .counter-display.clicked { transform: scale(1.05); background: #e8f5e8; border-color: #27ae60; color: #27ae60; }
+    .button-container { display: flex; gap: 20px; justify-content: center; margin: 20px 0; }
+    .click-button { background: #3498db; color: #fff; border: none; padding: 15px 25px; font-size: 2em; border-radius: 8px; cursor: pointer; transition: transform 0.1s ease; user-select: none; }
+    .up-button { background: #27ae60; }
+    .down-button { background: #e74c3c; }
+    .click-button:active { transform: translateY(2px); }
+    .controls { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .reset-button, .increment-button { background: #27ae60; color: #fff; border: none; padding: 8px 15px; font-size: 0.9em; border-radius: 5px; cursor: pointer; transition: background 0.2s ease; }
+    .reset-button { background: #e74c3c; font-size: 1em; }
+    .reset-button:hover { background: #c0392b; }
+    .increment-button:hover { background: #219a52; }
+    .stats { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #3498db; }
+    .stats h3 { color: #2c3e50; margin-bottom: 10px; }
+    .stats p { margin: 5px 0; color: #7f8c8d; }
+    @media (max-width: 480px) {
+      .click-button { font-size: 1.2em; padding: 12px 25px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Click Counter</h1>
-        <div class="counter-display" id="counterDisplay">0</div>
-        <div class="button-container">
-            <button class="click-button up-button" id="upButton">▲</button>
-            <button class="click-button down-button" id="downButton">▼</button>
-        </div>
-        <div class="controls">
-            <button class="increment-button" onclick="incrementCounter(5)">+5</button>
-            <button class="increment-button" onclick="incrementCounter(10)">+10</button>
-            <button class="increment-button" onclick="incrementCounter(100)">+100</button>
-            <button class="reset-button" onclick="resetCounter()">Reset</button>
-        </div>
-        <div class="stats">
-            <h3>Statistics</h3>
-            <p>Total Clicks: <span id="totalClicks">0</span></p>
-            <p>Clicks per Second: <span id="clicksPerSecond">0.0</span></p>
-            <p>Session Started: <span id="sessionStart">--</span></p>
-        </div>
+  <div class="container">
+    <h1>Click Counter</h1>
+    <div class="counter-display" id="counterDisplay">0</div>
+    <div class="button-container">
+      <button class="click-button up-button" id="upButton">▲</button>
+      <button class="click-button down-button" id="downButton">▼</button>
     </div>
+    <div class="controls">
+      <button class="increment-button" onclick="incrementCounter(5)">+5</button>
+      <button class="increment-button" onclick="incrementCounter(10)">+10</button>
+      <button class="increment-button" onclick="incrementCounter(100)">+100</button>
+      <button class="reset-button" onclick="resetCounter()">Reset</button>
+    </div>
+    <div class="stats">
+      <h3>Statistics</h3>
+      <p>Total Clicks: <span id="totalClicks">0</span></p>
+      <p>Clicks per Second: <span id="clicksPerSecond">0.0</span></p>
+      <p>Session Started: <span id="sessionStart">--</span></p>
+    </div>
+  </div>
 
-    <script>
-        // State and stats
-        let counter = 0, totalClicks = 0;
-        const clickTimes = [];
-        document.getElementById('sessionStart').textContent = new Date().toLocaleTimeString();
+  <script>
+    let counter = 0, totalClicks = 0;
+    let accumulator = 0;
+    const clickTimes = [];
+    document.getElementById('sessionStart').textContent = new Date().toLocaleTimeString();
 
-        // Exponential settings
-        const baseRate = 1;
-        const growthRate = 3.5;  // tweak for acceleration curve
+    // Exponential ramp settings
+    const baseRate = 1;      // units per second at t=0
+    const growthRate = 3.5;  // ramp coefficient
 
-        let pressing = false, pressDir = 0, pressStart = 0, lastFrame = 0;
+    let pressing = false, pressDir = 0, pressStart = 0, lastFrame = 0;
 
-        // DOM refs
-        const display = document.getElementById('counterDisplay');
-        const totalEl = document.getElementById('totalClicks');
-        const rateEl = document.getElementById('clicksPerSecond');
-        const upBtn = document.getElementById('upButton');
-        const downBtn = document.getElementById('downButton');
+    const display    = document.getElementById('counterDisplay');
+    const totalEl    = document.getElementById('totalClicks');
+    const rateEl     = document.getElementById('clicksPerSecond');
+    const upBtn      = document.getElementById('upButton');
+    const downBtn    = document.getElementById('downButton');
 
-        // Update stats every 200ms
-        function updateStats() {
-            const now = Date.now();
-            while (clickTimes.length && clickTimes[0] <= now - 1000) clickTimes.shift();
-            rateEl.textContent = clickTimes.length.toFixed(1);
+    function updateStats() {
+      const now = Date.now();
+      while (clickTimes.length && clickTimes[0] <= now - 1000) clickTimes.shift();
+      rateEl.textContent = clickTimes.length.toFixed(1);
+    }
+    setInterval(updateStats, 200);
+
+    function adjustFont() {
+      const len = display.textContent.length;
+      const size = Math.max(1.2, 4 - ((len - 6) / 5) * 0.1);
+      display.style.fontSize = `${size}em`;
+    }
+
+    function updateDisplay(force = false) {
+      const intVal = Math.round(counter);
+      const curr   = parseInt(display.textContent.replace(/,/g, ''), 10);
+      if (force || intVal !== curr) {
+        display.textContent = intVal.toLocaleString();
+        totalEl.textContent = Math.round(totalClicks).toLocaleString();
+        adjustFont();
+        display.classList.add('clicked');
+        setTimeout(() => display.classList.remove('clicked'), 100);
+      }
+    }
+
+    function incrementCounter(amount) {
+      counter += amount;
+      totalClicks += Math.abs(amount);
+      for (let i = 0; i < Math.abs(amount); i++) clickTimes.push(Date.now());
+      updateDisplay(true);
+    }
+
+    function resetCounter() {
+      counter = 0; totalClicks = 0; accumulator = 0;
+      clickTimes.length = 0;
+      document.getElementById('sessionStart').textContent = new Date().toLocaleTimeString();
+      updateDisplay(true);
+    }
+
+    function loop(ts) {
+      if (!lastFrame) lastFrame = ts;
+      const dt = (ts - lastFrame) / 1000;
+      lastFrame = ts;
+
+      if (pressing) {
+        const elapsed = (performance.now() - pressStart) / 1000;
+        const rate    = baseRate * Math.exp(growthRate * elapsed);
+        accumulator  += rate * dt;
+
+        // flush one-by-one to keep digits smooth
+        while (accumulator >= 1) {
+          counter    += pressDir;
+          totalClicks+= Math.abs(pressDir);
+          clickTimes.push(Date.now());
+          accumulator-= 1;
+          updateDisplay();
         }
-        setInterval(updateStats, 200);
+      }
 
-        // Adjust font size based on digit length
-        function adjustFont() {
-            const len = display.textContent.length;
-            const size = Math.max(1.2, 4 - ((len - 6) / 5) * 0.1);
-            display.style.fontSize = `${size}em`;
-        }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
 
-        // Render only integer changes
-        function updateDisplay(force = false) {
-            const intVal = Math.round(counter);
-            const curr = parseInt(display.textContent.replace(/,/g, ''), 10);
-            if (force || intVal !== curr) {
-                display.textContent = intVal.toLocaleString();
-                totalEl.textContent = Math.round(totalClicks).toLocaleString();
-                adjustFont();
-                display.classList.add('clicked');
-                setTimeout(() => display.classList.remove('clicked'), 100);
-            }
-        }
+    function startPress(dir) {
+      pressing  = true;
+      pressDir  = dir;
+      pressStart= performance.now();
+    }
+    function endPress() {
+      pressing = false;
+    }
 
-        // Manual increments
-        function incrementCounter(amount) {
-            counter += amount;
-            totalClicks += Math.abs(amount);
-            for (let i = 0; i < Math.abs(amount); i++) clickTimes.push(Date.now());
-            updateDisplay(true);
-        }
+    upBtn.addEventListener('mousedown', () => { incrementCounter(1); startPress(1); });
+    upBtn.addEventListener('mouseup',   endPress);
+    upBtn.addEventListener('mouseleave',endPress);
+    downBtn.addEventListener('mousedown',() => { incrementCounter(-1); startPress(-1); });
+    downBtn.addEventListener('mouseup',  endPress);
+    downBtn.addEventListener('mouseleave',endPress);
 
-        function resetCounter() {
-            counter = 0;
-            totalClicks = 0;
-            clickTimes.length = 0;
-            document.getElementById('sessionStart').textContent = new Date().toLocaleTimeString();
-            updateDisplay(true);
-        }
+    [upBtn, downBtn].forEach(btn => {
+      btn.addEventListener('touchstart', e => { e.preventDefault(); const d = btn===upBtn?1:-1; incrementCounter(d); startPress(d); });
+      btn.addEventListener('touchend',   e => { e.preventDefault(); endPress(); });
+    });
 
-        // Main loop: exponential, integer increments
-        function loop(ts) {
-            if (!lastFrame) lastFrame = ts;
-            const dt = (ts - lastFrame) / 1000;
-            lastFrame = ts;
-            if (pressing) {
-                const elapsed = (performance.now() - pressStart) / 1000;
-                const raw = baseRate * Math.exp(growthRate * elapsed) * dt;
-                const inc = Math.max(1, Math.floor(raw));
-                counter += inc * pressDir;
-                totalClicks += Math.abs(inc);
-                clickTimes.push(Date.now());
-                updateDisplay();
-            }
-            requestAnimationFrame(loop);
-        }
-        requestAnimationFrame(loop);
-
-        function startPress(dir) {
-            pressing = true;
-            pressDir = dir;
-            pressStart = performance.now();
-        }
-        function endPress() {
-            pressing = false;
-        }
-
-        // Mouse & touch handlers
-        upBtn.addEventListener('mousedown',  () => { incrementCounter(1); startPress(1); });
-        upBtn.addEventListener('mouseup',    endPress);
-        upBtn.addEventListener('mouseleave', endPress);
-        downBtn.addEventListener('mousedown',() => { incrementCounter(-1); startPress(-1); });
-        downBtn.addEventListener('mouseup',  endPress);
-        downBtn.addEventListener('mouseleave',endPress);
-        [upBtn, downBtn].forEach(btn => {
-            btn.addEventListener('touchstart', e => { e.preventDefault(); const d = btn===upBtn?1:-1; incrementCounter(d); startPress(d); });
-            btn.addEventListener('touchend',   e => { e.preventDefault(); endPress(); });
-        });
-        document.addEventListener('keydown', e => {
-            if (e.code === 'ArrowUp')   { e.preventDefault(); incrementCounter(1); }
-            if (e.code === 'ArrowDown') { e.preventDefault(); incrementCounter(-1); }
-        });
-    </script>
+    document.addEventListener('keydown', e => {
+      if (e.code === 'ArrowUp')   { e.preventDefault(); incrementCounter(1); }
+      if (e.code === 'ArrowDown') { e.preventDefault(); incrementCounter(-1); }
+    });
+  </script>
 </body>
 </html>

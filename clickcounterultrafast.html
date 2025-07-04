@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Click Counter (Smooth Exponential)</title>
+  <title>Click Counter (Smooth & High-Perf)</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
@@ -39,9 +39,7 @@
     .stats { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #3498db; }
     .stats h3 { color: #2c3e50; margin-bottom: 10px; }
     .stats p { margin: 5px 0; color: #7f8c8d; }
-    @media (max-width: 480px) {
-      .click-button { font-size: 1.2em; padding: 12px 25px; }
-    }
+    @media (max-width: 480px) { .click-button { font-size: 1.2em; padding: 12px 25px; } }
   </style>
 </head>
 <body>
@@ -72,17 +70,16 @@
     const clickTimes = [];
     document.getElementById('sessionStart').textContent = new Date().toLocaleTimeString();
 
-    // Exponential ramp settings
-    const baseRate = 1;      // units per second at t=0
-    const growthRate = 3.5;  // ramp coefficient
+    const baseRate = 1;
+    const growthRate = 3.5;
 
     let pressing = false, pressDir = 0, pressStart = 0, lastFrame = 0;
 
-    const display    = document.getElementById('counterDisplay');
-    const totalEl    = document.getElementById('totalClicks');
-    const rateEl     = document.getElementById('clicksPerSecond');
-    const upBtn      = document.getElementById('upButton');
-    const downBtn    = document.getElementById('downButton');
+    const display = document.getElementById('counterDisplay');
+    const totalEl = document.getElementById('totalClicks');
+    const rateEl = document.getElementById('clicksPerSecond');
+    const upBtn = document.getElementById('upButton');
+    const downBtn = document.getElementById('downButton');
 
     function updateStats() {
       const now = Date.now();
@@ -99,7 +96,7 @@
 
     function updateDisplay(force = false) {
       const intVal = Math.round(counter);
-      const curr   = parseInt(display.textContent.replace(/,/g, ''), 10);
+      const curr = parseInt(display.textContent.replace(/,/g, ''), 10);
       if (force || intVal !== curr) {
         display.textContent = intVal.toLocaleString();
         totalEl.textContent = Math.round(totalClicks).toLocaleString();
@@ -112,13 +109,12 @@
     function incrementCounter(amount) {
       counter += amount;
       totalClicks += Math.abs(amount);
-      for (let i = 0; i < Math.abs(amount); i++) clickTimes.push(Date.now());
+      clickTimes.push(Date.now());
       updateDisplay(true);
     }
 
     function resetCounter() {
-      counter = 0; totalClicks = 0; accumulator = 0;
-      clickTimes.length = 0;
+      counter = 0; totalClicks = 0; accumulator = 0; clickTimes.length = 0;
       document.getElementById('sessionStart').textContent = new Date().toLocaleTimeString();
       updateDisplay(true);
     }
@@ -127,49 +123,42 @@
       if (!lastFrame) lastFrame = ts;
       const dt = (ts - lastFrame) / 1000;
       lastFrame = ts;
-
       if (pressing) {
         const elapsed = (performance.now() - pressStart) / 1000;
-        const rate    = baseRate * Math.exp(growthRate * elapsed);
-        accumulator  += rate * dt;
-
-        // flush one-by-one to keep digits smooth
-        while (accumulator >= 1) {
-          counter    += pressDir;
-          totalClicks+= Math.abs(pressDir);
+        const rate = baseRate * Math.exp(growthRate * elapsed);
+        accumulator += rate * dt;
+        const inc = Math.floor(accumulator);
+        if (inc > 0) {
+          accumulator -= inc;
+          counter += inc * pressDir;
+          totalClicks += Math.abs(inc);
           clickTimes.push(Date.now());
-          accumulator-= 1;
           updateDisplay();
         }
       }
-
       requestAnimationFrame(loop);
     }
     requestAnimationFrame(loop);
 
     function startPress(dir) {
-      pressing  = true;
-      pressDir  = dir;
-      pressStart= performance.now();
+      pressing = true; pressDir = dir; pressStart = performance.now();
     }
-    function endPress() {
-      pressing = false;
-    }
+    function endPress() { pressing = false; }
 
     upBtn.addEventListener('mousedown', () => { incrementCounter(1); startPress(1); });
-    upBtn.addEventListener('mouseup',   endPress);
-    upBtn.addEventListener('mouseleave',endPress);
-    downBtn.addEventListener('mousedown',() => { incrementCounter(-1); startPress(-1); });
-    downBtn.addEventListener('mouseup',  endPress);
-    downBtn.addEventListener('mouseleave',endPress);
+    upBtn.addEventListener('mouseup', endPress);
+    upBtn.addEventListener('mouseleave', endPress);
+    downBtn.addEventListener('mousedown', () => { incrementCounter(-1); startPress(-1); });
+    downBtn.addEventListener('mouseup', endPress);
+    downBtn.addEventListener('mouseleave', endPress);
 
     [upBtn, downBtn].forEach(btn => {
-      btn.addEventListener('touchstart', e => { e.preventDefault(); const d = btn===upBtn?1:-1; incrementCounter(d); startPress(d); });
-      btn.addEventListener('touchend',   e => { e.preventDefault(); endPress(); });
+      btn.addEventListener('touchstart', e => { e.preventDefault(); const d = btn === upBtn ? 1 : -1; incrementCounter(d); startPress(d); });
+      btn.addEventListener('touchend', e => { e.preventDefault(); endPress(); });
     });
 
     document.addEventListener('keydown', e => {
-      if (e.code === 'ArrowUp')   { e.preventDefault(); incrementCounter(1); }
+      if (e.code === 'ArrowUp') { e.preventDefault(); incrementCounter(1); }
       if (e.code === 'ArrowDown') { e.preventDefault(); incrementCounter(-1); }
     });
   </script>

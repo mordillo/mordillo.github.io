@@ -3,13 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Click Counter (Exponential Continuous)</title>
+    <title>Click Counter (Responsive Font)</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 30px; max-width: 500px; width: 100%; text-align: center; }
         h1 { color: #333; margin-bottom: 30px; font-size: 2.2em; }
-        .counter-display { font-size: 4em; font-weight: bold; color: #2c3e50; background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 8px; padding: 20px; margin: 20px 0; min-height: 120px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+        .counter-display {
+            font-size: 4em;
+            font-weight: bold;
+            color: #2c3e50;
+            background: #ecf0f1;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            word-break: break-all;
+        }
         .counter-display.clicked { transform: scale(1.05); background: #e8f5e8; border-color: #27ae60; color: #27ae60; }
         .button-container { display: flex; gap: 20px; justify-content: center; margin: 20px 0; }
         .click-button { background: #3498db; color: #fff; border: none; padding: 15px 25px; font-size: 2em; border-radius: 8px; cursor: pointer; transition: transform 0.1s ease; user-select: none; }
@@ -25,7 +40,6 @@
         .stats h3 { color: #2c3e50; margin-bottom: 10px; }
         .stats p { margin: 5px 0; color: #7f8c8d; }
         @media (max-width: 480px) {
-            .counter-display { font-size: 3em; padding: 15px; }
             .click-button { font-size: 1.2em; padding: 12px 25px; }
         }
     </style>
@@ -53,19 +67,14 @@
     </div>
 
     <script>
-        // Core state
+        // State
         let counter = 0, totalClicks = 0;
         const clickTimes = [];
-        const sessionStart = new Date();
-        document.getElementById('sessionStart').textContent = sessionStart.toLocaleTimeString();
+        document.getElementById('sessionStart').textContent = new Date().toLocaleTimeString();
 
         // Exponential settings
-        const baseRate = 1;       // units per second
-        const growthRate = 3.5;   // acceleration coefficient
-        let pressing = false;
-        let pressDir = 0;
-        let pressStart = 0;
-        let lastFrame = 0;
+        const baseRate = 1, growthRate = 3.5;
+        let pressing = false, pressDir = 0, pressStart = 0, lastFrame = 0;
 
         // DOM refs
         const display = document.getElementById('counterDisplay');
@@ -74,7 +83,6 @@
         const upBtn = document.getElementById('upButton');
         const downBtn = document.getElementById('downButton');
 
-        // Stats update
         function updateStats() {
             const now = Date.now();
             while (clickTimes.length && clickTimes[0] <= now - 1000) clickTimes.shift();
@@ -82,46 +90,45 @@
         }
         setInterval(updateStats, 200);
 
-        // Render display when integer changes
+        function adjustFont() {
+            const len = display.textContent.length;
+            // reduce font-size by 0.1em for each 5 extra chars beyond 6
+            const size = Math.max(1.2, 4 - ((len - 6) / 5) * 0.1);
+            display.style.fontSize = `${size}em`;
+        }
+
         function updateDisplay(force = false) {
             const intVal = Math.round(counter);
-            const curr = parseInt(display.textContent.replace(/,/g,''), 10);
+            const curr = parseInt(display.textContent.replace(/,/g, ''), 10);
             if (force || intVal !== curr) {
                 display.textContent = intVal.toLocaleString();
                 totalEl.textContent = Math.round(totalClicks).toLocaleString();
+                adjustFont();
                 display.classList.add('clicked');
                 setTimeout(() => display.classList.remove('clicked'), 100);
             }
         }
 
-        // Single-click increments
         function incrementCounter(amount) {
-            counter += amount;
-            totalClicks += Math.abs(amount);
+            counter += amount; totalClicks += Math.abs(amount);
             const now = Date.now();
             for (let i = 0; i < Math.abs(amount); i++) clickTimes.push(now);
             updateDisplay(true);
         }
-
         function resetCounter() {
-            counter = 0;
-            totalClicks = 0;
-            clickTimes.length = 0;
+            counter = 0; totalClicks = 0; clickTimes.length = 0;
             document.getElementById('sessionStart').textContent = new Date().toLocaleTimeString();
             updateDisplay(true);
         }
 
-        // Main loop for smooth exponential acceleration
         function loop(ts) {
             if (!lastFrame) lastFrame = ts;
-            const dt = (ts - lastFrame) / 1000;
-            lastFrame = ts;
+            const dt = (ts - lastFrame) / 1000; lastFrame = ts;
             if (pressing) {
                 const elapsed = (performance.now() - pressStart) / 1000;
                 const mult = Math.exp(growthRate * elapsed);
                 const delta = baseRate * mult * dt * pressDir;
-                counter += delta;
-                totalClicks += Math.abs(delta);
+                counter += delta; totalClicks += Math.abs(delta);
                 clickTimes.push(Date.now());
                 updateDisplay();
             }
@@ -129,16 +136,9 @@
         }
         requestAnimationFrame(loop);
 
-        function startPress(dir) {
-            pressing = true;
-            pressDir = dir;
-            pressStart = performance.now();
-        }
-        function endPress() {
-            pressing = false;
-        }
+        function startPress(dir) { pressing = true; pressDir = dir; pressStart = performance.now(); }
+        function endPress() { pressing = false; }
 
-        // Mouse & touch
         upBtn.addEventListener('mousedown',  () => { incrementCounter(1); startPress(1); });
         upBtn.addEventListener('mouseup',    endPress);
         upBtn.addEventListener('mouseleave', endPress);
@@ -149,8 +149,6 @@
             btn.addEventListener('touchstart', e => { e.preventDefault(); const d = btn===upBtn?1:-1; incrementCounter(d); startPress(d); });
             btn.addEventListener('touchend',   e => { e.preventDefault(); endPress(); });
         });
-
-        // Keyboard
         document.addEventListener('keydown', e => {
             if (e.code === 'ArrowUp')   { e.preventDefault(); incrementCounter(1); }
             if (e.code === 'ArrowDown') { e.preventDefault(); incrementCounter(-1); }

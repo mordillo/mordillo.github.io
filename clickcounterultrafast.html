@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Click Counter (Responsive Font)</title>
+    <title>Click Counter (Responsive + Integer Increments)</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
@@ -67,13 +67,15 @@
     </div>
 
     <script>
-        // State
+        // State and stats
         let counter = 0, totalClicks = 0;
         const clickTimes = [];
         document.getElementById('sessionStart').textContent = new Date().toLocaleTimeString();
 
         // Exponential settings
-        const baseRate = 1, growthRate = 3.5;
+        const baseRate = 1;
+        const growthRate = 3.5;  // tweak for acceleration curve
+
         let pressing = false, pressDir = 0, pressStart = 0, lastFrame = 0;
 
         // DOM refs
@@ -83,6 +85,7 @@
         const upBtn = document.getElementById('upButton');
         const downBtn = document.getElementById('downButton');
 
+        // Update stats every 200ms
         function updateStats() {
             const now = Date.now();
             while (clickTimes.length && clickTimes[0] <= now - 1000) clickTimes.shift();
@@ -90,13 +93,14 @@
         }
         setInterval(updateStats, 200);
 
+        // Adjust font size based on digit length
         function adjustFont() {
             const len = display.textContent.length;
-            // reduce font-size by 0.1em for each 5 extra chars beyond 6
             const size = Math.max(1.2, 4 - ((len - 6) / 5) * 0.1);
             display.style.fontSize = `${size}em`;
         }
 
+        // Render only integer changes
         function updateDisplay(force = false) {
             const intVal = Math.round(counter);
             const curr = parseInt(display.textContent.replace(/,/g, ''), 10);
@@ -109,26 +113,33 @@
             }
         }
 
+        // Manual increments
         function incrementCounter(amount) {
-            counter += amount; totalClicks += Math.abs(amount);
-            const now = Date.now();
-            for (let i = 0; i < Math.abs(amount); i++) clickTimes.push(now);
+            counter += amount;
+            totalClicks += Math.abs(amount);
+            for (let i = 0; i < Math.abs(amount); i++) clickTimes.push(Date.now());
             updateDisplay(true);
         }
+
         function resetCounter() {
-            counter = 0; totalClicks = 0; clickTimes.length = 0;
+            counter = 0;
+            totalClicks = 0;
+            clickTimes.length = 0;
             document.getElementById('sessionStart').textContent = new Date().toLocaleTimeString();
             updateDisplay(true);
         }
 
+        // Main loop: exponential, integer increments
         function loop(ts) {
             if (!lastFrame) lastFrame = ts;
-            const dt = (ts - lastFrame) / 1000; lastFrame = ts;
+            const dt = (ts - lastFrame) / 1000;
+            lastFrame = ts;
             if (pressing) {
                 const elapsed = (performance.now() - pressStart) / 1000;
-                const mult = Math.exp(growthRate * elapsed);
-                const delta = baseRate * mult * dt * pressDir;
-                counter += delta; totalClicks += Math.abs(delta);
+                const raw = baseRate * Math.exp(growthRate * elapsed) * dt;
+                const inc = Math.max(1, Math.floor(raw));
+                counter += inc * pressDir;
+                totalClicks += Math.abs(inc);
                 clickTimes.push(Date.now());
                 updateDisplay();
             }
@@ -136,9 +147,16 @@
         }
         requestAnimationFrame(loop);
 
-        function startPress(dir) { pressing = true; pressDir = dir; pressStart = performance.now(); }
-        function endPress() { pressing = false; }
+        function startPress(dir) {
+            pressing = true;
+            pressDir = dir;
+            pressStart = performance.now();
+        }
+        function endPress() {
+            pressing = false;
+        }
 
+        // Mouse & touch handlers
         upBtn.addEventListener('mousedown',  () => { incrementCounter(1); startPress(1); });
         upBtn.addEventListener('mouseup',    endPress);
         upBtn.addEventListener('mouseleave', endPress);

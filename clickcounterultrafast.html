@@ -3,28 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Click Counter (With Max Limit)</title>
+  <title>Click Counter (With Max & Speed Controls)</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
     .container { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 30px; max-width: 500px; width: 100%; text-align: center; }
     h1 { color: #333; margin-bottom: 30px; font-size: 2.2em; }
-    .counter-display {
-      font-size: 4em;
-      font-weight: bold;
-      color: #2c3e50;
-      background: #ecf0f1;
-      border: 2px solid #bdc3c7;
-      border-radius: 8px;
-      padding: 20px;
-      margin: 20px 0;
-      min-height: 120px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-      word-break: break-all;
-    }
+    .counter-display { font-size: 4em; font-weight: bold; color: #2c3e50; background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 8px; padding: 20px; margin: 20px 0; min-height: 120px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; word-break: break-all; }
     .counter-display.clicked { transform: scale(1.05); background: #e8f5e8; border-color: #27ae60; color: #27ae60; }
     .button-container { display: flex; gap: 20px; justify-content: center; margin: 20px 0; }
     .click-button { background: #3498db; color: #fff; border: none; padding: 15px 25px; font-size: 2em; border-radius: 8px; cursor: pointer; transition: transform 0.1s ease; user-select: none; }
@@ -36,10 +21,12 @@
     .reset-button { background: #e74c3c; font-size: 1em; }
     .reset-button:hover { background: #c0392b; }
     .increment-button:hover { background: #219a52; }
-    .stats { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #3498db; }
+    .stats { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #3498db; text-align: left; }
     .stats h3 { color: #2c3e50; margin-bottom: 10px; }
-    .stats p { margin: 5px 0; color: #7f8c8d; }
-    .stats input { width: 100%; padding: 5px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    .stats p { margin: 8px 0; color: #2c3e50; }
+    .stats input[type=number], .stats input[type=range] { width: 100%; margin-top: 4px; }
+    .small-btn { width: 24px; height: 24px; border: none; border-radius: 4px; background: #ddd; color: #333; cursor: pointer; font-size: 1rem; line-height: 1; }
+    .small-btn:active { background: #ccc; }
     @media (max-width: 480px) { .click-button { font-size: 1.2em; padding: 12px 25px; } }
   </style>
 </head>
@@ -58,45 +45,97 @@
       <button class="reset-button" onclick="resetCounter()">Reset</button>
     </div>
     <div class="stats">
-      <h3>Statistics</h3>
+      <h3>Statistics & Controls</h3>
       <p>Total Clicks: <span id="totalClicks">0</span></p>
       <p>Clicks per Second: <span id="clicksPerSecond">0.0</span></p>
       <p>Session Started: <span id="sessionStart">--</span></p>
       <p>
-        Max Value:
-        <input type="number" id="maxInput" placeholder="Enter max" />
+        Max Count:
+        <input type="number" id="maxInput" placeholder="None" min="0" />
+      </p>
+      <p>
+        Speed Rate:
+        <input type="range" id="rateSlider" min="0.1" max="10" step="0.1" value="3.5" />
+        <span id="rateValue">3.5</span>
+      </p>
+      <p>
+        Dial Max:
+        <button id="dialMaxDown" class="small-btn">▼</button>
+        <span id="dialMaxValue">100</span>
+        <button id="dialMaxUp" class="small-btn">▲</button>
       </p>
     </div>
   </div>
 
   <script>
-    let counter = 0, totalClicks = 0;
-    let accumulator = 0;
-    let maxValue = Infinity;
+    let counter = 0, totalClicks = 0, accumulator = 0;
+    let maxValue = Infinity, dialMax = 100;
+    let speedFactor = 3.5;
     const clickTimes = [];
-    document.getElementById('sessionStart').textContent = new Date().toLocaleTimeString();
 
-    const baseRate = 1;
-    const growthRate = 3.5;
+    const display     = document.getElementById('counterDisplay');
+    const totalEl     = document.getElementById('totalClicks');
+    const rateEl      = document.getElementById('clicksPerSecond');
+    const sessionEl   = document.getElementById('sessionStart');
+    const maxInput    = document.getElementById('maxInput');
+    const rateSlider  = document.getElementById('rateSlider');
+    const rateValue   = document.getElementById('rateValue');
+    const dialDown    = document.getElementById('dialMaxDown');
+    const dialUp      = document.getElementById('dialMaxUp');
+    const dialValueEl = document.getElementById('dialMaxValue');
+    const upBtn       = document.getElementById('upButton');
+    const downBtn     = document.getElementById('downButton');
 
-    let pressing = false, pressDir = 0, pressStart = 0, lastFrame = 0;
+    sessionEl.textContent = new Date().toLocaleTimeString();
 
-    const display = document.getElementById('counterDisplay');
-    const totalEl = document.getElementById('totalClicks');
-    const rateEl = document.getElementById('clicksPerSecond');
-    const upBtn = document.getElementById('upButton');
-    const downBtn = document.getElementById('downButton');
-    const maxInput = document.getElementById('maxInput');
-
+    // Max count input
     maxInput.addEventListener('input', () => {
       const val = parseFloat(maxInput.value);
       maxValue = isNaN(val) ? Infinity : val;
-      if (counter > maxValue) {
-        counter = maxValue;
-        updateDisplay(true);
-      }
+      if (counter > maxValue) counter = maxValue;
+      updateDisplay(true);
     });
 
+    // Speed rate slider
+    rateSlider.addEventListener('input', () => {
+      speedFactor = parseFloat(rateSlider.value);
+      rateValue.textContent = speedFactor.toFixed(1);
+    });
+
+    // Dial max exponential control
+    function attachDial(btn, increase) {
+      let holding = false, startTs = 0, acc = 0;
+      const base = 10, growth = 2.0;
+      function step(ts) {
+        if (!holding) return;
+        if (!startTs) startTs = ts, step.last = ts;
+        const dt = (ts - step.last) / 1000;
+        const elapsed = (ts - startTs) / 1000;
+        step.last = ts;
+        const rate = base * Math.exp(growth * elapsed);
+        acc += rate * dt;
+        const ticks = Math.floor(acc);
+        if (ticks > 0) {
+          acc -= ticks;
+          dialMax = increase ? dialMax + ticks : Math.max(1, dialMax - ticks);
+          updateDialDisplay();
+        }
+        requestAnimationFrame(step);
+      }
+      btn.addEventListener('mousedown', e => { e.preventDefault(); holding = true; startTs = 0; acc = 0; dialMax = increase ? dialMax + 1 : Math.max(1, dialMax -1); updateDialDisplay(); requestAnimationFrame(step); });
+      ['mouseup','mouseleave'].forEach(ev => btn.addEventListener(ev, () => holding = false));
+      ['touchstart','touchend'].forEach(ev => btn.addEventListener(ev, e => { e.preventDefault(); if (ev==='touchstart') { holding=true; startTs=0; acc=0; dialMax = increase?dialMax+1:Math.max(1,dialMax-1); updateDialDisplay(); requestAnimationFrame(step);} else holding=false;}));
+    }
+    function updateDialDisplay() {
+      dialValueEl.textContent = dialMax;
+      rateSlider.max = dialMax;
+      if (speedFactor > dialMax) { speedFactor = dialMax; rateSlider.value = dialMax; rateValue.textContent = dialMax; }
+    }
+    attachDial(dialUp, true);
+    attachDial(dialDown, false);
+    updateDialDisplay();
+
+    // Stats updater
     function updateStats() {
       const now = Date.now();
       while (clickTimes.length && clickTimes[0] <= now - 1000) clickTimes.shift();
@@ -104,87 +143,74 @@
     }
     setInterval(updateStats, 200);
 
+    // Display & font
     function adjustFont() {
       const len = display.textContent.length;
       const size = Math.max(1.2, 4 - ((len - 6) / 5) * 0.1);
       display.style.fontSize = `${size}em`;
     }
-
     function updateDisplay(force = false) {
       const intVal = Math.round(counter);
-      const curr = parseInt(display.textContent.replace(/,/g, ''), 10);
+      const curr   = parseInt(display.textContent.replace(/,/g, ''), 10);
       if (force || intVal !== curr) {
         display.textContent = intVal.toLocaleString();
-        totalEl.textContent = Math.round(totalClicks).toLocaleString();
+        totalEl.textContent   = Math.round(totalClicks).toLocaleString();
         adjustFont();
         display.classList.add('clicked');
         setTimeout(() => display.classList.remove('clicked'), 100);
       }
     }
 
+    // Manual increment/decrement
     function incrementCounter(amount) {
-      counter += amount;
-      if (counter >= maxValue && pressDir > 0) counter = maxValue;
-      if (counter <= -maxValue && pressDir < 0) counter = -maxValue;
+      counter = Math.min(maxValue, counter + amount);
       totalClicks += Math.abs(amount);
       clickTimes.push(Date.now());
       updateDisplay(true);
     }
 
-    function resetCounter() {
-      counter = 0; totalClicks = 0; accumulator = 0; clickTimes.length = 0;
-      document.getElementById('sessionStart').textContent = new Date().toLocaleTimeString();
-      updateDisplay(true);
-    }
-
+    // Loop with exponential hold
     function loop(ts) {
-      if (!lastFrame) lastFrame = ts;
-      const dt = (ts - lastFrame) / 1000;
-      lastFrame = ts;
+      if (!this.last) this.last = ts;
+      const dt = (ts - this.last) / 1000; this.last = ts;
       if (pressing) {
         const elapsed = (performance.now() - pressStart) / 1000;
-        const rate = baseRate * Math.exp(growthRate * elapsed);
-        accumulator += rate * dt;
-        const inc = Math.floor(accumulator);
+        const rate    = speedFactor * Math.exp(speedFactor * elapsed);
+        accumulator   += rate * dt;
+        const inc     = Math.floor(accumulator);
         if (inc > 0) {
           accumulator -= inc;
-          counter += inc * pressDir;
-          if (counter >= maxValue && pressDir > 0) {
-            counter = maxValue;
-            pressing = false;
-          }
-          if (counter <= -maxValue && pressDir < 0) {
-            counter = -maxValue;
-            pressing = false;
-          }
+          counter      = Math.min(maxValue, counter + inc * pressDir);
           totalClicks += Math.abs(inc);
           clickTimes.push(Date.now());
           updateDisplay();
         }
       }
-      requestAnimationFrame(loop);
+      requestAnimationFrame(loop.bind(this));
     }
-    requestAnimationFrame(loop);
+    requestAnimationFrame(loop.bind({}));
 
+    // Press handlers
+    let pressing = false, pressDir = 0, pressStart = 0;
     function startPress(dir) { pressing = true; pressDir = dir; pressStart = performance.now(); }
-    function endPress() { pressing = false; }
+    function endPress()   { pressing = false; }
 
     upBtn.addEventListener('mousedown', () => { incrementCounter(1); startPress(1); });
-    upBtn.addEventListener('mouseup', endPress);
-    upBtn.addEventListener('mouseleave', endPress);
+    upBtn.addEventListener('mouseup',   endPress);
+    upBtn.addEventListener('mouseleave',endPress);
     downBtn.addEventListener('mousedown', () => { incrementCounter(-1); startPress(-1); });
-    downBtn.addEventListener('mouseup', endPress);
-    downBtn.addEventListener('mouseleave', endPress);
-
-    [upBtn, downBtn].forEach(btn => {
-      btn.addEventListener('touchstart', e => { e.preventDefault(); const d = btn === upBtn ? 1 : -1; incrementCounter(d); startPress(d); });
-      btn.addEventListener('touchend', e => { e.preventDefault(); endPress(); });
+    downBtn.addEventListener('mouseup',   endPress);
+    downBtn.addEventListener('mouseleave',endPress);
+    ['touchstart','touchend'].forEach(ev => {
+      upBtn.addEventListener(ev, e => { e.preventDefault(); ev==='touchstart'? (incrementCounter(1), startPress(1)): endPress(); });
+      downBtn.addEventListener(ev, e => { e.preventDefault(); ev==='touchstart'? (incrementCounter(-1), startPress(-1)): endPress(); });
     });
 
     document.addEventListener('keydown', e => {
-      if (e.code === 'ArrowUp') { e.preventDefault(); incrementCounter(1); }
-      if (e.code === 'ArrowDown') { e.preventDefault(); incrementCounter(-1); }
+      if (e.code==='ArrowUp')   { e.preventDefault(); incrementCounter(1); }
+      if (e.code==='ArrowDown') { e.preventDefault(); incrementCounter(-1); }
     });
+
   </script>
 </body>
 </html>

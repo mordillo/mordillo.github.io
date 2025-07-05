@@ -88,7 +88,6 @@
 
     sessionEl.textContent = new Date().toLocaleTimeString();
 
-    // Max count input
     maxInput.addEventListener('input', () => {
       const val = parseFloat(maxInput.value);
       maxValue = isNaN(val) ? Infinity : val;
@@ -96,13 +95,11 @@
       updateDisplay(true);
     });
 
-    // Speed rate slider
     rateSlider.addEventListener('input', () => {
       speedFactor = parseFloat(rateSlider.value);
       rateValue.textContent = speedFactor.toFixed(1);
     });
 
-    // Dial max exponential control
     function attachDial(btn, increase) {
       let holding = false, startTs = 0, acc = 0;
       const base = 10, growth = 2.0;
@@ -135,7 +132,6 @@
     attachDial(dialDown, false);
     updateDialDisplay();
 
-    // Stats updater
     function updateStats() {
       const now = Date.now();
       while (clickTimes.length && clickTimes[0] <= now - 1000) clickTimes.shift();
@@ -143,7 +139,6 @@
     }
     setInterval(updateStats, 200);
 
-    // Display & font
     function adjustFont() {
       const len = display.textContent.length;
       const size = Math.max(1.2, 4 - ((len - 6) / 5) * 0.1);
@@ -161,7 +156,18 @@
       }
     }
 
-    // Manual increment/decrement
+    function resetCounter() {
+      counter = 0;
+      totalClicks = 0;
+      accumulator = 0;
+      clickTimes.length = 0;
+      pressing = false;
+      sessionEl.textContent = new Date().toLocaleTimeString();
+      display.textContent = '0';
+      totalEl.textContent = '0';
+      updateDisplay(true);
+    }
+
     function incrementCounter(amount) {
       counter = Math.min(maxValue, counter + amount);
       totalClicks += Math.abs(amount);
@@ -169,7 +175,6 @@
       updateDisplay(true);
     }
 
-    // Loop with exponential hold
     function loop(ts) {
       if (!this.last) this.last = ts;
       const dt = (ts - this.last) / 1000; this.last = ts;
@@ -190,7 +195,6 @@
     }
     requestAnimationFrame(loop.bind({}));
 
-    // Press handlers
     let pressing = false, pressDir = 0, pressStart = 0;
     function startPress(dir) { pressing = true; pressDir = dir; pressStart = performance.now(); }
     function endPress()   { pressing = false; }

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Realistic 3D Click Counter</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --display-bg: #1d1f27;
+    --digit-bg: #0f111a;
+    --light: rgba(255,255,255,0.1);
+    --shadow: rgba(0,0,0,0.5);
+    --accent: #4fd1c5;
+    --font-stack: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: radial-gradient(circle at 30% 30%, #2f3240 0%, #1b1d27 80%);
+    color: #f0f3f9;
+    font-family: var(--font-stack);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 20px;
+    min-height: 100vh;
+    gap: 40px;
+    user-select: none;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 500;
+  }
+
+  .counter-wrapper {
+    display: flex;
+    gap: 8px;
+    perspective: 1000px;
+  }
+
+  .digit-slot {
+    position: relative;
+    width: 60px;
+    height: 90px;
+    background: linear-gradient(145deg, #262a3d 0%, #1f2232 60%);
+    border-radius: 10px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow:
+      inset 0 6px 18px rgba(255,255,255,0.04),
+      0 20px 40px -10px rgba(0,0,0,0.6),
+      0 0 20px rgba(79,209,197,0.25);
+    font-size: 60px;
+    font-weight: 700;
+    position: relative;
+  }
+
+  .digit-slot::after {
+    /* glass reflection */
+    content: "";
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 120%;
+    height: 120%;
+    pointer-events: none;
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.18), transparent 35%);
+    mix-blend-mode: overlay;
+    border-radius: 12px;
+  }
+
+  .digit {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    color: #d7e2ff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    transition: transform 0.5s ease, opacity 0.5s ease;
+  }
+
+  .digit.outgoing {
+    transform-origin: top;
+    animation: flipOut 0.5s forwards;
+  }
+
+  .digit.incoming {
+    transform-origin: bottom;
+    animation: flipIn 0.5s forwards;
+  }
+
+  @keyframes flipOut {
+    0% { transform: rotateX(0deg); opacity: 1; }
+    100% { transform: rotateX(90deg); opacity: 0; }
+  }
+
+  @keyframes flipIn {
+    0% { transform: rotateX(-90deg); opacity: 0; }
+    100% { transform: rotateX(0deg); opacity: 1; }
+  }
+
+  .display-container {
+    position: relative;
+    padding: 18px 22px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #272a3f 0%, #1e2131 70%);
+    box-shadow:
+      inset 0 0 30px rgba(255,255,255,0.03),
+      0 30px 60px -10px rgba(0,0,0,0.7);
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    display: block;
+    color: #9aa0c0;
+  }
+
+  .click-button {
+    position: relative;
+    padding: 0;
+    width: 140px;
+    height: 70px;
+    border: none;
+    border-radius: 38px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: radial-gradient(circle at 35% 35%, #5ac8d9 0%, #2f7f9a 70%);
+    color: white;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow:
+      0 25px 60px -5px rgba(0,0,0,0.6),
+      0 8px 20px rgba(0,0,0,0.3),
+      inset 0 2px 8px rgba(255,255,255,0.2);
+  }
+
+  .click-button:active {
+    transform: translateY(2px);
+    box-shadow:
+      0 12px 30px -5px rgba(0,0,0,0.5),
+      0 4px 12px rgba(0,0,0,0.2),
+      inset 0 2px 8px rgba(255,255,255,0.25);
+  }
+
+  .click-button .shine {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    width: 160px;
+    height: 90px;
+    pointer-events: none;
+    background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 50%);
+    filter: blur(10px);
+    border-radius: 38px;
+    mix-blend-mode: overlay;
+  }
+
+  .small-hint {
+    font-size: 0.8rem;
+    margin-top: 4px;
+    color: #b0b7d1;
+  }
+
+  .reset {
+    margin-left: 8px;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #c3c9ec;
+    transition: background .2s;
+  }
+
+  .reset:hover {
+    background: rgba(255,255,255,0.03);
+  }
+
+  .credits {
+    position: absolute;
+    bottom: 12px;
+    font-size: 0.55rem;
+    color: #777fa1;
+    text-align: center;
+    width: 100%;
+  }
+
+  @media (max-width: 600px) {
+    .digit-slot { width: 45px; height: 68px; font-size: 44px; }
+    .click-button { width: 120px; height: 60px; }
+  }
+</style>
+</head>
+<body>
+
+  <div>
+    <h1>Realistic 3D Click Counter</h1>
+    <div class="display-container" aria-label="Click counter display">
+      <div>
+        <div class="label">Clicks</div>
+      </div>
+      <div class="counter-wrapper" id="counter">
+        <!-- digits injected here -->
+      </div>
+      <button class="reset" id="resetBtn" aria-label="Reset counter">Reset</button>
+    </div>
+    <div>
+      <button class="click-button" id="clickBtn" aria-label="Increment counter">
+        <div class="shine"></div>
+        Click Me
+      </button>
+      <div class="small-hint">Every click flips the digits</div>
+    </div>
+  </div>
+
+  <script>
+    // Utility to create a digit element
+    function createDigitElement(value) {
+      const d = document.createElement('div');
+      d.className = 'digit';
+      d.textContent = value;
+      return d;
+    }
+
+    // Manage current count and display
+    let count = 0;
+    const counterEl = document.getElementById('counter');
+
+    // Initialize with at least 1 digit
+    function renderInitial(num) {
+      const str = String(num);
+      counterEl.innerHTML = '';
+      for (const ch of str) {
+        const slot = document.createElement('div');
+        slot.className = 'digit-slot';
+        const digit = createDigitElement(ch);
+        slot.appendChild(digit);
+        counterEl.appendChild(slot);
+      }
+    }
+
+    // Flip update from old number to new number
+    function updateDisplay(newCount) {
+      const oldStr = String(count);
+      const newStr = String(newCount);
+
+      // Pad with leading zeros if length changes (optional: keep widths stable)
+      const maxLen = Math.max(oldStr.length, newStr.length);
+      const oldPadded = oldStr.padStart(maxLen, '0');
+      const newPadded = newStr.padStart(maxLen, '0');
+
+      // If number of digits changed, rebuild all
+      if (oldPadded.length !== newPadded.length) {
+        renderInitial(newCount);
+      } else {
+        // Per-digit flip
+        const slots = Array.from(counterEl.children);
+        for (let i = 0; i < maxLen; i++) {
+          if (oldPadded[i] === newPadded[i]) continue; // no change
+          const slot = slots[i];
+          const current = slot.querySelector('.digit');
+          const outgoing = current.cloneNode(true);
+          outgoing.classList.add('outgoing');
+          // incoming digit
+          const incoming = createDigitElement(newPadded[i]);
+          incoming.classList.add('incoming');
+
+          // Clean out existing and insert both for animation
+          slot.appendChild(outgoing);
+          slot.appendChild(incoming);
+
+          // After animation, remove old ones, keep the final
+          setTimeout(() => {
+            // Remove all .digit except the final one
+            slot.querySelectorAll('.digit').forEach(d => {
+              if (!d.classList.contains('incoming')) slot.removeChild(d);
+              else {
+                d.classList.remove('incoming');
+              }
+            });
+          }, 520);
+        }
+      }
+
+      count = newCount;
+    }
+
+    document.getElementById('clickBtn').addEventListener('click', () => {
+      updateDisplay(count + 1);
+      // Optional: subtle click feedback (could add a tiny flash)
+      document.getElementById('clickBtn').blur();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      count = 0;
+      renderInitial(count);
+    });
+
+    // Start
+    renderInitial(count);
+  </script>
+
+</body>
+</html>

@@ -1,468 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Realistic Handheld 3D Click Counter</title>
+<meta charset="utf-8" />
+<title>Image-Based Mechanical Click Counter</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-  :root {
-    --body-bg: #1f2335;
-    --frame-gradient: linear-gradient(135deg,#272b47 0%,#1b1f33 70%);
-    --plastic-light: rgba(255,255,255,0.05);
-    --plastic-shadow: rgba(0,0,0,0.6);
-    --accent: #4fd1c5;
-    --font-stack: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  :root { --bg:#000; }
+  *{box-sizing:border-box;}
+  body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;color:#fff;}
+  .counter-wrapper{position:relative;max-width:500px;width:100%;display:inline-block;}
+  .device-image{display:block;width:100%;height:auto;}
+  /* overlay display window so we can animate digits */
+  .display-overlay{
+    position:absolute;
+    /* coordinates approximate to cover the digit window from the provided image */
+    left:50%;
+    top:40%;
+    transform:translate(-50%,-50%);
+    width:230px; /* adjust if needed to align exactly */
+    height:85px;
+    background:#090a0f; /* match the black window */
+    border-radius:5px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    box-shadow: inset 0 4px 20px rgba(255,255,255,0.03), 0 0 16px rgba(255,255,255,0.05);
+    font-family: 'Times New Roman', Georgia, serif; /* close to the reference serif number look */
+    font-size:64px;
+    font-weight:700;
+    letter-spacing:0.12em;
+    color:#d7dfe8;
+    perspective:800px;
   }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: radial-gradient(circle at 30% 40%, #2f334f 0%, #0f1224 90%);
-    font-family: var(--font-stack);
-    color: #eef2fc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 20px;
-    user-select: none;
+  .digit-wrapper{display:flex;gap:4px;}
+  .digit-slot{
+    position:relative;
+    width:50px;
+    height:80px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
   }
+  .digit{
+    position:absolute;
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    backface-visibility:hidden;
+    transform-style:preserve-3d;
+    transition:transform .35s ease, opacity .35s ease;
+  }
+  .digit.outgoing{transform-origin:top;animation:flipOut .35s forwards;}
+  .digit.incoming{transform-origin:bottom;animation:flipIn .35s forwards;}
+  @keyframes flipOut{0%{transform:rotateX(0deg);opacity:1;}100%{transform:rotateX(90deg);opacity:0;}}
+  @keyframes flipIn{0%{transform:rotateX(-90deg);opacity:0;}100%{transform:rotateX(0deg);opacity:1;}}
 
-  .device {
-    position: relative;
-    width: 360px;
-    padding: 28px 26px 38px;
-    border-radius: 32px;
-    background: var(--frame-gradient);
-    box-shadow:
-      0 40px 80px -15px rgba(0,0,0,0.7),
-      inset 0 6px 24px rgba(255,255,255,0.03),
-      0 2px 12px rgba(0,0,0,0.5);
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    transform-style: preserve-3d;
-    transition: transform .25s ease;
-    overflow: hidden;
+  /* invisible hotspot overlays for + and - (can make visible for debug by removing opacity) */
+  .hotspot{
+    position:absolute;
+    border-radius:50%;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    /* outline for accessibility focus */
   }
-
-  /* subtle plastic grain overlay */
-  .device::after {
-    content: "";
-    pointer-events: none;
-    position: absolute;
-    inset: 0;
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.04" fill="%23ffffff"/></svg>') repeat;
-    mix-blend-mode: overlay;
-    border-radius: 32px;
-  }
-
-  /* screws */
-  .screw {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    background: radial-gradient(circle at 30% 30%, #aaaaaa 0%, #6b6b6b 70%);
-    border-radius: 50%;
-    box-shadow: inset 0 1px 3px rgba(255,255,255,0.4), 0 2px 6px rgba(0,0,0,0.4);
-  }
-  .screw:before {
-    content: '';
-    position: absolute;
-    inset: 2px;
-    background: none;
-    border-radius: 50%;
-    box-shadow:
-      inset 0 0 0 2px rgba(0,0,0,0.2),
-      inset 0 0 0 4px rgba(255,255,255,0.15);
-  }
-  .screw.top-left { top: 8px; left: 8px; }
-  .screw.top-right { top: 8px; right: 8px; }
-  .screw.bottom-left { bottom: 8px; left: 8px; }
-  .screw.bottom-right { bottom: 8px; right: 8px; }
-
-  .device-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: 0.5px;
-  }
-
-  .display-wrapper {
-    background: #1f2235;
-    border-radius: 16px;
-    padding: 12px 14px;
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    box-shadow: inset 0 8px 30px rgba(0,0,0,0.5), 0 16px 50px -10px rgba(0,0,0,0.7);
-  }
-
-  .display-wrapper::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 16px;
-    padding: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,0,0,0.5) 60%);
-    mix-blend-mode: overlay;
-    pointer-events: none;
-  }
-
-  .label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 0 0 4px;
-    color: #9aa0c0;
-    display: block;
-  }
-
-  .counter-wrapper {
-    display: flex;
-    gap: 6px;
-    perspective: 1000px;
-  }
-
-  .digit-slot {
-    position: relative;
-    width: 52px;
-    height: 78px;
-    background: linear-gradient(145deg, #252842 0%, #1d1f33 70%);
-    border-radius: 12px;
-    padding: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    box-shadow:
-      inset 0 6px 14px rgba(255,255,255,0.03),
-      0 16px 36px -6px rgba(0,0,0,0.6),
-      0 0 16px rgba(79,209,197,0.2);
-    font-size: 52px;
-    font-weight: 700;
-    position: relative;
-  }
-
-  .digit-slot::after {
-    content: "";
-    position: absolute;
-    top: -8%;
-    left: -8%;
-    width: 116%;
-    height: 116%;
-    pointer-events: none;
-    background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.18), transparent 35%);
-    mix-blend-mode: overlay;
-    border-radius: 14px;
-  }
-
-  .digit {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backface-visibility: hidden;
-    transform-style: preserve-3d;
-    color: #d7e2ff;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-    transition: transform 0.5s ease, opacity 0.5s ease;
-  }
-
-  .digit.outgoing {
-    transform-origin: top;
-    animation: flipOut 0.5s forwards;
-  }
-
-  .digit.incoming {
-    transform-origin: bottom;
-    animation: flipIn 0.5s forwards;
-  }
-
-  @keyframes flipOut {
-    0% { transform: rotateX(0deg); opacity: 1; }
-    100% { transform: rotateX(90deg); opacity: 0; }
-  }
-
-  @keyframes flipIn {
-    0% { transform: rotateX(-90deg); opacity: 0; }
-    100% { transform: rotateX(0deg); opacity: 1; }
-  }
-
-  .controls {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .click-button {
-    position: relative;
-    padding: 0;
-    width: 160px;
-    height: 68px;
-    border: none;
-    border-radius: 34px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 600;
-    background: linear-gradient(135deg,#4cb9d4 0%,#236d8a 80%);
-    color: white;
-    letter-spacing: 0.5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.12s ease, box-shadow 0.15s ease;
-    box-shadow:
-      0 22px 50px -4px rgba(0,0,0,0.6),
-      0 8px 22px rgba(0,0,0,0.25),
-      inset 0 3px 12px rgba(255,255,255,0.12);
-  }
-
-  .click-button:active {
-    transform: translateY(2px);
-    box-shadow:
-      0 12px 28px -4px rgba(0,0,0,0.55),
-      0 4px 14px rgba(0,0,0,0.2),
-      inset 0 4px 14px rgba(255,255,255,0.2);
-  }
-
-  .click-button .shine {
-    position: absolute;
-    top: -10px;
-    left: -10px;
-    width: 180px;
-    height: 90px;
-    pointer-events: none;
-    background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 55%);
-    filter: blur(12px);
-    border-radius: 34px;
-    mix-blend-mode: overlay;
-  }
-
-  .reset {
-    background: none;
-    border: 1px solid rgba(255,255,255,0.25);
-    padding: 8px 16px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    color: #c3c9ec;
-    transition: background .2s, transform .1s;
-    position: relative;
-  }
-  .reset:hover {
-    background: rgba(255,255,255,0.05);
-    transform: translateY(-1px);
-  }
-
-  .small-hint {
-    font-size: 0.65rem;
-    margin-top: 4px;
-    color: #b0b7d1;
-  }
-
-  .grip {
-    position: absolute;
-    top: 60%;
-    left: -6px;
-    width: 8px;
-    height: 120px;
-    border-radius: 4px;
-    background: repeating-linear-gradient(180deg,#1e2040 0px,#1e2040 6px,#2a2e54 6px,#2a2e54 12px);
-    box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
-  }
-  .grip.right {
-    left: auto;
-    right: -6px;
-  }
-
-  .footer {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: center;
-    font-size: 0.55rem;
-    color: #8b92b8;
-  }
-
-  @media (max-width: 500px) {
-    .device { width: 100%; padding: 20px; }
-    .click-button { width: 140px; height: 58px; }
-    .digit-slot { width: 44px; height: 64px; font-size: 44px; }
-  }
+  .hotspot:focus-visible{outline:2px solid #fff;}
+  .plus-area{width:80px;height:80px;top:15%;left:50%;transform:translate(-50%,-50%);}
+  .minus-area{width:80px;height:80px;bottom:15%;left:50%;transform:translate(-50%,50%);}
+  .feedback{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+  .btn-symbol{position:absolute;font-size:48px;font-weight:700;color:#fff;mix-blend-mode:normal;text-shadow:0 0 8px rgba(255,255,255,0.6);}
+  /* small highlight on press */
+  .hotspot:active .circle{transform:scale(0.92);}
 </style>
 </head>
 <body>
-
-  <div class="device" id="device">
-    <div class="screw top-left"></div>
-    <div class="screw top-right"></div>
-    <div class="screw bottom-left"></div>
-    <div class="screw bottom-right"></div>
-
-    <div class="device-header">
-      <div class="title">Click Counter</div>
-      <div style="font-size:.55rem; color:#8b92b8;">Handheld Edition</div>
-    </div>
-
-    <div class="display-wrapper" aria-label="Click counter display">
-      <div>
-        <div class="label">Clicks</div>
+  <div class="counter-wrapper" aria-label="Mechanical click counter using provided image">
+    <!-- base image of the counter; if the path breaks, replace src with your uploaded image location -->
+    <img class="device-image" src="click_counter_body.png" alt="Mechanical click counter body" />
+    <!-- overlay for digits -->
+    <div class="display-overlay" aria-label="Digit display">
+      <div class="digit-wrapper" id="digitWrapper">
+        <!-- digits inserted by JS -->
       </div>
-      <div class="counter-wrapper" id="counter">
-        <!-- digits go here -->
-      </div>
-      <button class="reset" id="resetBtn" aria-label="Reset counter">Reset</button>
     </div>
-
-    <div class="controls">
-      <button class="click-button" id="clickBtn" aria-label="Increment counter">
-        <div class="shine"></div>
-        Click Me
-      </button>
-      <div class="small-hint">Every click flips the digits</div>
+    <!-- plus hotspot over the top knob -->
+    <div tabindex="0" role="button" aria-label="Increment" class="hotspot plus-area" id="plusBtn">
+      <!-- optional visible symbol; comment out if you want only the image used -->
+      <!-- <div class="btn-symbol">+</div> -->
     </div>
-
-    <div class="footer">
-      <div>Realistic 3D flip animation.</div>
-      <div>&bull; Embedded display glass.</div>
-      <div>&bull; Plastic casing with grip.</div>
+    <!-- minus hotspot over the bottom knob -->
+    <div tabindex="0" role="button" aria-label="Decrement" class="hotspot minus-area" id="minusBtn">
+      <!-- <div class="btn-symbol">−</div> -->
     </div>
-
-    <div class="grip"></div>
-    <div class="grip right"></div>
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      let count = 0;
-      const counterEl = document.getElementById('counter');
-      if (!counterEl) {
-        console.error('Missing counter element'); return;
-      }
+    // Starting value; you can set to any number (will pad to 4 digits)
+    let count = 1011;
+    const DIGITS = 4;
+    const wrapper = document.getElementById('digitWrapper');
 
-      function createDigitElement(value) {
-        const d = document.createElement('div');
-        d.className = 'digit';
-        d.textContent = value;
-        return d;
-      }
-
-      function renderInitial(num) {
-        const str = String(num);
-        counterEl.innerHTML = '';
-        for (const ch of str) {
+    function makeDigitElement(char) {
+      const d = document.createElement('div');
+      d.className = 'digit';
+      d.textContent = char;
+      return d;
+    }
+    function ensureSlots() {
+      if (wrapper.children.length !== DIGITS) {
+        wrapper.innerHTML = '';
+        for (let i = 0; i < DIGITS; i++) {
           const slot = document.createElement('div');
           slot.className = 'digit-slot';
-          const digit = createDigitElement(ch);
-          slot.appendChild(digit);
-          counterEl.appendChild(slot);
+          const initial = makeDigitElement('0');
+          slot.appendChild(initial);
+          wrapper.appendChild(slot);
         }
       }
-
-      function updateDisplay(newCount) {
-        const oldStr = String(count);
-        const newStr = String(newCount);
-
-        if (oldStr.length !== newStr.length) {
-          renderInitial(newCount);
-          count = newCount;
+    }
+    function render(newCount) {
+      const padded = String(newCount).padStart(DIGITS, '0');
+      ensureSlots();
+      Array.from(wrapper.children).forEach((slot, idx) => {
+        const current = slot.querySelector('.digit');
+        const targetChar = padded[idx];
+        if (!current) {
+          slot.innerHTML = '';
+          slot.appendChild(makeDigitElement(targetChar));
           return;
         }
-
-        const slots = Array.from(counterEl.children);
-        if (slots.length === 0) {
-          renderInitial(newCount);
-          count = newCount;
-          return;
-        }
-
-        const maxLen = Math.max(oldStr.length, newStr.length);
-        const oldPadded = oldStr.padStart(maxLen, '0');
-        const newPadded = newStr.padStart(maxLen, '0');
-
-        for (let i = 0; i < maxLen; i++) {
-          if (oldPadded[i] === newPadded[i]) continue;
-          const slot = slots[i];
-          if (!slot) continue;
-          const current = slot.querySelector('.digit');
-          if (!current) {
-            renderInitial(newCount);
-            count = newCount;
-            return;
-          }
-          const outgoing = current.cloneNode(true);
-          outgoing.classList.add('outgoing');
-          const incoming = createDigitElement(newPadded[i]);
-          incoming.classList.add('incoming');
-          slot.appendChild(outgoing);
-          slot.appendChild(incoming);
-          setTimeout(() => {
-            slot.querySelectorAll('.digit').forEach(d => {
-              if (!d.classList.contains('incoming')) slot.removeChild(d);
-              else d.classList.remove('incoming');
-            });
-          }, 520);
-        }
-        count = newCount;
-      }
-
-      const clickBtn = document.getElementById('clickBtn');
-      const resetBtn = document.getElementById('resetBtn');
-      if (!clickBtn || !resetBtn) {
-        console.error('Missing controls'); return;
-      }
-
-      clickBtn.addEventListener('click', () => {
-        updateDisplay(count + 1);
-        clickBtn.blur();
+        if (current.textContent === targetChar) return; // no change
+        const outgoing = current.cloneNode(true);
+        outgoing.classList.add('outgoing');
+        const incoming = makeDigitElement(targetChar);
+        incoming.classList.add('incoming');
+        slot.appendChild(outgoing);
+        slot.appendChild(incoming);
+        setTimeout(() => {
+          slot.querySelectorAll('.digit').forEach(d => {
+            if (!d.classList.contains('incoming')) slot.removeChild(d);
+            else d.classList.remove('incoming');
+          });
+        }, 360);
       });
-      resetBtn.addEventListener('click', () => {
-        count = 0;
-        renderInitial(count);
-      });
-
-      // Auto test helper (not visible by default, invoked via console)
-      window.runAutoTest = () => {
-        const sequence = [1, 2, 3, 9, 10, 11, 99, 100];
-        let delay = 0;
-        sequence.forEach((n, idx) => {
-          setTimeout(() => updateDisplay(n), delay);
-          delay += 400;
-        });
-        setTimeout(() => resetBtn.click(), delay + 300);
-      };
-
-      // Interactive tilt to simulate holding
-      const device = document.getElementById('device');
-      if (device) {
-        device.addEventListener('mousemove', e => {
-          const rect = device.getBoundingClientRect();
-          const mx = (e.clientX - rect.left) / rect.width;
-          const my = (e.clientY - rect.top) / rect.height;
-          const rotateY = (mx - 0.5) * 10; // left-right
-          const rotateX = (0.5 - my) * 8;  // up-down
-          device.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.01)`;
-        });
-        device.addEventListener('mouseleave', () => {
-          device.style.transform = 'rotateX(0) rotateY(0) scale(1)';
-        });
-      }
-
-      // initial draw
-      renderInitial(count);
-    });
+      count = newCount;
+    }
+    function increment() { render(count + 1); }
+    function decrement() { render(Math.max(0, count - 1)); }
+    document.getElementById('plusBtn').addEventListener('click', increment);
+    document.getElementById('minusBtn').addEventListener('click', decrement);
+    // keyboard accessibility (Enter/Space)
+    document.getElementById('plusBtn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { increment(); e.preventDefault(); }});
+    document.getElementById('minusBtn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { decrement(); e.preventDefault(); }});
+    // initial render
+    render(count);
   </script>
 </body>
 </html>

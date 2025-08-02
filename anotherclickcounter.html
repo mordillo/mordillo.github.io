@@ -2,77 +2,165 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Realistic 3D Click Counter</title>
+<title>Realistic Handheld 3D Click Counter</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
   :root {
-    --display-bg: #1d1f27;
-    --digit-bg: #0f111a;
-    --light: rgba(255,255,255,0.1);
-    --shadow: rgba(0,0,0,0.5);
+    --body-bg: #1f2335;
+    --frame-gradient: linear-gradient(135deg,#272b47 0%,#1b1f33 70%);
+    --plastic-light: rgba(255,255,255,0.05);
+    --plastic-shadow: rgba(0,0,0,0.6);
     --accent: #4fd1c5;
     --font-stack: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   }
-
   * { box-sizing: border-box; }
-
   body {
-    background: radial-gradient(circle at 30% 30%, #2f3240 0%, #1b1d27 80%);
-    color: #f0f3f9;
+    margin: 0;
+    background: radial-gradient(circle at 30% 40%, #2f334f 0%, #0f1224 90%);
     font-family: var(--font-stack);
+    color: #eef2fc;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: 60px 20px;
+    justify-content: center;
     min-height: 100vh;
-    gap: 40px;
+    padding: 20px;
     user-select: none;
   }
 
-  h1 {
+  .device {
+    position: relative;
+    width: 360px;
+    padding: 28px 26px 38px;
+    border-radius: 32px;
+    background: var(--frame-gradient);
+    box-shadow:
+      0 40px 80px -15px rgba(0,0,0,0.7),
+      inset 0 6px 24px rgba(255,255,255,0.03),
+      0 2px 12px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    transform-style: preserve-3d;
+    transition: transform .25s ease;
+    overflow: hidden;
+  }
+
+  /* subtle plastic grain overlay */
+  .device::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.04" fill="%23ffffff"/></svg>') repeat;
+    mix-blend-mode: overlay;
+    border-radius: 32px;
+  }
+
+  /* screws */
+  .screw {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: radial-gradient(circle at 30% 30%, #aaaaaa 0%, #6b6b6b 70%);
+    border-radius: 50%;
+    box-shadow: inset 0 1px 3px rgba(255,255,255,0.4), 0 2px 6px rgba(0,0,0,0.4);
+  }
+  .screw:before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background: none;
+    border-radius: 50%;
+    box-shadow:
+      inset 0 0 0 2px rgba(0,0,0,0.2),
+      inset 0 0 0 4px rgba(255,255,255,0.15);
+  }
+  .screw.top-left { top: 8px; left: 8px; }
+  .screw.top-right { top: 8px; right: 8px; }
+  .screw.bottom-left { bottom: 8px; left: 8px; }
+  .screw.bottom-right { bottom: 8px; right: 8px; }
+
+  .device-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .title {
+    font-size: 1.1rem;
+    font-weight: 600;
     margin: 0;
-    font-size: 1.4rem;
-    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  .display-wrapper {
+    background: #1f2235;
+    border-radius: 16px;
+    padding: 12px 14px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: inset 0 8px 30px rgba(0,0,0,0.5), 0 16px 50px -10px rgba(0,0,0,0.7);
+  }
+
+  .display-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,0,0,0.5) 60%);
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  .label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 4px;
+    color: #9aa0c0;
+    display: block;
   }
 
   .counter-wrapper {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     perspective: 1000px;
   }
 
   .digit-slot {
     position: relative;
-    width: 60px;
-    height: 90px;
-    background: linear-gradient(145deg, #262a3d 0%, #1f2232 60%);
-    border-radius: 10px;
-    padding: 8px;
+    width: 52px;
+    height: 78px;
+    background: linear-gradient(145deg, #252842 0%, #1d1f33 70%);
+    border-radius: 12px;
+    padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     box-shadow:
-      inset 0 6px 18px rgba(255,255,255,0.04),
-      0 20px 40px -10px rgba(0,0,0,0.6),
-      0 0 20px rgba(79,209,197,0.25);
-    font-size: 60px;
+      inset 0 6px 14px rgba(255,255,255,0.03),
+      0 16px 36px -6px rgba(0,0,0,0.6),
+      0 0 16px rgba(79,209,197,0.2);
+    font-size: 52px;
     font-weight: 700;
     position: relative;
   }
 
   .digit-slot::after {
-    /* glass reflection */
     content: "";
     position: absolute;
-    top: -10%;
-    left: -10%;
-    width: 120%;
-    height: 120%;
+    top: -8%;
+    left: -8%;
+    width: 116%;
+    height: 116%;
     pointer-events: none;
-    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.18), transparent 35%);
+    background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.18), transparent 35%);
     mix-blend-mode: overlay;
-    border-radius: 12px;
+    border-radius: 14px;
   }
 
   .digit {
@@ -110,217 +198,271 @@
     100% { transform: rotateX(0deg); opacity: 1; }
   }
 
-  .display-container {
-    position: relative;
-    padding: 18px 22px;
-    border-radius: 18px;
-    background: linear-gradient(135deg, #272a3f 0%, #1e2131 70%);
-    box-shadow:
-      inset 0 0 30px rgba(255,255,255,0.03),
-      0 30px 60px -10px rgba(0,0,0,0.7);
-    display: inline-flex;
+  .controls {
+    display: flex;
+    gap: 16px;
     align-items: center;
-    gap: 12px;
-  }
-
-  .label {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-    display: block;
-    color: #9aa0c0;
+    flex-wrap: wrap;
   }
 
   .click-button {
     position: relative;
     padding: 0;
-    width: 140px;
-    height: 70px;
+    width: 160px;
+    height: 68px;
     border: none;
-    border-radius: 38px;
+    border-radius: 34px;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
-    background: radial-gradient(circle at 35% 35%, #5ac8d9 0%, #2f7f9a 70%);
+    background: linear-gradient(135deg,#4cb9d4 0%,#236d8a 80%);
     color: white;
     letter-spacing: 0.5px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.12s ease, box-shadow 0.15s ease;
     box-shadow:
-      0 25px 60px -5px rgba(0,0,0,0.6),
-      0 8px 20px rgba(0,0,0,0.3),
-      inset 0 2px 8px rgba(255,255,255,0.2);
+      0 22px 50px -4px rgba(0,0,0,0.6),
+      0 8px 22px rgba(0,0,0,0.25),
+      inset 0 3px 12px rgba(255,255,255,0.12);
   }
 
   .click-button:active {
     transform: translateY(2px);
     box-shadow:
-      0 12px 30px -5px rgba(0,0,0,0.5),
-      0 4px 12px rgba(0,0,0,0.2),
-      inset 0 2px 8px rgba(255,255,255,0.25);
+      0 12px 28px -4px rgba(0,0,0,0.55),
+      0 4px 14px rgba(0,0,0,0.2),
+      inset 0 4px 14px rgba(255,255,255,0.2);
   }
 
   .click-button .shine {
     position: absolute;
     top: -10px;
     left: -10px;
-    width: 160px;
+    width: 180px;
     height: 90px;
     pointer-events: none;
-    background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 50%);
-    filter: blur(10px);
-    border-radius: 38px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 55%);
+    filter: blur(12px);
+    border-radius: 34px;
     mix-blend-mode: overlay;
   }
 
-  .small-hint {
+  .reset {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 16px;
+    border-radius: 10px;
+    cursor: pointer;
     font-size: 0.8rem;
+    color: #c3c9ec;
+    transition: background .2s, transform .1s;
+    position: relative;
+  }
+  .reset:hover {
+    background: rgba(255,255,255,0.05);
+    transform: translateY(-1px);
+  }
+
+  .small-hint {
+    font-size: 0.65rem;
     margin-top: 4px;
     color: #b0b7d1;
   }
 
-  .reset {
-    margin-left: 8px;
-    background: none;
-    border: 1px solid rgba(255,255,255,0.2);
-    padding: 6px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    color: #c3c9ec;
-    transition: background .2s;
-  }
-
-  .reset:hover {
-    background: rgba(255,255,255,0.03);
-  }
-
-  .credits {
+  .grip {
     position: absolute;
-    bottom: 12px;
-    font-size: 0.55rem;
-    color: #777fa1;
-    text-align: center;
-    width: 100%;
+    top: 60%;
+    left: -6px;
+    width: 8px;
+    height: 120px;
+    border-radius: 4px;
+    background: repeating-linear-gradient(180deg,#1e2040 0px,#1e2040 6px,#2a2e54 6px,#2a2e54 12px);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+  }
+  .grip.right {
+    left: auto;
+    right: -6px;
   }
 
-  @media (max-width: 600px) {
-    .digit-slot { width: 45px; height: 68px; font-size: 44px; }
-    .click-button { width: 120px; height: 60px; }
+  .footer {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    font-size: 0.55rem;
+    color: #8b92b8;
+  }
+
+  @media (max-width: 500px) {
+    .device { width: 100%; padding: 20px; }
+    .click-button { width: 140px; height: 58px; }
+    .digit-slot { width: 44px; height: 64px; font-size: 44px; }
   }
 </style>
 </head>
 <body>
 
-  <div>
-    <h1>Realistic 3D Click Counter</h1>
-    <div class="display-container" aria-label="Click counter display">
+  <div class="device" id="device">
+    <div class="screw top-left"></div>
+    <div class="screw top-right"></div>
+    <div class="screw bottom-left"></div>
+    <div class="screw bottom-right"></div>
+
+    <div class="device-header">
+      <div class="title">Click Counter</div>
+      <div style="font-size:.55rem; color:#8b92b8;">Handheld Edition</div>
+    </div>
+
+    <div class="display-wrapper" aria-label="Click counter display">
       <div>
         <div class="label">Clicks</div>
       </div>
       <div class="counter-wrapper" id="counter">
-        <!-- digits injected here -->
+        <!-- digits go here -->
       </div>
       <button class="reset" id="resetBtn" aria-label="Reset counter">Reset</button>
     </div>
-    <div>
+
+    <div class="controls">
       <button class="click-button" id="clickBtn" aria-label="Increment counter">
         <div class="shine"></div>
         Click Me
       </button>
       <div class="small-hint">Every click flips the digits</div>
     </div>
+
+    <div class="footer">
+      <div>Realistic 3D flip animation.</div>
+      <div>&bull; Embedded display glass.</div>
+      <div>&bull; Plastic casing with grip.</div>
+    </div>
+
+    <div class="grip"></div>
+    <div class="grip right"></div>
   </div>
 
   <script>
-    // Utility to create a digit element
-    function createDigitElement(value) {
-      const d = document.createElement('div');
-      d.className = 'digit';
-      d.textContent = value;
-      return d;
-    }
-
-    // Manage current count and display
-    let count = 0;
-    const counterEl = document.getElementById('counter');
-
-    // Initialize with at least 1 digit
-    function renderInitial(num) {
-      const str = String(num);
-      counterEl.innerHTML = '';
-      for (const ch of str) {
-        const slot = document.createElement('div');
-        slot.className = 'digit-slot';
-        const digit = createDigitElement(ch);
-        slot.appendChild(digit);
-        counterEl.appendChild(slot);
+    document.addEventListener('DOMContentLoaded', () => {
+      let count = 0;
+      const counterEl = document.getElementById('counter');
+      if (!counterEl) {
+        console.error('Missing counter element'); return;
       }
-    }
 
-    // Flip update from old number to new number
-    function updateDisplay(newCount) {
-      const oldStr = String(count);
-      const newStr = String(newCount);
+      function createDigitElement(value) {
+        const d = document.createElement('div');
+        d.className = 'digit';
+        d.textContent = value;
+        return d;
+      }
 
-      // Pad with leading zeros if length changes (optional: keep widths stable)
-      const maxLen = Math.max(oldStr.length, newStr.length);
-      const oldPadded = oldStr.padStart(maxLen, '0');
-      const newPadded = newStr.padStart(maxLen, '0');
-
-      // If number of digits changed, rebuild all
-      if (oldPadded.length !== newPadded.length) {
-        renderInitial(newCount);
-      } else {
-        // Per-digit flip
-        const slots = Array.from(counterEl.children);
-        for (let i = 0; i < maxLen; i++) {
-          if (oldPadded[i] === newPadded[i]) continue; // no change
-          const slot = slots[i];
-          const current = slot.querySelector('.digit');
-          const outgoing = current.cloneNode(true);
-          outgoing.classList.add('outgoing');
-          // incoming digit
-          const incoming = createDigitElement(newPadded[i]);
-          incoming.classList.add('incoming');
-
-          // Clean out existing and insert both for animation
-          slot.appendChild(outgoing);
-          slot.appendChild(incoming);
-
-          // After animation, remove old ones, keep the final
-          setTimeout(() => {
-            // Remove all .digit except the final one
-            slot.querySelectorAll('.digit').forEach(d => {
-              if (!d.classList.contains('incoming')) slot.removeChild(d);
-              else {
-                d.classList.remove('incoming');
-              }
-            });
-          }, 520);
+      function renderInitial(num) {
+        const str = String(num);
+        counterEl.innerHTML = '';
+        for (const ch of str) {
+          const slot = document.createElement('div');
+          slot.className = 'digit-slot';
+          const digit = createDigitElement(ch);
+          slot.appendChild(digit);
+          counterEl.appendChild(slot);
         }
       }
 
-      count = newCount;
-    }
+      function updateDisplay(newCount) {
+        const oldStr = String(count);
+        const newStr = String(newCount);
 
-    document.getElementById('clickBtn').addEventListener('click', () => {
-      updateDisplay(count + 1);
-      // Optional: subtle click feedback (could add a tiny flash)
-      document.getElementById('clickBtn').blur();
-    });
+        if (oldStr.length !== newStr.length) {
+          renderInitial(newCount);
+          count = newCount;
+          return;
+        }
 
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      count = 0;
+        const slots = Array.from(counterEl.children);
+        if (slots.length === 0) {
+          renderInitial(newCount);
+          count = newCount;
+          return;
+        }
+
+        const maxLen = Math.max(oldStr.length, newStr.length);
+        const oldPadded = oldStr.padStart(maxLen, '0');
+        const newPadded = newStr.padStart(maxLen, '0');
+
+        for (let i = 0; i < maxLen; i++) {
+          if (oldPadded[i] === newPadded[i]) continue;
+          const slot = slots[i];
+          if (!slot) continue;
+          const current = slot.querySelector('.digit');
+          if (!current) {
+            renderInitial(newCount);
+            count = newCount;
+            return;
+          }
+          const outgoing = current.cloneNode(true);
+          outgoing.classList.add('outgoing');
+          const incoming = createDigitElement(newPadded[i]);
+          incoming.classList.add('incoming');
+          slot.appendChild(outgoing);
+          slot.appendChild(incoming);
+          setTimeout(() => {
+            slot.querySelectorAll('.digit').forEach(d => {
+              if (!d.classList.contains('incoming')) slot.removeChild(d);
+              else d.classList.remove('incoming');
+            });
+          }, 520);
+        }
+        count = newCount;
+      }
+
+      const clickBtn = document.getElementById('clickBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      if (!clickBtn || !resetBtn) {
+        console.error('Missing controls'); return;
+      }
+
+      clickBtn.addEventListener('click', () => {
+        updateDisplay(count + 1);
+        clickBtn.blur();
+      });
+      resetBtn.addEventListener('click', () => {
+        count = 0;
+        renderInitial(count);
+      });
+
+      // Auto test helper (not visible by default, invoked via console)
+      window.runAutoTest = () => {
+        const sequence = [1, 2, 3, 9, 10, 11, 99, 100];
+        let delay = 0;
+        sequence.forEach((n, idx) => {
+          setTimeout(() => updateDisplay(n), delay);
+          delay += 400;
+        });
+        setTimeout(() => resetBtn.click(), delay + 300);
+      };
+
+      // Interactive tilt to simulate holding
+      const device = document.getElementById('device');
+      if (device) {
+        device.addEventListener('mousemove', e => {
+          const rect = device.getBoundingClientRect();
+          const mx = (e.clientX - rect.left) / rect.width;
+          const my = (e.clientY - rect.top) / rect.height;
+          const rotateY = (mx - 0.5) * 10; // left-right
+          const rotateX = (0.5 - my) * 8;  // up-down
+          device.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.01)`;
+        });
+        device.addEventListener('mouseleave', () => {
+          device.style.transform = 'rotateX(0) rotateY(0) scale(1)';
+        });
+      }
+
+      // initial draw
       renderInitial(count);
     });
-
-    // Start
-    renderInitial(count);
   </script>
-
 </body>
 </html>

@@ -7,8 +7,9 @@
   <style>
     :root{ --bg:#f6fbff; --glass:#e6f2ff; --tube:#ffffff; --stroke:#6b7a8a; --mercury:#d84444; --accent:#2b7be4 }
     html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Helvetica,Arial; background:linear-gradient(180deg,var(--bg),#eaf4ff); color:#123;}
-    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:18px}
     .game{display:flex;gap:48px;align-items:center}
+
     /* Thermometer area */
     .thermo{width:220px;position:relative}
     svg{display:block;width:100%;height:auto}
@@ -29,12 +30,39 @@
     .labels{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap}
     .label{background:#f4f8ff;padding:8px 10px;border-radius:8px;font-weight:700}
     .controls{margin-top:14px;display:flex;gap:8px}
-    button{padding:8px 10px;border-radius:8px;border:0;background:var(--accent);color:white;font-weight:700;cursor:pointer}
+    button{padding:10px 12px;border-radius:8px;border:0;background:var(--accent);color:white;font-weight:700;cursor:pointer;min-height:44px}
     button.secondary{background:#6c7d9a}
     .hint{margin-top:10px;color:#345;font-size:13px}
-    /* For small screens */
-    @media (max-width:920px){.game{flex-direction:column;gap:20px}.thermo{width:260px}}
-    @media (max-width:640px){.game{flex-direction:column}}
+
+    /* Responsive tweaks for smaller screens / iPhone */
+    @media (max-width:920px){
+      .game{flex-direction:column;gap:20px}
+      .thermo{width:260px}
+      .controller{margin-left:0}
+    }
+
+    /* Target typical phone widths including iPhone */
+    @media (max-width:420px){
+      /* stack and center for narrow screens */
+      .game{flex-direction:column;gap:12px}
+      .thermo{width:160px}
+      svg{max-width:160px}
+      .controller{width:92%;padding:12px}
+      /* decrease display numbers but keep them legible per mobile guidelines (Apple HIG suggests >=11pt; web guidance commonly 16px for body) */
+      .bigtemp{font-size:32px}
+      .unit{font-size:13px}
+      .numbers{font-size:12px}
+      .label{font-size:13px;padding:6px 8px}
+      .hint{font-size:12px}
+      button{padding:10px 12px;min-height:44px}
+    }
+
+    @media (max-width:360px){
+      .thermo{width:140px}
+      svg{max-width:140px}
+      .bigtemp{font-size:28px}
+      .unit{font-size:12px}
+    }
   </style>
 </head>
 <body>
@@ -51,7 +79,7 @@
             </linearGradient>
             <clipPath id="tubeClip">
               <!-- rounded tube shape: rounded rect running from y=40 to y=320 -->
-              <rect x="42" y="40" width="36" height="260" rx="18"/>
+              <rect x="46" y="40" width="28" height="260" rx="14"/>
             </clipPath>
           </defs>
 
@@ -130,18 +158,17 @@
     let currentC = 20;
 
     // helper conversions
-    function cToF(c){ return (c * 9/5) + 32; } // standard formula. See references.
+    function cToF(c){ return (c * 9/5) + 32; }
 
     // map Celsius value to mercury rectangle (y,height)
     function setMercuryByC(c){
       c = Math.max(MIN_C, Math.min(MAX_C, c));
       const ratio = (c - MIN_C) / (MAX_C - MIN_C);
-      // mercury top y (higher c -> shorter y)
       const newHeight = Math.max(6, Math.round(ratio * TUBE_HEIGHT));
       const newY = TUBE_BOTTOM - newHeight;
       mercury.setAttribute('y', newY);
       mercury.setAttribute('height', newHeight);
-      // also update numeric displays
+      // update numeric displays
       currentC = Math.round(c * 10) / 10; // one decimal
       cLabel.textContent = currentC + '°C';
       fLabel.textContent = Math.round(cToF(currentC) * 10)/10 + '°F';
@@ -151,7 +178,7 @@
     function drawTicks(){
       const group = ticksGroup;
       group.innerHTML = '';
-      const left = 110; // x for ticks - moved right so numbers are fully visible
+      const left = 110; // x for ticks - positioned so numbers remain visible on wide layouts; SVG scales on mobile
       for(let t=MIN_C; t<=MAX_C; t++){
         const ratio = (t - MIN_C)/(MAX_C - MIN_C);
         const y = TUBE_BOTTOM - Math.round(ratio*TUBE_HEIGHT) + 6; // small offset visually

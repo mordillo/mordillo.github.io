@@ -29,9 +29,11 @@
     .unit{font-size:16px;color:#456}
     .labels{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap}
     .label{background:#f4f8ff;padding:8px 10px;border-radius:8px;font-weight:700}
-    .controls{margin-top:14px;display:flex;gap:8px}
+    .controls{margin-top:14px;display:flex;gap:8px;align-items:center}
     button{padding:10px 12px;border-radius:8px;border:0;background:var(--accent);color:white;font-weight:700;cursor:pointer;min-height:44px}
     button.secondary{background:#6c7d9a}
+    .step-btn{width:54px;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
+    .step-group{display:flex;flex-direction:column;gap:8px}
     .hint{margin-top:10px;color:#345;font-size:13px}
 
     /* Responsive tweaks for smaller screens / iPhone */
@@ -48,13 +50,14 @@
       .thermo{width:160px}
       svg{max-width:160px}
       .controller{width:92%;padding:12px}
-      /* decrease display numbers but keep them legible per mobile guidelines (Apple HIG suggests >=11pt; web guidance commonly 16px for body) */
+      /* decrease display numbers but keep them legible per mobile guidelines */
       .bigtemp{font-size:32px}
       .unit{font-size:13px}
       .numbers{font-size:12px}
       .label{font-size:13px;padding:6px 8px}
       .hint{font-size:12px}
       button{padding:10px 12px;min-height:44px}
+      .step-btn{width:56px;font-size:16px}
     }
 
     @media (max-width:360px){
@@ -62,6 +65,7 @@
       svg{max-width:140px}
       .bigtemp{font-size:28px}
       .unit{font-size:12px}
+      .step-btn{width:52px}
     }
   </style>
 </head>
@@ -127,10 +131,14 @@
         </div>
 
         <div class="controls">
+          <div class="step-group" role="group" aria-label="Adjust temperature">
+            <button id="upBtn" class="step-btn" aria-label="Increase temperature">▲</button>
+            <button id="downBtn" class="step-btn" aria-label="Decrease temperature">▼</button>
+          </div>
           <button id="randomBtn">Surprise!</button>
           <button class="secondary" id="resetBtn">Reset</button>
         </div>
-        <div class="hint">Drag up and down on the thermometer to change the mercury level. Numbers update in real time.</div>
+        <div class="hint">Drag up and down on the thermometer or use the arrows to change the temperature. Numbers update in real time.</div>
       </div>
     </div>
   </div>
@@ -139,6 +147,7 @@
     // Configuration for the thermometer scale
     const MIN_C = 0; // bottom of scale
     const MAX_C = 40; // top of scale
+    const STEP = 1; // degrees per press for up/down; keep whole numbers for a 5-year-old
 
     const svg = document.getElementById('thermoSVG');
     const mercury = document.getElementById('mercuryRect');
@@ -148,6 +157,8 @@
     const fLabel = document.getElementById('fahrenheitLabel');
     const randomBtn = document.getElementById('randomBtn');
     const resetBtn = document.getElementById('resetBtn');
+    const upBtn = document.getElementById('upBtn');
+    const downBtn = document.getElementById('downBtn');
 
     // Pixel coordinates in the SVG for the tube
     const TUBE_TOP = 40; // y where tube starts
@@ -230,6 +241,31 @@
     track.addEventListener('touchmove', function(e){ if(dragging) setMercuryByC(posToC(e)); e.preventDefault(); });
     track.addEventListener('touchend', function(){ dragging=false; });
 
+    // up/down button behavior
+    function stepUp(){ setMercuryByC(Math.round((currentC + STEP) * 10) / 10); }
+    function stepDown(){ setMercuryByC(Math.round((currentC - STEP) * 10) / 10); }
+    upBtn.addEventListener('click', stepUp);
+    downBtn.addEventListener('click', stepDown);
+
+    // support long-press to hold increase/decrease
+    let holdInterval = null;
+    function startHold(fn){
+      fn();
+      holdInterval = setInterval(fn, 200); // repeat every 200ms while held
+    }
+    function stopHold(){ if(holdInterval){ clearInterval(holdInterval); holdInterval = null; }}
+    upBtn.addEventListener('mousedown', ()=> startHold(stepUp));
+    upBtn.addEventListener('mouseup', stopHold);
+    upBtn.addEventListener('mouseleave', stopHold);
+    downBtn.addEventListener('mousedown', ()=> startHold(stepDown));
+    downBtn.addEventListener('mouseup', stopHold);
+    downBtn.addEventListener('mouseleave', stopHold);
+    // touch
+    upBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); startHold(stepUp); });
+    upBtn.addEventListener('touchend', stopHold);
+    downBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); startHold(stepDown); });
+    downBtn.addEventListener('touchend', stopHold);
+
     // quick controls
     randomBtn.addEventListener('click', function(){
       const rand = Math.round((Math.random()*(MAX_C-MIN_C) + MIN_C)*10)/10;
@@ -244,9 +280,13 @@
     // Accessibility: allow arrow keys when focused on the SVG
     svg.setAttribute('tabindex',0);
     svg.addEventListener('keydown', function(e){
-      if(e.key==='ArrowUp'){ setMercuryByC(currentC + 1); e.preventDefault(); }
-      if(e.key==='ArrowDown'){ setMercuryByC(currentC - 1); e.preventDefault(); }
+      if(e.key==='ArrowUp'){ stepUp(); e.preventDefault(); }
+      if(e.key==='ArrowDown'){ stepDown(); e.preventDefault(); }
     });
+
+    // also support keyboard when buttons are focused
+    upBtn.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' ') { stepUp(); e.preventDefault(); }});
+    downBtn.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' ') { stepDown(); e.preventDefault(); }});
 
   </script>
 </body>

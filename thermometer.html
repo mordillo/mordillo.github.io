@@ -127,7 +127,7 @@
 
         <div class="labels">
           <div class="label" id="roundLabel">Round to: 1°</div>
-          <div class="label" id="rangeLabel">Range: -20°–100°C</div>
+          <div class="label" id="rangeLabel">Range: 0°–100°C</div>
         </div>
 
         <div class="controls">
@@ -145,7 +145,7 @@
 
   <script>
     // Configuration for the thermometer scale
-    const MIN_C = -20; // bottom of scale
+    const MIN_C = 0; // bottom of scale
     const MAX_C = 100; // top of scale
     const STEP = 1; // degrees per press for up/down; keep whole numbers for a 5-year-old
 
@@ -190,25 +190,24 @@
       const group = ticksGroup;
       group.innerHTML = '';
       const left = 110; // x for ticks - positioned so numbers remain visible on wide layouts; SVG scales on mobile
-      for(let t=MIN_C; t<=MAX_C; t++){
+      // Draw major ticks every 10°C (no 5°C marks) to match requested spacing
+      for(let t = MIN_C; t <= MAX_C; t += 10){
         const ratio = (t - MIN_C)/(MAX_C - MIN_C);
         const y = TUBE_BOTTOM - Math.round(ratio*TUBE_HEIGHT) + 6; // small offset visually
-        const isMajor = (t%5===0);
         const line = document.createElementNS('http://www.w3.org/2000/svg','line');
         line.setAttribute('x1', left);
-        line.setAttribute('x2', left + (isMajor?18:10));
+        line.setAttribute('x2', left + 18);
         line.setAttribute('y1', y);
         line.setAttribute('y2', y);
-        line.setAttribute('class', 'tick' + (isMajor? '' : ' small'));
+        line.setAttribute('class', 'tick');
         group.appendChild(line);
-        if(isMajor){
-          const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
-          txt.setAttribute('x', left + 22);
-          txt.setAttribute('y', y + 4);
-          txt.setAttribute('class','numbers');
-          txt.textContent = t;
-          group.appendChild(txt);
-        }
+
+        const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+        txt.setAttribute('x', left + 22);
+        txt.setAttribute('y', y + 4);
+        txt.setAttribute('class','numbers');
+        txt.textContent = t;
+        group.appendChild(txt);
       }
     }
 

@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mercury Thermometer Game (kid-friendly)</title>
+  <style>
+    :root{ --bg:#f6fbff; --glass:#e6f2ff; --tube:#ffffff; --stroke:#6b7a8a; --mercury:#d84444; --accent:#2b7be4 }
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Helvetica,Arial; background:linear-gradient(180deg,var(--bg),#eaf4ff); color:#123;}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+    .game{display:flex;gap:48px;align-items:center}
+    /* Thermometer area */
+    .thermo{width:220px;position:relative}
+    svg{display:block;width:100%;height:auto}
+    .glass{fill:url(#glassGrad);stroke:var(--stroke);stroke-width:3}
+    .tube{fill:var(--tube);stroke:var(--stroke);stroke-width:1.5}
+    .tick{stroke:#334;stroke-width:2}
+    .tick.small{stroke-width:1}
+    .numbers{fill:#0b2a3a;font-weight:700;font-size:14px}
+    /* Mercury (we animate height changes) */
+    .mercury-fill{fill:var(--mercury);transition:height 300ms ease, y 300ms ease}
+
+    /* Controller box */
+    .controller{width:260px;background:#fff;border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(18,40,60,0.12);border:1px solid rgba(18,40,60,0.04);margin-left:16px}
+    .controller h2{margin:0 0 8px;font-size:18px}
+    .display{display:flex;gap:12px;align-items:center;}
+    .bigtemp{font-size:44px;font-weight:800;line-height:1}
+    .unit{font-size:16px;color:#456}
+    .labels{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap}
+    .label{background:#f4f8ff;padding:8px 10px;border-radius:8px;font-weight:700}
+    .controls{margin-top:14px;display:flex;gap:8px}
+    button{padding:8px 10px;border-radius:8px;border:0;background:var(--accent);color:white;font-weight:700;cursor:pointer}
+    button.secondary{background:#6c7d9a}
+    .hint{margin-top:10px;color:#345;font-size:13px}
+    /* For small screens */
+    @media (max-width:920px){.game{flex-direction:column;gap:20px}.thermo{width:260px}}
+    @media (max-width:640px){.game{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="game">
+      <div class="thermo" aria-hidden="false">
+        <!-- SVG thermometer: tube + bulb + ticks + mercury using simple shapes -->
+        <svg viewBox="0 0 220 420" id="thermoSVG" role="img" aria-label="Interactive thermometer" overflow="visible" preserveAspectRatio="xMidYMin meet">
+          <defs>
+            <linearGradient id="glassGrad" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+              <stop offset="40%" stop-color="#f3fbff" stop-opacity="0.6" />
+              <stop offset="100%" stop-color="#d9f0ff" stop-opacity="0.3" />
+            </linearGradient>
+            <clipPath id="tubeClip">
+              <!-- rounded tube shape: rounded rect running from y=40 to y=320 -->
+              <rect x="42" y="40" width="36" height="260" rx="18"/>
+            </clipPath>
+          </defs>
+
+          <!-- glass outer (tube + bulb) -->
+          <path class="glass" d="M60 32c-24 0-28 22-28 28v190c0 27 21 48 48 48 27 0 48-21 48-48V60c0-6-4-28-28-28H60z" />
+
+          <!-- tube interior (white) -->
+          <rect x="46" y="40" width="28" height="260" rx="14" class="tube" />
+
+          <!-- bulb (glass outline) -->
+          <circle cx="60" cy="320" r="36" class="glass" />
+
+          <!-- mercury bulb (solid) -->
+          <circle cx="60" cy="320" r="28" fill="var(--mercury)" />
+
+          <!-- mercury column: we draw a long rect and clip it to the tube so we can alter y and height -->
+          <g clip-path="url(#tubeClip)">
+            <rect id="mercuryRect" x="46" y="200" width="28" height="100" class="mercury-fill" rx="14"/>
+          </g>
+
+          <!-- ticks & numbers (we will populate via JS for flexibility) -->
+          <g id="ticks" transform="translate(0,0)"></g>
+
+          <!-- invisible vertical tracker for pointer events -->
+          <rect id="track" x="0" y="40" width="220" height="280" fill-opacity="0" />
+        </svg>
+      </div>
+
+      <div class="controller" role="region" aria-label="Thermometer controls and readout">
+        <h2>Thermometer Readout</h2>
+        <div class="display">
+          <div>
+            <div class="bigtemp" id="celsiusLabel">20°C</div>
+            <div class="unit">Celsius</div>
+          </div>
+          <div style="margin-left:8px">
+            <div class="bigtemp" id="fahrenheitLabel">68°F</div>
+            <div class="unit">Fahrenheit</div>
+          </div>
+        </div>
+
+        <div class="labels">
+          <div class="label" id="roundLabel">Round to: 1°</div>
+          <div class="label" id="rangeLabel">Range: 0°–40°C</div>
+        </div>
+
+        <div class="controls">
+          <button id="randomBtn">Surprise!</button>
+          <button class="secondary" id="resetBtn">Reset</button>
+        </div>
+        <div class="hint">Drag up and down on the thermometer to change the mercury level. Numbers update in real time.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration for the thermometer scale
+    const MIN_C = 0; // bottom of scale
+    const MAX_C = 40; // top of scale
+
+    const svg = document.getElementById('thermoSVG');
+    const mercury = document.getElementById('mercuryRect');
+    const track = document.getElementById('track');
+    const ticksGroup = document.getElementById('ticks');
+    const cLabel = document.getElementById('celsiusLabel');
+    const fLabel = document.getElementById('fahrenheitLabel');
+    const randomBtn = document.getElementById('randomBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // Pixel coordinates in the SVG for the tube
+    const TUBE_TOP = 40; // y where tube starts
+    const TUBE_BOTTOM = 300; // y where tube ends (top of bulb area)
+    const TUBE_HEIGHT = TUBE_BOTTOM - TUBE_TOP;
+
+    // initial temperature
+    let currentC = 20;
+
+    // helper conversions
+    function cToF(c){ return (c * 9/5) + 32; } // standard formula. See references.
+
+    // map Celsius value to mercury rectangle (y,height)
+    function setMercuryByC(c){
+      c = Math.max(MIN_C, Math.min(MAX_C, c));
+      const ratio = (c - MIN_C) / (MAX_C - MIN_C);
+      // mercury top y (higher c -> shorter y)
+      const newHeight = Math.max(6, Math.round(ratio * TUBE_HEIGHT));
+      const newY = TUBE_BOTTOM - newHeight;
+      mercury.setAttribute('y', newY);
+      mercury.setAttribute('height', newHeight);
+      // also update numeric displays
+      currentC = Math.round(c * 10) / 10; // one decimal
+      cLabel.textContent = currentC + '°C';
+      fLabel.textContent = Math.round(cToF(currentC) * 10)/10 + '°F';
+    }
+
+    // create ticks & labels along side like a ruler
+    function drawTicks(){
+      const group = ticksGroup;
+      group.innerHTML = '';
+      const left = 110; // x for ticks - moved right so numbers are fully visible
+      for(let t=MIN_C; t<=MAX_C; t++){
+        const ratio = (t - MIN_C)/(MAX_C - MIN_C);
+        const y = TUBE_BOTTOM - Math.round(ratio*TUBE_HEIGHT) + 6; // small offset visually
+        const isMajor = (t%5===0);
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1', left);
+        line.setAttribute('x2', left + (isMajor?18:10));
+        line.setAttribute('y1', y);
+        line.setAttribute('y2', y);
+        line.setAttribute('class', 'tick' + (isMajor? '' : ' small'));
+        group.appendChild(line);
+        if(isMajor){
+          const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+          txt.setAttribute('x', left + 22);
+          txt.setAttribute('y', y + 4);
+          txt.setAttribute('class','numbers');
+          txt.textContent = t;
+          group.appendChild(txt);
+        }
+      }
+    }
+
+    // convert mouse/touch position to Celsius value
+    function posToC(evt){
+      const pt = svg.createSVGPoint();
+      if(evt.touches && evt.touches[0]){
+        pt.x = evt.touches[0].clientX; pt.y = evt.touches[0].clientY;
+      } else {
+        pt.x = evt.clientX; pt.y = evt.clientY;
+      }
+      const inv = svg.getScreenCTM().inverse();
+      const loc = pt.matrixTransform(inv);
+      // clamp
+      let y = Math.max(TUBE_TOP, Math.min(TUBE_BOTTOM, loc.y));
+      // ratio from bottom
+      const ratio = (TUBE_BOTTOM - y)/TUBE_HEIGHT;
+      const c = MIN_C + ratio*(MAX_C - MIN_C);
+      return c;
+    }
+
+    // attach dragging behavior
+    let dragging = false;
+    track.addEventListener('mousedown', function(e){ dragging = true; setMercuryByC(posToC(e)); });
+    window.addEventListener('mousemove', function(e){ if(dragging) setMercuryByC(posToC(e)); });
+    window.addEventListener('mouseup', function(){ dragging=false; });
+
+    // touch support
+    track.addEventListener('touchstart', function(e){ dragging=true; setMercuryByC(posToC(e)); e.preventDefault(); });
+    track.addEventListener('touchmove', function(e){ if(dragging) setMercuryByC(posToC(e)); e.preventDefault(); });
+    track.addEventListener('touchend', function(){ dragging=false; });
+
+    // quick controls
+    randomBtn.addEventListener('click', function(){
+      const rand = Math.round((Math.random()*(MAX_C-MIN_C) + MIN_C)*10)/10;
+      setMercuryByC(rand);
+    });
+    resetBtn.addEventListener('click', function(){ setMercuryByC(20); });
+
+    // initial draw
+    drawTicks();
+    setMercuryByC(currentC);
+
+    // Accessibility: allow arrow keys when focused on the SVG
+    svg.setAttribute('tabindex',0);
+    svg.addEventListener('keydown', function(e){
+      if(e.key==='ArrowUp'){ setMercuryByC(currentC + 1); e.preventDefault(); }
+      if(e.key==='ArrowDown'){ setMercuryByC(currentC - 1); e.preventDefault(); }
+    });
+
+  </script>
+</body>
+</html>

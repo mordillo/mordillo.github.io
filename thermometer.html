@@ -127,7 +127,7 @@
 
         <div class="labels">
           <div class="label" id="roundLabel">Round to: 1°</div>
-          <div class="label" id="rangeLabel">Range: 0°–40°C</div>
+          <div class="label" id="rangeLabel">Range: -20°–100°C</div>
         </div>
 
         <div class="controls">
@@ -145,8 +145,8 @@
 
   <script>
     // Configuration for the thermometer scale
-    const MIN_C = 0; // bottom of scale
-    const MAX_C = 40; // top of scale
+    const MIN_C = -20; // bottom of scale
+    const MAX_C = 100; // top of scale
     const STEP = 1; // degrees per press for up/down; keep whole numbers for a 5-year-old
 
     const svg = document.getElementById('thermoSVG');

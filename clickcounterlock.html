@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Click Counter • Lock + Rate Control</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .gauge-needle { transform-origin: 50% 100%; transition: transform 160ms linear; }
+    .pressable:active { transform: translateY(1px); }
+    input[type="range"] { accent-color: #0ea5e9; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
+  <div class="max-w-5xl mx-auto p-6">
+    <header class="mb-6">
+      <h1 class="text-2xl font-semibold">Click Counter</h1>
+      <p class="text-sm text-slate-500">Plus/Minus with a lock that auto-counts in the chosen direction. Rate is controlled by the panel below (up to 10,000 counts/sec).</p>
+    </header>
+
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-2xl shadow p-6 flex flex-col gap-6">
+          <div class="flex items-center justify-between">
+            <div class="text-sm font-medium text-slate-500">Status</div>
+            <div id="statusBadge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Unlocked</div>
+          </div>
+
+          <div class="flex items-center justify-center">
+            <div id="countDisplay" class="text-7xl font-bold tabular-nums">0</div>
+          </div>
+
+          <div class="grid grid-cols-4 gap-3">
+            <button id="minusBtn" class="pressable col-span-1 bg-slate-800 text-white rounded-xl py-3 text-lg font-semibold shadow hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed">−</button>
+            <button id="plusBtn" class="pressable col-span-1 bg-slate-800 text-white rounded-xl py-3 text-lg font-semibold shadow hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed">+</button>
+            <button id="lockBtn" class="pressable col-span-1 bg-amber-500 text-white rounded-xl py-3 text-lg font-semibold shadow hover:bg-amber-600" aria-pressed="false">Lock</button>
+            <button id="resetBtn" class="pressable col-span-1 bg-slate-200 text-slate-800 rounded-xl py-3 text-lg font-semibold shadow hover:bg-slate-300">Reset</button>
+          </div>
+
+          <div class="text-xs text-slate-500 leading-relaxed">
+            <ul class="list-disc pl-5 space-y-1">
+              <li><span class="font-medium">Unlocked:</span> "+" and "−" change the counter by 1.</li>
+              <li><span class="font-medium">Lock → choose direction:</span> Click <em>Lock</em>, then press "+" or "−" once. The counter will auto-run in that direction at the selected rate.</li>
+              <li><span class="font-medium">Unlock:</span> Click <em>Unlock</em> to stop auto-counting.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <aside class="bg-white rounded-2xl shadow p-6 flex flex-col gap-6">
+        <h2 class="text-lg font-semibold">Rate Accelerator Panel</h2>
+
+        <div class="flex flex-col items-center gap-3">
+          <div class="w-full max-w-xs">
+            <svg viewBox="0 0 200 120" class="w-full">
+              <path d="M10 110 A90 90 0 0 1 190 110" fill="none" stroke="#e5e7eb" stroke-width="16" stroke-linecap="round"/>
+              <g stroke="#cbd5e1" stroke-width="2">
+                <line x1="20" y1="108" x2="32" y2="104" />
+                <line x1="57" y1="85" x2="68" y2="92" />
+                <line x1="100" y1="74" x2="100" y2="88" />
+                <line x1="143" y1="85" x2="132" y2="92" />
+                <line x1="180" y1="108" x2="168" y2="104" />
+              </g>
+              <g id="needle" class="gauge-needle">
+                <circle cx="100" cy="110" r="6" fill="#0ea5e9"/>
+                <path d="M100 110 L96 110 L100 20 L104 110 Z" fill="#0ea5e9"/>
+              </g>
+              <text x="100" y="118" text-anchor="middle" font-size="10" fill="#64748b">Rate</text>
+            </svg>
+          </div>
+
+          <div class="flex items-end justify-between w-full max-w-xs">
+            <div class="text-3xl font-bold tabular-nums" id="rateReadout">2.0</div>
+            <div class="text-xs text-slate-500">counts/sec</div>
+          </div>
+        </div>
+
+        <div>
+          <label for="rate" class="block text-sm font-medium mb-2">Adjust Rate</label>
+          <input id="rate" type="range" min="0.1" max="10000" step="0.1" value="2" class="w-full" />
+          <div class="mt-2 text-xs text-slate-500">Use the slider to change the auto-count speed. The gauge and readout reflect the current rate.</div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2">
+          <button data-rate="100" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">100×</button>
+          <button data-rate="1000" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">1k×</button>
+          <button data-rate="5000" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">5k×</button>
+          <button data-rate="10000" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">10k×</button>
+        </div>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+    const countDisplay = document.getElementById('countDisplay');
+    const minusBtn = document.getElementById('minusBtn');
+    const plusBtn = document.getElementById('plusBtn');
+    const lockBtn = document.getElementById('lockBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const statusBadge = document.getElementById('statusBadge');
+
+    const rateSlider = document.getElementById('rate');
+    const rateReadout = document.getElementById('rateReadout');
+    const quickRateBtns = Array.from(document.querySelectorAll('.quick-rate'));
+    const needle = document.getElementById('needle');
+
+    let count = 0;
+    let intervalId = null;
+    let lockState = 'unlocked';
+
+    const MAX_RATE = parseFloat(rateSlider.max);
+
+    function updateDisplay() { countDisplay.textContent = count.toString(); }
+
+    function setStatus(text, classes) {
+      statusBadge.textContent = text;
+      statusBadge.className = `px-2.5 py-1 rounded-full text-xs font-semibold ${classes}`;
+    }
+
+    function updateNeedle(rate) {
+      const pct = Math.max(0, Math.min(1, rate / MAX_RATE));
+      const angle = -90 + pct * 180;
+      needle.style.transform = `rotate(${angle}deg)`;
+    }
+
+    function currentRate() { return parseFloat(rateSlider.value); }
+
+    function applyRateUI(rate) {
+      const r = Math.max(0.1, Math.min(MAX_RATE, rate));
+      rateSlider.value = r.toFixed(1);
+      rateReadout.textContent = r.toFixed(1);
+      updateNeedle(r);
+      if (intervalId) {
+        const dir = lockState === 'lockedDown' ? -1 : 1;
+        startAuto(dir);
+      }
+    }
+
+    function startAuto(direction) {
+      stopAuto();
+      const rate = currentRate();
+      const intervalMs = Math.max(1, Math.round(1000 / rate));
+      intervalId = setInterval(() => {
+        count += direction;
+        updateDisplay();
+      }, intervalMs);
+    }
+
+    function stopAuto() { if (intervalId) { clearInterval(intervalId); intervalId = null; } }
+    function setButtonsDisabled(disabled) { plusBtn.disabled = disabled; minusBtn.disabled = disabled; }
+
+    function enterUnlocked() {
+      stopAuto(); lockState = 'unlocked'; setButtonsDisabled(false);
+      setStatus('Unlocked', 'bg-slate-100 text-slate-600'); lockBtn.textContent = 'Lock'; lockBtn.setAttribute('aria-pressed','false');
+    }
+    function enterArmed() {
+      stopAuto(); lockState = 'armed'; setButtonsDisabled(false);
+      setStatus('Locked (choose + or −)', 'bg-amber-100 text-amber-700'); lockBtn.textContent = 'Cancel'; lockBtn.setAttribute('aria-pressed','true');
+    }
+    function enterLocked(direction) {
+      lockState = direction>0?'lockedUp':'lockedDown'; setButtonsDisabled(true);
+      const dirLabel = direction>0?'Auto ↑':'Auto ↓'; setStatus(`Locked • ${dirLabel}`, 'bg-emerald-100 text-emerald-700');
+      lockBtn.textContent='Unlock'; lockBtn.setAttribute('aria-pressed','true'); startAuto(direction);
+    }
+
+    minusBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){count--;updateDisplay();} else if(lockState==='armed'){enterLocked(-1);} });
+    plusBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){count++;updateDisplay();} else if(lockState==='armed'){enterLocked(1);} });
+    lockBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){enterArmed();} else if(lockState==='armed'){enterUnlocked();} else {enterUnlocked();} });
+    resetBtn.addEventListener('click',()=>{ count=0; updateDisplay(); });
+
+    rateSlider.addEventListener('input',e=>applyRateUI(parseFloat(e.target.value)));
+    quickRateBtns.forEach(btn=>btn.addEventListener('click',()=>{applyRateUI(parseFloat(btn.dataset.rate));}));
+
+    updateDisplay(); applyRateUI(parseFloat(rateSlider.value));
+  </script>
+</body>
+</html>

@@ -15,7 +15,7 @@
   <div class="max-w-5xl mx-auto p-6">
     <header class="mb-6">
       <h1 class="text-2xl font-semibold">Click Counter</h1>
-      <p class="text-sm text-slate-500">Plus/Minus with a lock that auto-counts in the chosen direction. Rate is controlled by the panel below (up to 50,000 counts/sec).</p>
+      <p class="text-sm text-slate-500">Plus/Minus with a lock that auto-counts in the chosen direction. Rate is controlled by the panel below (up to 100,000 counts/sec).</p>
     </header>
 
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
@@ -77,139 +77,111 @@
 
         <div>
           <label for="rate" class="block text-sm font-medium mb-2">Adjust Rate</label>
-          <input id="rate" type="range" min="0.1" max="50000" step="0.1" value="2" class="w-full" />
+          <input id="rate" type="range" min="0.1" max="100000" step="0.1" value="2" class="w-full" />
           <div class="mt-2 text-xs text-slate-500">Use the slider to change the auto-count speed. The gauge and readout reflect the current rate.</div>
         </div>
 
         <div class="grid grid-cols-4 gap-2">
-          <button data-rate="100" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">100×</button>
           <button data-rate="1000" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">1k×</button>
           <button data-rate="10000" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">10k×</button>
           <button data-rate="50000" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">50k×</button>
+          <button data-rate="100000" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">100k×</button>
         </div>
       </aside>
     </section>
   </div>
 
   <script>
-  const countDisplay = document.getElementById('countDisplay');
-  const minusBtn = document.getElementById('minusBtn');
-  const plusBtn = document.getElementById('plusBtn');
-  const lockBtn = document.getElementById('lockBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const statusBadge = document.getElementById('statusBadge');
+    const countDisplay = document.getElementById('countDisplay');
+    const minusBtn = document.getElementById('minusBtn');
+    const plusBtn = document.getElementById('plusBtn');
+    const lockBtn = document.getElementById('lockBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const statusBadge = document.getElementById('statusBadge');
 
-  const rateSlider = document.getElementById('rate');
-  const rateReadout = document.getElementById('rateReadout');
-  const quickRateBtns = Array.from(document.querySelectorAll('.quick-rate'));
-  const needle = document.getElementById('needle');
+    const rateSlider = document.getElementById('rate');
+    const rateReadout = document.getElementById('rateReadout');
+    const quickRateBtns = Array.from(document.querySelectorAll('.quick-rate'));
+    const needle = document.getElementById('needle');
 
-  let count = 0;
-  let rafId = null;
-  let lockState = 'unlocked'; // 'unlocked' | 'armed' | 'lockedUp' | 'lockedDown'
-  let lastTs = 0;
-  let fractionCarry = 0;
+    let count = 0;
+    let rafId = null;
+    let lockState = 'unlocked';
+    let lastTs = 0;
+    let fractionCarry = 0;
 
-  const MIN_RATE = parseFloat(rateSlider.min);
-  const MAX_RATE = parseFloat(rateSlider.max); // 50,000
+    const MIN_RATE = parseFloat(rateSlider.min);
+    const MAX_RATE = parseFloat(rateSlider.max);
 
-  function updateDisplay() { countDisplay.textContent = count.toString(); }
-  function setStatus(text, classes) {
-    statusBadge.textContent = text;
-    statusBadge.className = `px-2.5 py-1 rounded-full text-xs font-semibold ${classes}`;
-  }
+    function updateDisplay() { countDisplay.textContent = count.toString(); }
 
-  // Keep gauge linear from 0..MAX_RATE
-  function updateNeedle(rate) {
-    const r = Math.max(MIN_RATE, Math.min(MAX_RATE, rate));
-    const pct = r / MAX_RATE;
-    const angle = -90 + pct * 180;
-    needle.style.transform = `rotate(${angle}deg)`;
-  }
+    function setStatus(text, classes) {
+      statusBadge.textContent = text;
+      statusBadge.className = `px-2.5 py-1 rounded-full text-xs font-semibold ${classes}`;
+    }
 
-  function currentRate() { return parseFloat(rateSlider.value); }
-  function effectiveRate() {
-    const r = currentRate();
-    return r >= MAX_RATE ? r * 10 : r; // 10× at 50k
-  }
+    function updateNeedle(rate) {
+      const r = Math.max(MIN_RATE, Math.min(MAX_RATE, rate));
+      const pct = r / MAX_RATE;
+      const angle = -90 + pct * 180;
+      needle.style.transform = `rotate(${angle}deg)`;
+    }
 
-  function applyRateUI(rate) {
-    const r = Math.max(MIN_RATE, Math.min(MAX_RATE, rate));
-    rateSlider.value = r.toFixed(1);
-    rateReadout.textContent = r.toFixed(1);
-    updateNeedle(r);
-  }
+    function currentRate() { return parseFloat(rateSlider.value); }
 
-  function startAuto(direction) {
-    stopAuto();
-    lastTs = performance.now();
-    fractionCarry = 0;
-    const step = (ts) => {
-      const dt = (ts - lastTs) / 1000; // seconds
-      lastTs = ts;
-      const rate = effectiveRate();
-      let delta = rate * dt + fractionCarry; // counts desired this frame
-      const whole = Math.trunc(delta);
-      fractionCarry = delta - whole;
-      if (whole !== 0) {
-        count += whole * direction;
-        updateDisplay();
-      }
+    function applyRateUI(rate) {
+      const r = Math.max(MIN_RATE, Math.min(MAX_RATE, rate));
+      rateSlider.value = r.toFixed(1);
+      rateReadout.textContent = r.toFixed(1);
+      updateNeedle(r);
+    }
+
+    function startAuto(direction) {
+      stopAuto();
+      lastTs = performance.now();
+      fractionCarry = 0;
+      const step = (ts) => {
+        const dt = (ts - lastTs) / 1000;
+        lastTs = ts;
+        const rate = currentRate();
+        let delta = rate * dt + fractionCarry;
+        const whole = Math.trunc(delta);
+        fractionCarry = delta - whole;
+        if (whole !== 0) {
+          count += whole * direction;
+          updateDisplay();
+        }
+        rafId = requestAnimationFrame(step);
+      };
       rafId = requestAnimationFrame(step);
-    };
-    rafId = requestAnimationFrame(step);
-  }
+    }
 
-  function stopAuto() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
-  function setButtonsDisabled(disabled) { plusBtn.disabled = disabled; minusBtn.disabled = disabled; }
+    function stopAuto() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
+    function setButtonsDisabled(disabled) { plusBtn.disabled = disabled; minusBtn.disabled = disabled; }
 
-  function enterUnlocked() {
-    stopAuto(); lockState = 'unlocked'; setButtonsDisabled(false);
-    setStatus('Unlocked', 'bg-slate-100 text-slate-600'); lockBtn.textContent = 'Lock'; lockBtn.setAttribute('aria-pressed','false');
-  }
-  function enterArmed() {
-    stopAuto(); lockState = 'armed'; setButtonsDisabled(false);
-    setStatus('Locked (choose + or −)', 'bg-amber-100 text-amber-700'); lockBtn.textContent = 'Cancel'; lockBtn.setAttribute('aria-pressed','true');
-  }
-  function enterLocked(direction) {
-    lockState = direction > 0 ? 'lockedUp' : 'lockedDown'; setButtonsDisabled(true);
-    const dirLabel = direction > 0 ? 'Auto ↑' : 'Auto ↓';
-    setStatus(`Locked • ${dirLabel}`, 'bg-emerald-100 text-emerald-700');
-    lockBtn.textContent = 'Unlock'; lockBtn.setAttribute('aria-pressed','true');
-    startAuto(direction);
-  }
+    function enterUnlocked() {
+      stopAuto(); lockState = 'unlocked'; setButtonsDisabled(false);
+      setStatus('Unlocked', 'bg-slate-100 text-slate-600'); lockBtn.textContent = 'Lock'; lockBtn.setAttribute('aria-pressed','false');
+    }
+    function enterArmed() {
+      stopAuto(); lockState = 'armed'; setButtonsDisabled(false);
+      setStatus('Locked (choose + or −)', 'bg-amber-100 text-amber-700'); lockBtn.textContent = 'Cancel'; lockBtn.setAttribute('aria-pressed','true');
+    }
+    function enterLocked(direction) {
+      lockState = direction>0?'lockedUp':'lockedDown'; setButtonsDisabled(true);
+      const dirLabel = direction>0?'Auto ↑':'Auto ↓'; setStatus(`Locked • ${dirLabel}`, 'bg-emerald-100 text-emerald-700');
+      lockBtn.textContent='Unlock'; lockBtn.setAttribute('aria-pressed','true'); startAuto(direction);
+    }
 
-  // Click handlers
-  minusBtn.addEventListener('click', () => {
-    if (lockState === 'unlocked') { count--; updateDisplay(); }
-    else if (lockState === 'armed') { enterLocked(-1); }
-  });
-  plusBtn.addEventListener('click', () => {
-    if (lockState === 'unlocked') { count++; updateDisplay(); }
-    else if (lockState === 'armed') { enterLocked(1); }
-  });
-  lockBtn.addEventListener('click', () => {
-    if (lockState === 'unlocked') enterArmed(); else enterUnlocked();
-  });
-  resetBtn.addEventListener('click', () => { count = 0; updateDisplay(); });
+    minusBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){count--;updateDisplay();} else if(lockState==='armed'){enterLocked(-1);} });
+    plusBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){count++;updateDisplay();} else if(lockState==='armed'){enterLocked(1);} });
+    lockBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){enterArmed();} else {enterUnlocked();} });
+    resetBtn.addEventListener('click',()=>{ count=0; updateDisplay(); });
 
-  // Keyboard shortcuts (ArrowUp/ArrowDown) — disabled while typing in inputs, textareas, selects, or contentEditable
-  document.addEventListener('keydown', (e) => {
-    const el = document.activeElement;
-    const tag = (el && el.tagName) || '';
-    const typing = ['INPUT','TEXTAREA','SELECT'].includes(tag) || (el && el.isContentEditable);
-    if (typing) return;
-    if (e.key === 'ArrowUp') { e.preventDefault(); plusBtn.click(); }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); minusBtn.click(); }
-  });
+    rateSlider.addEventListener('input',e=>applyRateUI(parseFloat(e.target.value)));
+    quickRateBtns.forEach(btn=>btn.addEventListener('click',()=>{applyRateUI(parseFloat(btn.dataset.rate));}));
 
-  // Slider & quick-rate buttons
-  rateSlider.addEventListener('input', (e) => applyRateUI(parseFloat(e.target.value)));
-  quickRateBtns.forEach(btn => btn.addEventListener('click', () => applyRateUI(parseFloat(btn.dataset.rate))));
-
-  // Init
-  updateDisplay();
-  applyRateUI(parseFloat(rateSlider.value));
+    updateDisplay(); applyRateUI(parseFloat(rateSlider.value));
   </script>
 </body>
 </html>

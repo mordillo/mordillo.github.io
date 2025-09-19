@@ -15,7 +15,7 @@
   <div class="max-w-5xl mx-auto p-6">
     <header class="mb-6">
       <h1 class="text-2xl font-semibold">Click Counter</h1>
-      <p class="text-sm text-slate-500">Plus/Minus with a lock that auto-counts in the chosen direction. Rate is controlled by the panel below (up to 20,000 counts/sec).</p>
+      <p class="text-sm text-slate-500">Plus/Minus with a lock that auto-counts in the chosen direction. Rate is controlled by the panel below (up to 50,000 counts/sec).</p>
     </header>
 
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
@@ -77,7 +77,7 @@
 
         <div>
           <label for="rate" class="block text-sm font-medium mb-2">Adjust Rate</label>
-          <input id="rate" type="range" min="0.1" max="20000" step="0.1" value="2" class="w-full" />
+          <input id="rate" type="range" min="0.1" max="50000" step="0.1" value="2" class="w-full" />
           <div class="mt-2 text-xs text-slate-500">Use the slider to change the auto-count speed. The gauge and readout reflect the current rate.</div>
         </div>
 
@@ -85,7 +85,7 @@
           <button data-rate="100" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">100×</button>
           <button data-rate="1000" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">1k×</button>
           <button data-rate="10000" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">10k×</button>
-          <button data-rate="20000" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">20k×</button>
+          <button data-rate="50000" class="pressable quick-rate bg-slate-100 hover:bg-slate-200 rounded-lg py-2 text-sm font-medium">50k×</button>
         </div>
       </aside>
     </section>
@@ -105,9 +105,12 @@
     const needle = document.getElementById('needle');
 
     let count = 0;
-    let intervalId = null;
+    let rafId = null;
     let lockState = 'unlocked';
+    let lastTs = 0;
+    let fractionCarry = 0;
 
+    const MIN_RATE = parseFloat(rateSlider.min);
     const MAX_RATE = parseFloat(rateSlider.max);
 
     function updateDisplay() { countDisplay.textContent = count.toString(); }
@@ -118,7 +121,8 @@
     }
 
     function updateNeedle(rate) {
-      const pct = Math.max(0, Math.min(1, rate / MAX_RATE));
+      const r = Math.max(MIN_RATE, Math.min(MAX_RATE, rate));
+      const pct = r / MAX_RATE;
       const angle = -90 + pct * 180;
       needle.style.transform = `rotate(${angle}deg)`;
     }
@@ -126,32 +130,33 @@
     function currentRate() { return parseFloat(rateSlider.value); }
 
     function applyRateUI(rate) {
-      const r = Math.max(0.1, Math.min(MAX_RATE, rate));
+      const r = Math.max(MIN_RATE, Math.min(MAX_RATE, rate));
       rateSlider.value = r.toFixed(1);
       rateReadout.textContent = r.toFixed(1);
       updateNeedle(r);
-      if (intervalId) {
-        const dir = lockState === 'lockedDown' ? -1 : 1;
-        startAuto(dir);
-      }
     }
 
     function startAuto(direction) {
       stopAuto();
-      const rate = currentRate();
-      const intervalMs = 1;
-      const increment = rate / 1000; // counts per millisecond
-      let remainder = 0;
-      intervalId = setInterval(() => {
-        const add = increment + remainder;
-        const whole = Math.floor(add);
-        remainder = add - whole;
-        count += whole * direction;
-        updateDisplay();
-      }, intervalMs);
+      lastTs = performance.now();
+      fractionCarry = 0;
+      const step = (ts) => {
+        const dt = (ts - lastTs) / 1000;
+        lastTs = ts;
+        const rate = currentRate();
+        let delta = rate * dt + fractionCarry;
+        const whole = Math.trunc(delta);
+        fractionCarry = delta - whole;
+        if (whole !== 0) {
+          count += whole * direction;
+          updateDisplay();
+        }
+        rafId = requestAnimationFrame(step);
+      };
+      rafId = requestAnimationFrame(step);
     }
 
-    function stopAuto() { if (intervalId) { clearInterval(intervalId); intervalId = null; } }
+    function stopAuto() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
     function setButtonsDisabled(disabled) { plusBtn.disabled = disabled; minusBtn.disabled = disabled; }
 
     function enterUnlocked() {
@@ -170,7 +175,7 @@
 
     minusBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){count--;updateDisplay();} else if(lockState==='armed'){enterLocked(-1);} });
     plusBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){count++;updateDisplay();} else if(lockState==='armed'){enterLocked(1);} });
-    lockBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){enterArmed();} else if(lockState==='armed'){enterUnlocked();} else {enterUnlocked();} });
+    lockBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){enterArmed();} else {enterUnlocked();} });
     resetBtn.addEventListener('click',()=>{ count=0; updateDisplay(); });
 
     rateSlider.addEventListener('input',e=>applyRateUI(parseFloat(e.target.value)));

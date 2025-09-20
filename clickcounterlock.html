@@ -92,96 +92,141 @@
   </div>
 
   <script>
-    const countDisplay = document.getElementById('countDisplay');
-    const minusBtn = document.getElementById('minusBtn');
-    const plusBtn = document.getElementById('plusBtn');
-    const lockBtn = document.getElementById('lockBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const statusBadge = document.getElementById('statusBadge');
+  const countDisplay = document.getElementById('countDisplay');
+  const minusBtn = document.getElementById('minusBtn');
+  const plusBtn = document.getElementById('plusBtn');
+  const lockBtn = document.getElementById('lockBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const statusBadge = document.getElementById('statusBadge');
 
-    const rateSlider = document.getElementById('rate');
-    const rateReadout = document.getElementById('rateReadout');
-    const quickRateBtns = Array.from(document.querySelectorAll('.quick-rate'));
-    const needle = document.getElementById('needle');
+  const rateSlider = document.getElementById('rate');
+  const rateReadout = document.getElementById('rateReadout');
+  const quickRateBtns = Array.from(document.querySelectorAll('.quick-rate'));
+  const needle = document.getElementById('needle');
 
-    let count = 0;
-    let rafId = null;
-    let lockState = 'unlocked';
-    let lastTs = 0;
-    let fractionCarry = 0;
+  let count = 0;
+  let rafId = null;
+  let lockState = 'unlocked';
+  let lastTs = 0;         // last rAF timestamp
+  let fractionCarry = 0;  // carry fractional counts between frames
+  let displayAcc = 0;     // throttle DOM updates
 
-    const MIN_RATE = parseFloat(rateSlider.min);
-    const MAX_RATE = parseFloat(rateSlider.max);
+  const MIN_RATE = parseFloat(rateSlider.min);
+  const MAX_RATE = parseFloat(rateSlider.max); // 100,000 shown on gauge
 
-    function updateDisplay() { countDisplay.textContent = count.toString(); }
+  // --- Turbo settings tuned for mobile performance ---
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  // Higher boost on iOS, and throttle text updates a bit to avoid layout thrash
+  const BOOST_MAX = isIOS ? 20000 : 5000;     // up to 20k× on iPhone/iPad, 5k× desktop
+  const DISPLAY_FPS = isIOS ? 12 : 24;        // DOM writes per second (text only)
 
-    function setStatus(text, classes) {
-      statusBadge.textContent = text;
-      statusBadge.className = `px-2.5 py-1 rounded-full text-xs font-semibold ${classes}`;
-    }
+  function updateDisplay() { countDisplay.textContent = String(count); }
+  function setStatus(text, classes) {
+    statusBadge.textContent = text;
+    statusBadge.className = `px-2.5 py-1 rounded-full text-xs font-semibold ${classes}`;
+  }
 
-    function updateNeedle(rate) {
-      const r = Math.max(MIN_RATE, Math.min(MAX_RATE, rate));
-      const pct = r / MAX_RATE;
-      const angle = -90 + pct * 180;
-      needle.style.transform = `rotate(${angle}deg)`;
-    }
+  // Keep gauge linear against displayed rate
+  function updateNeedle(rate) {
+    const r = Math.max(MIN_RATE, Math.min(MAX_RATE, rate));
+    const pct = r / MAX_RATE;
+    const angle = -90 + pct * 180;
+    needle.style.transform = `rotate(${angle}deg)`;
+  }
 
-    function currentRate() { return parseFloat(rateSlider.value); }
+  function currentRate() { return parseFloat(rateSlider.value); }
 
-    function applyRateUI(rate) {
-      const r = Math.max(MIN_RATE, Math.min(MAX_RATE, rate));
-      rateSlider.value = r.toFixed(1);
-      rateReadout.textContent = r.toFixed(1);
-      updateNeedle(r);
-    }
+  // Turbo curve: mild in the middle, rockets at the top.
+  // boost = 1 + (t^3) * (BOOST_MAX - 1), with t in [0,1]
+  function effectiveRate() {
+    const r = currentRate();
+    const t = Math.max(0, Math.min(1, r / MAX_RATE));
+    const boost = 1 + (t * t * t) * (BOOST_MAX - 1);
+    return r * boost;
+  }
 
-    function startAuto(direction) {
-      stopAuto();
-      lastTs = performance.now();
-      fractionCarry = 0;
-      const step = (ts) => {
-        const dt = (ts - lastTs) / 1000;
-        lastTs = ts;
-        const rate = currentRate();
-        let delta = rate * dt + fractionCarry;
-        const whole = Math.trunc(delta);
-        fractionCarry = delta - whole;
-        if (whole !== 0) {
-          count += whole * direction;
-          updateDisplay();
-        }
-        rafId = requestAnimationFrame(step);
-      };
+  function applyRateUI(rate) {
+    const r = Math.max(MIN_RATE, Math.min(MAX_RATE, rate));
+    rateSlider.value = r.toFixed(1);
+    rateReadout.textContent = r.toFixed(1);
+    updateNeedle(r);
+  }
+
+  function startAuto(direction) {
+    stopAuto();
+    lastTs = performance.now();
+    fractionCarry = 0;
+    displayAcc = 0;
+    const displayInterval = 1 / DISPLAY_FPS;
+
+    const step = (ts) => {
+      const dt = (ts - lastTs) / 1000;
+      lastTs = ts;
+
+      // Compute counts for this frame using Turbo effective rate
+      const rate = effectiveRate();
+      let delta = rate * dt + fractionCarry;
+      const whole = Math.trunc(delta);
+      fractionCarry = delta - whole;
+      if (whole !== 0) {
+        count += whole * direction;
+      }
+
+      // Throttle DOM updates (text only) for smoother iOS performance
+      displayAcc += dt;
+      if (displayAcc >= displayInterval) {
+        updateDisplay();
+        displayAcc = 0;
+      }
+
       rafId = requestAnimationFrame(step);
-    }
+    };
+    rafId = requestAnimationFrame(step);
+  }
 
-    function stopAuto() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
-    function setButtonsDisabled(disabled) { plusBtn.disabled = disabled; minusBtn.disabled = disabled; }
+  function stopAuto() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
+  function setButtonsDisabled(disabled) { plusBtn.disabled = disabled; minusBtn.disabled = disabled; }
 
-    function enterUnlocked() {
-      stopAuto(); lockState = 'unlocked'; setButtonsDisabled(false);
-      setStatus('Unlocked', 'bg-slate-100 text-slate-600'); lockBtn.textContent = 'Lock'; lockBtn.setAttribute('aria-pressed','false');
-    }
-    function enterArmed() {
-      stopAuto(); lockState = 'armed'; setButtonsDisabled(false);
-      setStatus('Locked (choose + or −)', 'bg-amber-100 text-amber-700'); lockBtn.textContent = 'Cancel'; lockBtn.setAttribute('aria-pressed','true');
-    }
-    function enterLocked(direction) {
-      lockState = direction>0?'lockedUp':'lockedDown'; setButtonsDisabled(true);
-      const dirLabel = direction>0?'Auto ↑':'Auto ↓'; setStatus(`Locked • ${dirLabel}`, 'bg-emerald-100 text-emerald-700');
-      lockBtn.textContent='Unlock'; lockBtn.setAttribute('aria-pressed','true'); startAuto(direction);
-    }
+  function enterUnlocked() {
+    stopAuto(); lockState = 'unlocked'; setButtonsDisabled(false);
+    setStatus('Unlocked', 'bg-slate-100 text-slate-600'); lockBtn.textContent = 'Lock'; lockBtn.setAttribute('aria-pressed','false');
+  }
+  function enterArmed() {
+    stopAuto(); lockState = 'armed'; setButtonsDisabled(false);
+    setStatus('Locked (choose + or −)', 'bg-amber-100 text-amber-700'); lockBtn.textContent = 'Cancel'; lockBtn.setAttribute('aria-pressed','true');
+  }
+  function enterLocked(direction) {
+    lockState = direction > 0 ? 'lockedUp' : 'lockedDown'; setButtonsDisabled(true);
+    const dirLabel = direction > 0 ? 'Auto ↑' : 'Auto ↓';
+    setStatus(`Locked • ${dirLabel}`, 'bg-emerald-100 text-emerald-700');
+    lockBtn.textContent = 'Unlock'; lockBtn.setAttribute('aria-pressed','true');
+    startAuto(direction);
+  }
 
-    minusBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){count--;updateDisplay();} else if(lockState==='armed'){enterLocked(-1);} });
-    plusBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){count++;updateDisplay();} else if(lockState==='armed'){enterLocked(1);} });
-    lockBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){enterArmed();} else {enterUnlocked();} });
-    resetBtn.addEventListener('click',()=>{ count=0; updateDisplay(); });
+  // Clicks
+  minusBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){count--;updateDisplay();} else if(lockState==='armed'){enterLocked(-1);} });
+  plusBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){count++;updateDisplay();} else if(lockState==='armed'){enterLocked(1);} });
+  lockBtn.addEventListener('click',()=>{ if(lockState==='unlocked'){enterArmed();} else {enterUnlocked();} });
+  resetBtn.addEventListener('click',()=>{ count=0; updateDisplay(); });
 
-    rateSlider.addEventListener('input',e=>applyRateUI(parseFloat(e.target.value)));
-    quickRateBtns.forEach(btn=>btn.addEventListener('click',()=>{applyRateUI(parseFloat(btn.dataset.rate));}));
+  // Keyboard shortcuts (desktop)
+  document.addEventListener('keydown', (e) => {
+    const el = document.activeElement;
+    const tag = (el && el.tagName) || '';
+    const typing = ['INPUT','TEXTAREA','SELECT'].includes(tag) || (el && el.isContentEditable);
+    if (typing) return;
+    if (e.key === 'ArrowUp') { e.preventDefault(); plusBtn.click(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); minusBtn.click(); }
+  });
 
-    updateDisplay(); applyRateUI(parseFloat(rateSlider.value));
-  </script>
+  // Rate controls
+  rateSlider.addEventListener('input',e=>applyRateUI(parseFloat(e.target.value)));
+  quickRateBtns.forEach(btn=>btn.addEventListener('click',()=>{applyRateUI(parseFloat(btn.dataset.rate));}));
+
+  // Init
+  updateDisplay(); applyRateUI(parseFloat(rateSlider.value));
+</script>
+
+
 </body>
 </html>

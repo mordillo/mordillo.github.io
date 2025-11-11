@@ -4,31 +4,81 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Flip Clock</title>
 
-<!-- React (UMD) + Babel to run JSX in the browser -->
+<!-- React (UMD) + ReactDOM + Babel (so we can keep JSX in one file) -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-<div id="root"></div>
+<style>
+  :root { --fg:#111; --bg:#fff; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); }
+  .page { min-height: 100vh; width: 100%; display:flex; align-items:center; justify-content:center; user-select:none; }
+  /* Blink for colon */
+  @keyframes blink { 0%, 49% { opacity:1 } 50%, 100% { opacity:0 } }
+  .blink { animation: blink 1s steps(1,end) infinite; }
+  /* Digital-style font stack; uses Digital-7 if present */
+  .digital7 { font-family:'Digital-7','DS-Digital','Segment7','DSEG7 Classic','Seven Segment',ui-monospace,Menlo,Consolas,'Courier New',monospace; letter-spacing:.04em; }
+  /* Rounded colon dots */
+  .colon-dot { width: .18em; height: .18em; border-radius: 9999px; display:block; background: currentColor; }
+  /* Layout helpers */
+  .row { display:flex; align-items:baseline; gap:.75rem; }
+  /* Bottom handle button */
+  .handle { position:fixed; left:50%; bottom:.75rem; transform:translateX(-50%); padding:.25rem .5rem; border:1px solid currentColor; border-radius:9999px; opacity:.6; transition:opacity .2s; background:transparent; color:inherit; }
+  .handle:hover { opacity:1; }
+  /* Settings panel */
+  .panel { position:fixed; left:0; right:0; bottom:0; z-index:50; transform: translateY(100%); transition: transform .3s ease-out; }
+  .panel.open { transform: translateY(0); }
+  .card { margin:0 auto; max-width:640px; width:100%; border:1px solid rgba(0,0,0,.1); background:#fff; color:#111; border-top-left-radius:16px; border-top-right-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.15); }
+  .drag { display:flex; justify-content:center; padding:8px 0; }
+  .drag > div { height:6px; width:48px; border-radius:9999px; background:#e5e5e5; }
+  .card-body { padding: 8px 20px 20px; display:grid; gap:16px; }
+  .between { display:flex; align-items:center; justify-content:space-between; }
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  .radio-row { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .color { height:36px; width:64px; padding:0; border-radius:6px; border:1px solid #d4d4d4; background:transparent; }
+  .btn { font-size:14px; padding:.25rem .75rem; border:1px solid #d4d4d4; border-radius:6px; background:#fff; }
+
+  /* === Split‑flap flip styles (no seam) === */
+  .flip-digit { position: relative; display:inline-block; line-height:1; perspective:1000px; }
+  .abs-fill { position:absolute; inset:0; }
+  .flip-face { line-height:1; }
+  /* Slight overlap to avoid hairline gap */
+  .clip-top { clip-path: inset(0 0 50.1% 0); }
+  .clip-bottom { clip-path: inset(49.9% 0 0 0); }
+  .flip-layer { position:absolute; inset:0; transform-style:preserve-3d; backface-visibility:hidden; }
+  .flip-upper { top:0; transform-origin:center bottom; }
+  .flip-lower { bottom:0; transform-origin:center top; }
+  @keyframes flipTopDown { from { transform: rotateX(0); } to { transform: rotateX(-90deg); } }
+  @keyframes flipBottomUp { from { transform: rotateX(90deg); } to { transform: rotateX(0); } }
+  .run-top { animation: flipTopDown .28s ease-in forwards; }
+  .run-bottom { animation: flipBottomUp .28s ease-out .18s forwards; }
+</style>
+
+<div id="root" class="page"></div>
 
 <script type="text/babel">
-/* === Paste of your FlipClock (converted to plain JS) === */
 const { useEffect, useMemo, useRef, useState } = React;
 
 function FlipClock() {
   const [now, setNow] = useState(new Date());
-  const [twelveHour, setTwelveHour] = useState(getStoredBool("flipclock:twelveHour", false));
-  const [fgColor, setFgColor] = useState(getStored("flipclock:fg", "#111111"));
-  const [bgColor, setBgColor] = useState(getStored("flipclock:bg", "#ffffff"));
+  const [twelveHour, setTwelveHour] = useState(getStoredBool('flipclock:twelveHour', false));
+  const [fgColor, setFgColor] = useState(getStored('flipclock:fg', '#111111'));
+  const [bgColor, setBgColor] = useState(getStored('flipclock:bg', '#ffffff'));
   const [panelOpen, setPanelOpen] = useState(false);
 
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
-  useEffect(() => store("flipclock:twelveHour", String(twelveHour)), [twelveHour]);
-  useEffect(() => store("flipclock:fg", fgColor), [fgColor]);
-  useEffect(() => store("flipclock:bg", bgColor), [bgColor]);
+  useEffect(() => store('flipclock:twelveHour', String(twelveHour)), [twelveHour]);
+  useEffect(() => store('flipclock:fg', fgColor), [fgColor]);
+  useEffect(() => store('flipclock:bg', bgColor), [bgColor]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--fg', fgColor);
+    document.documentElement.style.setProperty('--bg', bgColor);
+  }, [fgColor, bgColor]);
 
   const { hh, mm, ss, ampm } = useMemo(() => formatParts(now, twelveHour), [now, twelveHour]);
 
+  // Swipe-up to open settings
   const startY = useRef(null);
   const onTouchStart = (e) => { startY.current = e.touches[0].clientY; };
   const onTouchEnd = (e) => {
@@ -38,75 +88,49 @@ function FlipClock() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center select-none"
-         style={{ backgroundColor: bgColor, color: fgColor }}
-         onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <style>{`
-        @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
-        .blink { animation: blink 1s steps(1,end) infinite; }
-        .digital7 { font-family: 'Digital-7','DS-Digital','Segment7','DSEG7 Classic','Seven Segment',ui-monospace,Menlo,Consolas,'Courier New',monospace; letter-spacing: .04em; }
-        .colon-dot { width: .18em; height: .18em; border-radius: 9999px; display: block; background: currentColor; }
-        .flip-digit { position: relative; display: inline-block; line-height: 1; perspective: 1000px; }
-        .abs-fill { position: absolute; inset: 0; }
-        .flip-face { line-height: 1; }
-        .clip-top { clip-path: inset(0 0 50.1% 0); }
-        .clip-bottom { clip-path: inset(49.9% 0 0 0); }
-        .flip-layer { position: absolute; inset: 0; transform-style: preserve-3d; backface-visibility: hidden; }
-        .flip-upper { top: 0; transform-origin: center bottom; }
-        .flip-lower { bottom: 0; transform-origin: center top; }
-        @keyframes flipTopDown { from { transform: rotateX(0); } to { transform: rotateX(-90deg); } }
-        @keyframes flipBottomUp { from { transform: rotateX(90deg); } to { transform: rotateX(0); } }
-        .run-top { animation: flipTopDown .28s ease-in forwards; }
-        .run-bottom { animation: flipBottomUp .28s ease-out .18s forwards; }
-        /* Tiny Tailwind-lite utilities used in markup */
-        .min-h-screen{min-height:100vh}.w-full{width:100%}.flex{display:flex}.items-baseline{align-items:baseline}.items-center{align-items:center}.justify-center{justify-content:center}.gap-3{gap:.75rem}.ml-2{margin-left:.5rem}.opacity-80{opacity:.8}.opacity-70{opacity:.7}.select-none{user-select:none}
-        .fixed{position:fixed}.bottom-3{bottom:.75rem}.left-1\\/2{left:50%}.px-3{padding-left:.75rem;padding-right:.75rem}.py-1{padding:.25rem .5rem}.rounded-full{border-radius:9999px}.border{border:1px solid currentColor}.opacity-60{opacity:.6}.hover\\:opacity-100:hover{opacity:1}.transition{transition:all .2s}
-        .text-\\[11vw\\]{font-size:11vw}.text-\\[9vw\\]{font-size:9vw}.text-\\[6\\.2vw\\]{font-size:6.2vw}.text-\\[4vw\\]{font-size:4vw}
-      `}</style>
-
-      <div className="flex items-baseline gap-3">
-        <TimeGroup label="hours" value={hh} digitClass="text-[11vw] md:text-[9vw]" />
-        <RoundedColon blink className="text-[11vw] md:text-[9vw]" />
-        <TimeGroup label="minutes" value={mm} digitClass="text-[11vw] md:text-[9vw]" />
-        <TimeGroup label="seconds" value={ss} digitClass="text-[6.2vw] md:text-[4.6vw]" groupClass="ml-2 opacity-80" />
+    <div className="page" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className="row">
+        <TimeGroup label="hours" value={hh} fontSizeVW={11} />
+        <RoundedColon blink fontSizeVW={11} />
+        <TimeGroup label="minutes" value={mm} fontSizeVW={11} />
+        <TimeGroup label="seconds" value={ss} fontSizeVW={6.2} style={{ marginLeft: '0.5rem', opacity: .8 }} />
         {twelveHour && (
-          <span aria-label="am-pm" className="digital7 ml-2" style={{ fontSize: '4vw', lineHeight: 1 }}> {ampm} </span>
+          <span aria-label="am-pm" className="digital7" style={{ marginLeft: '.5rem', opacity:.7, fontSize:'4vw', lineHeight:1 }}>{ampm}</span>
         )}
       </div>
 
-      <button onClick={() => setPanelOpen(true)}
-              className="fixed bottom-3 left-1/2 px-3 py-1 rounded-full border opacity-60 hover:opacity-100"
-              aria-label="Open settings"
-              style={{ transform: 'translateX(-50%)' }}>
-        Swipe up or click for settings
-      </button>
+      <button className="handle" onClick={() => setPanelOpen(true)} aria-label="Open settings">Swipe up or click for settings</button>
 
       <SettingsPanel
-        open={panelOpen} onClose={() => setPanelOpen(false)}
-        twelveHour={twelveHour} onTwelveHour={setTwelveHour}
-        fgColor={fgColor} bgColor={bgColor}
-        onFgColor={setFgColor} onBgColor={setBgColor}
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        twelveHour={twelveHour}
+        onTwelveHour={setTwelveHour}
+        fgColor={fgColor}
+        bgColor={bgColor}
+        onFgColor={setFgColor}
+        onBgColor={setBgColor}
       />
     </div>
   );
 }
 
-function TimeGroup({ label, value, digitClass = "", groupClass = "" }) {
+function TimeGroup({ label, value, fontSizeVW=11, style }) {
   return (
-    <div className={`flex items-baseline gap-[0.4vw] ${groupClass}`} aria-label={label}>
+    <div className="row" aria-label={label} style={style}>
       {[...value].map((ch, i) => (
-        <FlipDigit key={label + i} value={ch} sizeClass={digitClass || "text-[11vw] md:text-[9vw]"} />
+        <FlipDigit key={label + i} value={ch} fontSizeVW={fontSizeVW} />
       ))}
     </div>
   );
 }
 
-function FlipDigit({ value, sizeClass }) {
-  const [current, setCurrent] = React.useState(value);
-  const [next, setNext] = React.useState(null);
-  const [anim, setAnim] = React.useState(false);
+function FlipDigit({ value, fontSizeVW }) {
+  const [current, setCurrent] = useState(value);
+  const [next, setNext] = useState(null);
+  const [anim, setAnim] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (value !== current) {
       setNext(value);
       const id = requestAnimationFrame(() => setAnim(true));
@@ -115,31 +139,38 @@ function FlipDigit({ value, sizeClass }) {
     }
   }, [value, current]);
 
+  const wrapStyle = { fontSize: `${fontSizeVW}vw`, lineHeight: 1 };
+
   return (
-    <span className={`flip-digit digital7 ${sizeClass}`} aria-hidden>
-      <span className="select-none" style={{ opacity: 0 }}>8</span>
-      <span className="flip-face clip-top abs-fill flex items-start justify-center">{current}</span>
-      <span className="flip-face clip-bottom abs-fill flex items-end justify-center">{current}</span>
+    <span className="flip-digit digital7" aria-hidden style={wrapStyle}>
+      {/* sizing glyph so absolute layers have dimensions */}
+      <span style={{ opacity:0, visibility:'hidden' }}>8</span>
+
+      {/* static faces */}
+      <span className="flip-face clip-top abs-fill" style={{ display:'flex', alignItems:'flex-start', justifyContent:'center' }}>{current}</span>
+      <span className="flip-face clip-bottom abs-fill" style={{ display:'flex', alignItems:'flex-end', justifyContent:'center' }}>{current}</span>
+
       {next !== null && (
         <>
-          <span className={`flip-layer flip-upper clip-top ${anim ? 'run-top' : ''} flex items-start justify-center`}>{current}</span>
-          <span className={`flip-layer flip-lower clip-bottom ${anim ? 'run-bottom' : ''} flex items-end justify-center`}>{next}</span>
+          <span className={`flip-layer flip-upper clip-top ${anim ? 'run-top' : ''}`} style={{ display:'flex', alignItems:'flex-start', justifyContent:'center' }}>{current}</span>
+          <span className={`flip-layer flip-lower clip-bottom ${anim ? 'run-bottom' : ''}`} style={{ display:'flex', alignItems:'flex-end', justifyContent:'center' }}>{next}</span>
         </>
       )}
     </span>
   );
 }
 
-function RoundedColon({ blink = true, className = "" }) {
+function RoundedColon({ blink=true, fontSizeVW=11 }) {
   return (
-    <span aria-hidden className={`inline-flex flex-col items-center justify-center ${className} ${blink ? "blink" : ""}`}>
-      <span className="colon-dot" />
-      <span className="colon-dot" style={{ marginTop: '0.28em' }} />
+    <span aria-hidden className={blink ? 'blink' : ''} style={{ fontSize: `${fontSizeVW}vw`, lineHeight: 1, display:'inline-flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <span className="colon-dot"></span>
+      <span className="colon-dot" style={{ marginTop: '.28em' }}></span>
     </span>
   );
 }
 
 function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgColor, onFgColor, onBgColor }) {
+  // swipe down to close
   const startY = React.useRef(null);
   const onTouchStart = (e) => { startY.current = e.touches[0].clientY; };
   const onTouchEnd = (e) => {
@@ -149,45 +180,36 @@ function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgCol
   };
 
   return (
-    <div role="dialog" aria-modal="true"
-      className={`fixed left-0 right-0 bottom-0 z-50 transition-transform`} 
-      style={{ transform: open ? 'translateY(0)' : 'translateY(100%)', transitionDuration: '300ms', transitionTimingFunction: 'ease-out' }}
-      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <div className="mx-auto" style={{ maxWidth: 640 }}>
-        <div style="display:none"></div>
-        <div style="display:none"></div>
-        <div className="w-full rounded-t-2xl" style={{ boxShadow: '0 8px 24px rgba(0,0,0,.15)', border: '1px solid rgba(0,0,0,.1)', background: '#fff', color: '#111' }}>
-          <div className="w-full flex justify-center" style={{ padding: '8px 0' }}>
-            <div className="h-1.5 w-12 rounded-full" style={{ background: '#e5e5e5' }}></div>
+    <div className={`panel ${open ? 'open' : ''}`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className="card">
+        <div className="drag"><div></div></div>
+        <div className="card-body">
+          <div className="between">
+            <h2 style={{ fontSize:16, fontWeight:600, margin:0 }}>Settings</h2>
+            <button className="btn" onClick={onClose}>Close</button>
           </div>
-          <div style={{ padding: '8px 20px 20px', display: 'grid', gap: 16 }}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-base" style={{ fontWeight: 500 }}>Settings</h2>
-              <button onClick={onClose} className="text-sm px-3 py-1 rounded border" style={{ borderColor: '#d4d4d4' }}>Close</button>
-            </div>
 
-            <fieldset style={{ display: 'grid', gap: 8 }}>
-              <legend className="text-sm" style={{ fontWeight: 500 }}>Time format</legend>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="radio" name="format" checked={!twelveHour} onChange={() => onTwelveHour(false)} />
-                24-hour
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="radio" name="format" checked={twelveHour} onChange={() => onTwelveHour(true)} />
-                12-hour (show AM/PM)
-              </label>
-            </fieldset>
+          <fieldset style={{ display:'grid', gap:8 }}>
+            <legend style={{ fontSize:14, fontWeight:500 }}>Time format</legend>
+            <label className="radio-row">
+              <input type="radio" name="format" checked={!twelveHour} onChange={() => onTwelveHour(false)} />
+              24-hour
+            </label>
+            <label className="radio-row">
+              <input type="radio" name="format" checked={twelveHour} onChange={() => onTwelveHour(true)} />
+              12-hour (show AM/PM)
+            </label>
+          </fieldset>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <label className="text-sm flex items-center justify-between gap-3">
-                <span>Font color</span>
-                <input type="color" value={fgColor} onChange={(e) => onFgColor(e.target.value)} className="h-9 w-16 p-0 border rounded bg-transparent" aria-label="Choose font color" />
-              </label>
-              <label className="text-sm flex items-center justify-between gap-3">
-                <span>Background</span>
-                <input type="color" value={bgColor} onChange={(e) => onBgColor(e.target.value)} className="h-9 w-16 p-0 border rounded bg-transparent" aria-label="Choose background color" />
-              </label>
-            </div>
+          <div className="grid2">
+            <label className="between">
+              <span style={{ fontSize:14 }}>Font color</span>
+              <input className="color" type="color" value={fgColor} onChange={(e) => onFgColor(e.target.value)} aria-label="Choose font color" />
+            </label>
+            <label className="between">
+              <span style={{ fontSize:14 }}>Background</span>
+              <input className="color" type="color" value={bgColor} onChange={(e) => onBgColor(e.target.value)} aria-label="Choose background color" />
+            </label>
           </div>
         </div>
       </div>
@@ -195,21 +217,36 @@ function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgCol
   );
 }
 
-/* helpers */
-function pad2(n) { return n.toString().padStart(2, "0"); }
-function formatParts(d, twelveHour) {
+/* Helpers */
+function pad2(n){ return n.toString().padStart(2,'0'); }
+function formatParts(d, twelveHour){
   let h = d.getHours();
-  const ampm = h >= 12 ? "PM" : "AM";
-  if (twelveHour) { h = h % 12 || 12; }
-  const hh = pad2(h), mm = pad2(d.getMinutes()), ss = pad2(d.getSeconds());
-  return { hh, mm, ss, ampm };
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  if (twelveHour) h = h % 12 || 12;
+  return { hh: pad2(h), mm: pad2(d.getMinutes()), ss: pad2(d.getSeconds()), ampm };
 }
-function getStored(k, f){ try{ const v = localStorage.getItem(k); return v ?? f; } catch{ return f; } }
-function getStoredBool(k, f){ try{ const v = localStorage.getItem(k); return v ? v === 'true' : f; } catch{ return f; } }
-function store(k, v){ try{ localStorage.setItem(k, v); } catch{} }
+function getStored(k,f){ try{ const v = localStorage.getItem(k); return v ?? f; } catch { return f; } }
+function getStoredBool(k,f){ try{ const v = localStorage.getItem(k); return v ? v === 'true' : f; } catch { return f; } }
+function store(k,v){ try{ localStorage.setItem(k,v); } catch{}
+}
 
-/* Render */
+/* Runtime tests (console asserts) */
+(function tests(){
+  // pad2
+  console.assert(pad2(0)==='00','pad2(0)');
+  console.assert(pad2(7)==='07','pad2(7)');
+  console.assert(pad2(12)==='12','pad2(12)');
+  console.assert(pad2(59)==='59','pad2(59)');
+  // formatParts 24h
+  const d1=new Date('2025-01-01T00:05:09Z'); const f1=formatParts(new Date(d1.getTime()),false);
+  console.assert(f1.hh.length===2 && f1.mm==='05' && f1.ss==='09','formatParts 24h basic');
+  // formatParts 12h
+  const d2=new Date('2025-01-01T13:08:04Z'); const f2=formatParts(new Date(d2.getTime()),true);
+  console.assert(f2.ampm==='PM' && f2.hh.length===2 && f2.mm==='08' && f2.ss==='04','formatParts 12h basic');
+})();
+
+/* Mount */
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<FlipClock />);
+root.render(<FlipClock/>);
 </script>
 </html>

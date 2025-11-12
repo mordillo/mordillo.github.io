@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Flip Clock — Split-Flap</title>
+<title>Flip Clock — Split-Flap with Time Zone</title>
 
 <!-- React + ReactDOM + Babel for inline JSX -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -12,7 +12,7 @@
 <style>
   :root { --fg:#111; --bg:#fff; --hinge:1000px; }
   html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); }
-  .page { min-height:100vh; display:flex; align-items:center; justify-content:center; user-select:none; }
+  .page { min-height:100vh; display:flex; align-items:center; justify-content:center; user-select:none; padding: 12px; box-sizing: border-box; }
   .row  { display:flex; align-items:center; gap:.75rem; }
 
   /* Digital-7-ish stack (uses Digital-7 if present) */
@@ -26,9 +26,11 @@
   /* Sizes (mobile-first) */
   .t-huge { font-size:11vw; }
   .t-small { font-size:6.2vw; }
+  .tz-chip { font-size:4vw; opacity:.75; line-height:1; margin-left:.5rem; }
   @media (min-width:768px){
     .t-huge  { font-size:9vw; }
     .t-small { font-size:4.6vw; }
+    .tz-chip { font-size:3vw; }
   }
 
   /* Settings handle & panel */
@@ -36,19 +38,21 @@
   .handle:hover { opacity:1; }
   .panel { position:fixed; left:0; right:0; bottom:0; transform:translateY(100%); transition:transform .3s ease-out; z-index:50; }
   .panel.open { transform:translateY(0); }
-  .card { margin:0 auto; max-width:640px; background:#fff; color:#111; border:1px solid #0000001a; border-top-left-radius:16px; border-top-right-radius:16px; box-shadow:0 8px 24px #00000026; }
+  .card { margin:0 auto; max-width:720px; background:#fff; color:#111; border:1px solid #0000001a; border-top-left-radius:16px; border-top-right-radius:16px; box-shadow:0 8px 24px #00000026; }
   .drag { display:flex; justify-content:center; padding:8px 0; }
   .drag > div { height:6px; width:48px; border-radius:9999px; background:#e5e5e5; }
   .card-body { padding:8px 20px 20px; display:grid; gap:16px; }
   .between { display:flex; align-items:center; justify-content:space-between; }
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .grid1 { display:grid; grid-template-columns:1fr; gap:12px; }
   .radio-row { display:flex; align-items:center; gap:8px; font-size:14px; }
   .color { height:36px; width:64px; padding:0; border-radius:6px; border:1px solid #d4d4d4; background:transparent; }
   .btn { font-size:14px; padding:.25rem .75rem; border:1px solid #d4d4d4; border-radius:6px; background:#fff; }
 
-  /* === Split-flap (true hinged) ===
-     Constrained to the digit rectangle; perspective creates depth.
-  */
+  .select { height:36px; border:1px solid #d4d4d4; border-radius:6px; padding:0 8px; background:#fff; font-size:14px; }
+  .input { height:36px; border:1px solid #d4d4d4; border-radius:6px; padding:0 8px; background:#fff; font-size:14px; width:100%; box-sizing: border-box; }
+
+  /* === Split-flap (true hinged) === */
   .flip-digit { position:relative; display:inline-block; line-height:1; overflow:hidden; perspective:var(--hinge); }
   .abs-fill  { position:absolute; inset:0; }
   .flip-face { line-height:1; }
@@ -85,24 +89,66 @@
 <script type="text/babel">
 const { useEffect, useMemo, useRef, useState } = React;
 
+/* ---------- Time zone helpers ---------- */
+const DEFAULT_TZ = getStored('flipclock:tz', 'America/New_York');
+
+const COMMON_TZS = [
+  'Pacific/Midway','America/Adak','America/Anchorage','America/Los_Angeles','America/Denver','America/Chicago',
+  'America/New_York','America/Toronto','America/Sao_Paulo','Atlantic/Bermuda','Europe/London','Europe/Paris',
+  'Europe/Berlin','Europe/Madrid','Europe/Warsaw','Europe/Athens','Africa/Cairo','Europe/Moscow','Asia/Dubai',
+  'Asia/Karachi','Asia/Kolkata','Asia/Bangkok','Asia/Hong_Kong','Asia/Tokyo','Australia/Sydney','Pacific/Auckland'
+];
+
+function formatPartsInTZ(date, tz, twelveHour) {
+  // Use Intl to format into parts in the target time zone
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: twelveHour
+  });
+  const parts = fmt.formatToParts(date);
+  const get = t => parts.find(p => p.type === t)?.value ?? '';
+  const hour = get('hour');
+  const minute = get('minute');
+  const second = get('second');
+  const dayPeriod = get('dayPeriod') || ''; // AM/PM when 12h
+  return { hh: hour, mm: minute, ss: second, ampm: dayPeriod.toUpperCase() };
+}
+
+function tzShort(date, tz) {
+  // Try to extract a short zone name (e.g., EST/EDT, CET, GMT-5)
+  // Fallback to IANA name if not available in this browser.
+  try {
+    const fmt = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' });
+    const parts = fmt.formatToParts(date);
+    const name = parts.find(p => p.type === 'timeZoneName')?.value?.trim();
+    if (name) return name;
+  } catch {}
+  return tz; // fallback
+}
+
 /* ---------- Core: Split-flap flip clock ---------- */
 function App(){
   const [now, setNow] = useState(new Date());
   const [twelveHour, setTwelveHour] = useState(getStoredBool('flipclock:twelveHour', false));
   const [fgColor, setFgColor] = useState(getStored('flipclock:fg', '#111111'));
   const [bgColor, setBgColor] = useState(getStored('flipclock:bg', '#ffffff'));
+  const [tz, setTz] = useState(DEFAULT_TZ);
   const [panelOpen, setPanelOpen] = useState(false);
 
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
   useEffect(() => store('flipclock:twelveHour', String(twelveHour)), [twelveHour]);
   useEffect(() => store('flipclock:fg', fgColor), [fgColor]);
   useEffect(() => store('flipclock:bg', bgColor), [bgColor]);
+  useEffect(() => store('flipclock:tz', tz), [tz]);
+
   useEffect(() => {
     document.documentElement.style.setProperty('--fg', fgColor);
     document.documentElement.style.setProperty('--bg', bgColor);
   }, [fgColor, bgColor]);
 
-  const { hh, mm, ss, ampm } = useMemo(() => formatParts(now, twelveHour), [now, twelveHour]);
+  const { hh, mm, ss, ampm } = useMemo(() => formatPartsInTZ(now, tz, twelveHour), [now, tz, twelveHour]);
+  const zoneLabel = useMemo(() => tzShort(now, tz), [now, tz]);
 
   // Mechanical coupling: hour flips just after minute rolls 59 -> 00
   const lastRef = useRef(null);
@@ -128,18 +174,24 @@ function App(){
         <RoundedColon blink className="t-huge" />
         <TimeGroup label="minutes" value={mm} digitClass="t-huge digital7" />
         <TimeGroup label="seconds" value={ss} digitClass="t-small digital7" groupStyle={{ marginLeft: '.5rem', opacity: .8 }} />
-        {twelveHour && (
-          <span className="digital7" style={{ marginLeft: '.5rem', opacity:.7, fontSize:'4vw', lineHeight:1 }}>{ampm}</span>
-        )}
+        {/* AM/PM (12h) and TZ label */}
+        <span className="digital7 tz-chip">{twelveHour ? (ampm || '\u00A0') : '\u00A0'}</span>
+        <span className="digital7 tz-chip" title={tz}>{zoneLabel}</span>
       </div>
 
       <button className="handle" onClick={() => setPanelOpen(true)} aria-label="Open settings">Swipe up or click for settings</button>
 
       <SettingsPanel
-        open={panelOpen} onClose={() => setPanelOpen(false)}
-        twelveHour={twelveHour} onTwelveHour={setTwelveHour}
-        fgColor={fgColor} bgColor={bgColor}
-        onFgColor={setFgColor} onBgColor={setBgColor}
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        twelveHour={twelveHour}
+        onTwelveHour={setTwelveHour}
+        fgColor={fgColor}
+        bgColor={bgColor}
+        onFgColor={setFgColor}
+        onBgColor={setBgColor}
+        tz={tz}
+        onTz={setTz}
       />
     </div>
   );
@@ -218,14 +270,30 @@ function RoundedColon({ blink=true, className="" }) {
   );
 }
 
-/* Settings UI */
-function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgColor, onFgColor, onBgColor }) {
+/* Settings UI (adds Time Zone control) */
+function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgColor, onFgColor, onBgColor, tz, onTz }) {
+  // swipe down to close
   const startY = React.useRef(null);
   const onTouchStart = e => { startY.current = e.touches[0].clientY; };
   const onTouchEnd   = e => {
     const endY = e.changedTouches[0].clientY;
     if (startY.current !== null && endY - startY.current > 40) onClose();
     startY.current = null;
+  };
+
+  const [customTz, setCustomTz] = React.useState('');
+
+  const applyCustomTz = () => {
+    const val = customTz.trim();
+    if (!val) return;
+    try {
+      // Validate by attempting to format in that zone
+      new Intl.DateTimeFormat('en-US', { timeZone: val }).format(new Date());
+      onTz(val);
+      setCustomTz('');
+    } catch {
+      alert('That time zone is not recognized. Try an IANA name like "Europe/Paris".');
+    }
   };
 
   return (
@@ -237,6 +305,23 @@ function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgCol
             <h2 style={{ fontSize:16, fontWeight:600, margin:0 }}>Settings</h2>
             <button className="btn" onClick={onClose}>Close</button>
           </div>
+
+          <fieldset className="grid1">
+            <legend style={{ fontSize:14, fontWeight:500 }}>Time zone</legend>
+            <div className="between" style="gap:8px">
+              <select className="select" value={tz} onChange={(e) => onTz(e.target.value)} style="flex:1">
+                {COMMON_TZS.map(z => <option key={z} value={z}>{z}</option>)}
+              </select>
+              <button className="btn" onClick={() => onTz('America/New_York')}>NY (Default)</button>
+            </div>
+            <div className="between" style="gap:8px">
+              <input className="input" placeholder="Or type an IANA zone, e.g. Europe/Paris" value={customTz} onChange={e=>setCustomTz(e.target.value)} />
+              <button className="btn" onClick={applyCustomTz}>Apply</button>
+            </div>
+            <div style="font-size:12px; opacity:.8">
+              Tip: Use standard IANA names like <code>America/New_York</code>, <code>Europe/London</code>, <code>Asia/Tokyo</code>.
+            </div>
+          </fieldset>
 
           <fieldset style={{ display:'grid', gap:8 }}>
             <legend style={{ fontSize:14, fontWeight:500 }}>Time format</legend>
@@ -268,25 +353,9 @@ function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgCol
 
 /* Helpers */
 function pad2(n){ return n.toString().padStart(2,'0'); }
-function formatParts(d, twelveHour){
-  let h = d.getHours();
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  if (twelveHour) h = h % 12 || 12;
-  return { hh: pad2(h), mm: pad2(d.getMinutes()), ss: pad2(d.getSeconds()), ampm };
-}
 function getStored(k,f){ try{ const v = localStorage.getItem(k); return v ?? f; } catch { return f; } }
 function getStoredBool(k,f){ try{ const v = localStorage.getItem(k); return v ? v === 'true' : f; } catch { return f; } }
 function store(k,v){ try{ localStorage.setItem(k, v); } catch{} }
-
-/* Tiny console tests */
-(function(){
-  console.assert(pad2(0)==='00','pad2(0)');
-  console.assert(pad2(7)==='07','pad2(7)');
-  const f1=formatParts(new Date('2025-01-01T00:05:09Z'), false);
-  console.assert(f1.hh.length===2 && f1.mm==='05' && f1.ss==='09','24h basic');
-  const f2=formatParts(new Date('2025-01-01T13:08:04Z'), true);
-  console.assert(f2.ampm==='PM' && f2.hh.length===2 && f2.mm==='08' && f2.ss==='04','12h basic');
-})();
 
 /* Mount */
 const root = ReactDOM.createRoot(document.getElementById('root'));

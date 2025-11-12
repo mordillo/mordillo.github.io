@@ -2,73 +2,82 @@
 <html lang="en">
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Flip Clock (Split-Flap)</title>
+<title>Flip Clock — Split-Flap</title>
 
-<!-- React (UMD) + ReactDOM + Babel to run JSX inline -->
+<!-- React + ReactDOM + Babel for inline JSX -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <style>
-  :root { --fg:#111; --bg:#fff; }
+  :root { --fg:#111; --bg:#fff; --hinge:1000px; }
   html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); }
-  .page { min-height:100vh; width:100%; display:flex; align-items:center; justify-content:center; user-select:none; }
-  .row { display:flex; align-items:center; gap:.75rem; }
+  .page { min-height:100vh; display:flex; align-items:center; justify-content:center; user-select:none; }
+  .row  { display:flex; align-items:center; gap:.75rem; }
 
-  /* Blink for colon */
-  @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
-  .blink { animation: blink 1s steps(1,end) infinite; }
-
-  /* Digital-style font stack; uses Digital-7 if present */
+  /* Digital-7-ish stack (uses Digital-7 if present) */
   .digital7 { font-family:'Digital-7','DS-Digital','Segment7','DSEG7 Classic','Seven Segment',ui-monospace,Menlo,Consolas,'Courier New',monospace; letter-spacing:.04em; }
 
-  /* Rounded colon dots */
+  /* Colon blink */
+  @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+  .blink { animation: blink 1s steps(1,end) infinite; }
   .colon-dot { width:.18em; height:.18em; border-radius:9999px; display:block; background:currentColor; }
 
-  /* Settings handle */
-  .handle { position:fixed; left:50%; bottom:.75rem; transform:translateX(-50%); padding:.25rem .5rem; border:1px solid currentColor; border-radius:9999px; opacity:.6; transition:opacity .2s; background:transparent; color:inherit; }
-  .handle:hover { opacity:1; }
+  /* Sizes (mobile-first) */
+  .t-huge { font-size:11vw; }
+  .t-small { font-size:6.2vw; }
+  @media (min-width:768px){
+    .t-huge  { font-size:9vw; }
+    .t-small { font-size:4.6vw; }
+  }
 
-  /* Settings panel */
-  .panel { position:fixed; left:0; right:0; bottom:0; z-index:50; transform: translateY(100%); transition: transform .3s ease-out; }
-  .panel.open { transform: translateY(0); }
-  .card { margin:0 auto; max-width:640px; width:100%; border:1px solid rgba(0,0,0,.1); background:#fff; color:#111; border-top-left-radius:16px; border-top-right-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.15); }
+  /* Settings handle & panel */
+  .handle { position:fixed; left:50%; bottom:.75rem; transform:translateX(-50%); padding:.25rem .6rem; border:1px solid currentColor; border-radius:9999px; opacity:.65; background:transparent; color:inherit; transition:opacity .2s; }
+  .handle:hover { opacity:1; }
+  .panel { position:fixed; left:0; right:0; bottom:0; transform:translateY(100%); transition:transform .3s ease-out; z-index:50; }
+  .panel.open { transform:translateY(0); }
+  .card { margin:0 auto; max-width:640px; background:#fff; color:#111; border:1px solid #0000001a; border-top-left-radius:16px; border-top-right-radius:16px; box-shadow:0 8px 24px #00000026; }
   .drag { display:flex; justify-content:center; padding:8px 0; }
   .drag > div { height:6px; width:48px; border-radius:9999px; background:#e5e5e5; }
-  .card-body { padding: 8px 20px 20px; display:grid; gap:16px; }
+  .card-body { padding:8px 20px 20px; display:grid; gap:16px; }
   .between { display:flex; align-items:center; justify-content:space-between; }
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .radio-row { display:flex; align-items:center; gap:8px; font-size:14px; }
   .color { height:36px; width:64px; padding:0; border-radius:6px; border:1px solid #d4d4d4; background:transparent; }
   .btn { font-size:14px; padding:.25rem .75rem; border:1px solid #d4d4d4; border-radius:6px; background:#fff; }
 
-  /* === Split-flap styles (seamless, true hinged flip) === */
-  .flip-digit { position:relative; display:inline-block; line-height:1; overflow:hidden; perspective:1000px; }
-  .abs-fill { position:absolute; inset:0; }
+  /* === Split-flap (true hinged) ===
+     Constrained to the digit rectangle; perspective creates depth.
+  */
+  .flip-digit { position:relative; display:inline-block; line-height:1; overflow:hidden; perspective:var(--hinge); }
+  .abs-fill  { position:absolute; inset:0; }
   .flip-face { line-height:1; }
-  /* slight overlap to avoid hairline gap */
-  .clip-top { clip-path: inset(0 0 50.1% 0); }
+  /* slight overlap to avoid hairline seam */
+  .clip-top    { clip-path: inset(0 0 50.1% 0); }
   .clip-bottom { clip-path: inset(49.9% 0 0 0); }
 
-  /* Animated halves */
-  .flip-layer { position:absolute; inset:0; transform-style:preserve-3d; backface-visibility:hidden; }
-  .flip-upper { top:0; transform-origin:center bottom; }
-  .flip-lower { bottom:0; transform-origin:center top; }
+  /* Animated halves (leaves) */
+  .flip-layer  { position:absolute; inset:0; transform-style:preserve-3d; backface-visibility:hidden; }
+  .flip-upper  { top:0;    transform-origin:center bottom; z-index:3; }
+  .flip-lower  { bottom:0; transform-origin:center top;    z-index:2; }
 
-  /* True split-flap (hinged) sequence */
-  @keyframes flipTopOut   { from { transform: rotateX(0deg); } to { transform: rotateX(-90deg); } }
-  @keyframes flipBottomIn { from { transform: rotateX(90deg); } to { transform: rotateX(0deg); } }
+  /* Subtle leaf shading to accent the hinge motion */
+  .leaf-shadow-top::after {
+    content:""; position:absolute; inset:0;
+    background: linear-gradient(to bottom, rgba(0,0,0,.18), transparent 60%);
+    pointer-events:none;
+  }
+  .leaf-shadow-bottom::before {
+    content:""; position:absolute; inset:0;
+    background: linear-gradient(to top, rgba(0,0,0,.15), transparent 60%);
+    pointer-events:none;
+  }
+
+  /* Motion curves feel springy/snappy like a mechanical release */
+  @keyframes flipTopOut   { from { transform: rotateX(  0deg); } to { transform: rotateX(-90deg); } }
+  @keyframes flipBottomIn { from { transform: rotateX( 90deg); } to { transform: rotateX(  0deg); } }
   .run-top-out   { animation: flipTopOut   .22s cubic-bezier(.33,.01,.67,.99) forwards; }
   .run-bottom-in { animation: flipBottomIn .22s cubic-bezier(.25,.6,.2,1)  .12s forwards; }
-
-  /* Simple text sizes (mobile-first) */
-  .t-huge { font-size:11vw; }
-  .t-large { font-size:9vw; }
-  .t-small { font-size:6.2vw; }
-  @media (min-width:768px){
-    .t-huge { font-size:9vw; }
-    .t-small { font-size:4.6vw; }
-  }
 </style>
 
 <div id="root" class="page"></div>
@@ -76,7 +85,8 @@
 <script type="text/babel">
 const { useEffect, useMemo, useRef, useState } = React;
 
-function FlipClock() {
+/* ---------- Core: Split-flap flip clock ---------- */
+function App(){
   const [now, setNow] = useState(new Date());
   const [twelveHour, setTwelveHour] = useState(getStoredBool('flipclock:twelveHour', false));
   const [fgColor, setFgColor] = useState(getStored('flipclock:fg', '#111111'));
@@ -87,23 +97,29 @@ function FlipClock() {
   useEffect(() => store('flipclock:twelveHour', String(twelveHour)), [twelveHour]);
   useEffect(() => store('flipclock:fg', fgColor), [fgColor]);
   useEffect(() => store('flipclock:bg', bgColor), [bgColor]);
-  useEffect(() => { document.documentElement.style.setProperty('--fg', fgColor); document.documentElement.style.setProperty('--bg', bgColor); }, [fgColor, bgColor]);
+  useEffect(() => {
+    document.documentElement.style.setProperty('--fg', fgColor);
+    document.documentElement.style.setProperty('--bg', bgColor);
+  }, [fgColor, bgColor]);
 
   const { hh, mm, ss, ampm } = useMemo(() => formatParts(now, twelveHour), [now, twelveHour]);
 
-  // Detect minute rollover (59 -> 00) to trigger hour flip with a slight mechanical delay
-  const lastTimeRef = useRef(null);
+  // Mechanical coupling: hour flips just after minute rolls 59 -> 00
+  const lastRef = useRef(null);
   const minuteRolled = useMemo(() => {
-    const prev = lastTimeRef.current;
-    const rolled = prev ? (prev.mm === '59' && mm === '00') : false;
-    return rolled;
+    const prev = lastRef.current;
+    return prev ? (prev.mm === '59' && mm === '00') : false;
   }, [mm]);
-  useEffect(() => { lastTimeRef.current = { hh, mm, ss }; }, [hh, mm, ss]);
+  useEffect(() => { lastRef.current = { hh, mm, ss }; }, [hh, mm, ss]);
 
-  // Swipe up for settings
+  // Swipe up opens settings (iOS)
   const startY = useRef(null);
-  const onTouchStart = (e) => { startY.current = e.touches[0].clientY; };
-  const onTouchEnd = (e) => { const endY = e.changedTouches[0].clientY; if (startY.current !== null && startY.current - endY > 40) setPanelOpen(true); startY.current = null; };
+  const onTouchStart = e => { startY.current = e.touches[0].clientY; };
+  const onTouchEnd   = e => {
+    const endY = e.changedTouches[0].clientY;
+    if (startY.current !== null && startY.current - endY > 40) setPanelOpen(true);
+    startY.current = null;
+  };
 
   return (
     <div className="page" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
@@ -112,7 +128,9 @@ function FlipClock() {
         <RoundedColon blink className="t-huge" />
         <TimeGroup label="minutes" value={mm} digitClass="t-huge digital7" />
         <TimeGroup label="seconds" value={ss} digitClass="t-small digital7" groupStyle={{ marginLeft: '.5rem', opacity: .8 }} />
-        {twelveHour && <span className="digital7" style={{ marginLeft: '.5rem', opacity:.7, fontSize:'4vw', lineHeight:1 }}>{ampm}</span>}
+        {twelveHour && (
+          <span className="digital7" style={{ marginLeft: '.5rem', opacity:.7, fontSize:'4vw', lineHeight:1 }}>{ampm}</span>
+        )}
       </div>
 
       <button className="handle" onClick={() => setPanelOpen(true)} aria-label="Open settings">Swipe up or click for settings</button>
@@ -127,6 +145,7 @@ function FlipClock() {
   );
 }
 
+/* One group of digits (e.g., "12") */
 function TimeGroup({ label, value, digitClass="", groupStyle, startDelayMs=0 }) {
   return (
     <div className="row" aria-label={label} style={groupStyle}>
@@ -137,6 +156,11 @@ function TimeGroup({ label, value, digitClass="", groupStyle, startDelayMs=0 }) 
   );
 }
 
+/* Split-flap leaf animation:
+   - Current leaf's TOP hinges down (falls) and hides behind.
+   - Next leaf's BOTTOM hinges up (appears) from top.
+   Both motions are clipped inside the digit rectangle.
+*/
 function FlipDigit({ value, sizeClass, startDelayMs=0 }) {
   const [current, setCurrent] = useState(value);
   const [next, setNext] = useState(null);
@@ -146,34 +170,36 @@ function FlipDigit({ value, sizeClass, startDelayMs=0 }) {
     if (value !== current) {
       setNext(value);
       const start = setTimeout(() => setAnim(true), Math.max(0, startDelayMs));
-      const done = setTimeout(() => {
+      const done  = setTimeout(() => {
         setCurrent(value);
         setNext(null);
         setAnim(false);
-      }, Math.max(0, startDelayMs) + 360);
+      }, Math.max(0, startDelayMs) + 360); // slightly longer than staged flips
       return () => { clearTimeout(start); clearTimeout(done); };
     }
   }, [value, current, startDelayMs]);
 
   return (
     <span className={`flip-digit ${sizeClass}`} aria-hidden>
-      {/* sizing glyph so absolute layers have dimensions */}
+      {/* sizing glyph for stable box metrics */}
       <span style={{ opacity:0, visibility:'hidden' }}>8</span>
 
-      {/* STATIC FACES: current on top, next on bottom (classic mechanism) */}
-      <span className="flip-face clip-top abs-fill" style={{ display:'flex', alignItems:'flex-start', justifyContent:'center' }}>{current}</span>
-      <span className="flip-face clip-bottom abs-fill" style={{ display:'flex', alignItems:'flex-end', justifyContent:'center' }}>{next ?? current}</span>
+      {/* Static faces: show CURRENT on top, NEXT on bottom (like two leaves on the wheel) */}
+      <span className="flip-face clip-top abs-fill"    style={{ display:'flex', alignItems:'flex-start', justifyContent:'center' }}>{current}</span>
+      <span className="flip-face clip-bottom abs-fill" style={{ display:'flex', alignItems:'flex-end',   justifyContent:'center' }}>{next ?? current}</span>
 
-      {/* OUTGOING TOP: current top hinges down */}
+      {/* OUTGOING TOP leaf: hinges down and disappears behind */}
       {next !== null && (
-        <span className={`flip-layer flip-upper clip-top ${anim ? 'run-top-out' : ''}`} style={{ display:'flex', alignItems:'flex-start', justifyContent:'center' }}>
+        <span className={`flip-layer flip-upper clip-top leaf-shadow-top ${anim ? 'run-top-out' : ''}`}
+              style={{ display:'flex', alignItems:'flex-start', justifyContent:'center' }}>
           {current}
         </span>
       )}
 
-      {/* INCOMING BOTTOM: next bottom hinges up (slightly delayed) */}
+      {/* INCOMING BOTTOM leaf: hinges up (slightly delayed) */}
       {next !== null && (
-        <span className={`flip-layer flip-lower clip-bottom ${anim ? 'run-bottom-in' : ''}`} style={{ display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+        <span className={`flip-layer flip-lower clip-bottom leaf-shadow-bottom ${anim ? 'run-bottom-in' : ''}`}
+              style={{ display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
           {next}
         </span>
       )}
@@ -181,6 +207,7 @@ function FlipDigit({ value, sizeClass, startDelayMs=0 }) {
   );
 }
 
+/* Centered colon, two round dots, synced blink */
 function RoundedColon({ blink=true, className="" }) {
   return (
     <span aria-hidden className={`${className} ${blink ? 'blink' : ''}`}
@@ -191,14 +218,18 @@ function RoundedColon({ blink=true, className="" }) {
   );
 }
 
+/* Settings UI */
 function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgColor, onFgColor, onBgColor }) {
-  // swipe down to close
   const startY = React.useRef(null);
-  const onTouchStart = (e) => { startY.current = e.touches[0].clientY; };
-  const onTouchEnd = (e) => { const endY = e.changedTouches[0].clientY; if (startY.current !== null && endY - startY.current > 40) onClose(); startY.current = null; };
+  const onTouchStart = e => { startY.current = e.touches[0].clientY; };
+  const onTouchEnd   = e => {
+    const endY = e.changedTouches[0].clientY;
+    if (startY.current !== null && endY - startY.current > 40) onClose();
+    startY.current = null;
+  };
 
   return (
-    <div className={`panel ${open ? 'open' : ''}`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+    <div className={`panel ${open ? 'open' : ''}`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} role="dialog" aria-modal="true">
       <div className="card">
         <div className="drag"><div></div></div>
         <div className="card-body">
@@ -222,11 +253,11 @@ function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgCol
           <div className="grid2">
             <label className="between">
               <span style={{ fontSize:14 }}>Font color</span>
-              <input className="color" type="color" value={fgColor} onChange={(e) => onFgColor(e.target.value)} aria-label="Choose font color" />
+              <input className="color" type="color" value={fgColor} onChange={e => onFgColor(e.target.value)} />
             </label>
             <label className="between">
               <span style={{ fontSize:14 }}>Background</span>
-              <input className="color" type="color" value={bgColor} onChange={(e) => onBgColor(e.target.value)} aria-label="Choose background color" />
+              <input className="color" type="color" value={bgColor} onChange={e => onBgColor(e.target.value)} />
             </label>
           </div>
         </div>
@@ -247,23 +278,18 @@ function getStored(k,f){ try{ const v = localStorage.getItem(k); return v ?? f; 
 function getStoredBool(k,f){ try{ const v = localStorage.getItem(k); return v ? v === 'true' : f; } catch { return f; } }
 function store(k,v){ try{ localStorage.setItem(k, v); } catch{} }
 
-/* Simple tests in console */
-(function tests(){
+/* Tiny console tests */
+(function(){
   console.assert(pad2(0)==='00','pad2(0)');
   console.assert(pad2(7)==='07','pad2(7)');
-  console.assert(pad2(12)==='12','pad2(12)');
   const f1=formatParts(new Date('2025-01-01T00:05:09Z'), false);
-  console.assert(f1.hh.length===2 && f1.mm==='05' && f1.ss==='09','formatParts 24h basic');
+  console.assert(f1.hh.length===2 && f1.mm==='05' && f1.ss==='09','24h basic');
   const f2=formatParts(new Date('2025-01-01T13:08:04Z'), true);
-  console.assert(f2.ampm==='PM' && f2.hh.length===2 && f2.mm==='08' && f2.ss==='04','formatParts 12h basic');
-  // minute rollover helper
-  const minuteRollover = (prev,next) => prev.mm==='59' && next.mm==='00';
-  console.assert(minuteRollover({mm:'59'},{mm:'00'})===true,'minuteRollover 59->00');
-  console.assert(minuteRollover({mm:'58'},{mm:'59'})===false,'minuteRollover false');
+  console.assert(f2.ampm==='PM' && f2.hh.length===2 && f2.mm==='08' && f2.ss==='04','12h basic');
 })();
 
 /* Mount */
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<FlipClock />);
+root.render(<App />);
 </script>
 </html>

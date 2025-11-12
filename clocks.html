@@ -12,10 +12,10 @@
 <style>
   :root { --fg:#111; --bg:#fff; --hinge:1000px; }
   html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); }
-  .page { min-height:100vh; display:flex; align-items:center; justify-content:center; user-select:none; padding: 12px; box-sizing: border-box; }
+  .page { min-height:100vh; display:flex; align-items:center; justify-content:center; user-select:none; padding:12px; box-sizing:border-box; }
   .row  { display:flex; align-items:center; gap:.75rem; }
 
-  /* Digital-7-ish stack (uses Digital-7 if present) */
+  /* Digital-7-ish stack */
   .digital7 { font-family:'Digital-7','DS-Digital','Segment7','DSEG7 Classic','Seven Segment',ui-monospace,Menlo,Consolas,'Courier New',monospace; letter-spacing:.04em; }
 
   /* Colon blink */
@@ -49,8 +49,8 @@
   .color { height:36px; width:64px; padding:0; border-radius:6px; border:1px solid #d4d4d4; background:transparent; }
   .btn { font-size:14px; padding:.25rem .75rem; border:1px solid #d4d4d4; border-radius:6px; background:#fff; }
 
-  .select { height:36px; border:1px solid #d4d4d4; border-radius:6px; padding:0 8px; background:#fff; font-size:14px; }
-  .input { height:36px; border:1px solid #d4d4d4; border-radius:6px; padding:0 8px; background:#fff; font-size:14px; width:100%; box-sizing: border-box; }
+  .select { height:36px; border:1px solid #d4d4d4; border-radius:6px; padding:0 8px; background:#fff; font-size:14px; width:100%; box-sizing:border-box; }
+  .input  { height:36px; border:1px solid #d4d4d4; border-radius:6px; padding:0 8px; background:#fff; font-size:14px; width:100%; box-sizing:border-box; }
 
   /* === Split-flap (true hinged) === */
   .flip-digit { position:relative; display:inline-block; line-height:1; overflow:hidden; perspective:var(--hinge); }
@@ -65,19 +65,11 @@
   .flip-upper  { top:0;    transform-origin:center bottom; z-index:3; }
   .flip-lower  { bottom:0; transform-origin:center top;    z-index:2; }
 
-  /* Subtle leaf shading to accent the hinge motion */
-  .leaf-shadow-top::after {
-    content:""; position:absolute; inset:0;
-    background: linear-gradient(to bottom, rgba(0,0,0,.18), transparent 60%);
-    pointer-events:none;
-  }
-  .leaf-shadow-bottom::before {
-    content:""; position:absolute; inset:0;
-    background: linear-gradient(to top, rgba(0,0,0,.15), transparent 60%);
-    pointer-events:none;
-  }
+  /* Subtle leaf shading */
+  .leaf-shadow-top::after { content:""; position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,.18), transparent 60%); pointer-events:none; }
+  .leaf-shadow-bottom::before { content:""; position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,.15), transparent 60%); pointer-events:none; }
 
-  /* Motion curves feel springy/snappy like a mechanical release */
+  /* Motion curves */
   @keyframes flipTopOut   { from { transform: rotateX(  0deg); } to { transform: rotateX(-90deg); } }
   @keyframes flipBottomIn { from { transform: rotateX( 90deg); } to { transform: rotateX(  0deg); } }
   .run-top-out   { animation: flipTopOut   .22s cubic-bezier(.33,.01,.67,.99) forwards; }
@@ -92,39 +84,52 @@ const { useEffect, useMemo, useRef, useState } = React;
 /* ---------- Time zone helpers ---------- */
 const DEFAULT_TZ = getStored('flipclock:tz', 'America/New_York');
 
-const COMMON_TZS = [
-  'Pacific/Midway','America/Adak','America/Anchorage','America/Los_Angeles','America/Denver','America/Chicago',
-  'America/New_York','America/Toronto','America/Sao_Paulo','Atlantic/Bermuda','Europe/London','Europe/Paris',
-  'Europe/Berlin','Europe/Madrid','Europe/Warsaw','Europe/Athens','Africa/Cairo','Europe/Moscow','Asia/Dubai',
-  'Asia/Karachi','Asia/Kolkata','Asia/Bangkok','Asia/Hong_Kong','Asia/Tokyo','Australia/Sydney','Pacific/Auckland'
+// Try to use the browser's full IANA list; fall back to a large curated list
+const FALLBACK_TZS = [
+  // Americas
+  'America/Adak','America/Anchorage','America/Los_Angeles','America/Denver','America/Phoenix','America/Chicago',
+  'America/New_York','America/Toronto','America/Halifax','America/St_Johns','America/Sao_Paulo','America/Argentina/Buenos_Aires',
+  'America/Bogota','America/Lima','America/Mexico_City','America/Guatemala','America/Montevideo','America/Santiago',
+  // Europe & Africa
+  'UTC','Europe/London','Europe/Dublin','Europe/Lisbon','Atlantic/Canary','Europe/Paris','Europe/Berlin','Europe/Madrid',
+  'Europe/Rome','Europe/Amsterdam','Europe/Brussels','Europe/Vienna','Europe/Stockholm','Europe/Oslo','Europe/Copenhagen',
+  'Europe/Warsaw','Europe/Prague','Europe/Budapest','Europe/Athens','Europe/Helsinki','Europe/Bucharest','Europe/Moscow',
+  'Africa/Casablanca','Africa/Algiers','Africa/Cairo','Africa/Johannesburg','Europe/Istanbul',
+  // Middle East & Asia
+  'Asia/Jerusalem','Asia/Dubai','Asia/Tehran','Asia/Karachi','Asia/Kolkata','Asia/Dhaka','Asia/Bangkok','Asia/Jakarta',
+  'Asia/Kuala_Lumpur','Asia/Singapore','Asia/Hong_Kong','Asia/Manila','Asia/Taipei','Asia/Tokyo','Asia/Seoul',
+  'Asia/Shanghai','Asia/Ho_Chi_Minh',
+  // Oceania
+  'Australia/Perth','Australia/Darwin','Australia/Adelaide','Australia/Brisbane','Australia/Sydney','Pacific/Auckland',
+  'Pacific/Fiji','Pacific/Honolulu','Pacific/Midway'
 ];
 
-function formatPartsInTZ(date, tz, twelveHour) {
-  // Use Intl to format into parts in the target time zone
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz,
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-    hour12: twelveHour
-  });
-  const parts = fmt.formatToParts(date);
-  const get = t => parts.find(p => p.type === t)?.value ?? '';
-  const hour = get('hour');
-  const minute = get('minute');
-  const second = get('second');
-  const dayPeriod = get('dayPeriod') || ''; // AM/PM when 12h
-  return { hh: hour, mm: minute, ss: second, ampm: dayPeriod.toUpperCase() };
-}
+const SUPPORTED_TZS = (typeof Intl !== 'undefined' && Intl.supportedValuesOf)
+  ? Intl.supportedValuesOf('timeZone')
+  : FALLBACK_TZS;
 
+// Nice label for "short" zone name (EST/EDT/CET/GMT-5, etc.)
 function tzShort(date, tz) {
-  // Try to extract a short zone name (e.g., EST/EDT, CET, GMT-5)
-  // Fallback to IANA name if not available in this browser.
   try {
     const fmt = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' });
     const parts = fmt.formatToParts(date);
     const name = parts.find(p => p.type === 'timeZoneName')?.value?.trim();
     if (name) return name;
   } catch {}
-  return tz; // fallback
+  return tz;
+}
+
+function formatPartsInTZ(date, tz, twelveHour) {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: twelveHour
+  });
+  const parts = fmt.formatToParts(date);
+  const get = t => parts.find(p => p.type === t)?.value ?? '';
+  const hour = get('hour');
+  const minute = get('minute');
+  const second = get('second');
+  const dayPeriod = get('dayPeriod') || '';
+  return { hh: hour, mm: minute, ss: second, ampm: dayPeriod.toUpperCase() };
 }
 
 /* ---------- Core: Split-flap flip clock ---------- */
@@ -141,7 +146,6 @@ function App(){
   useEffect(() => store('flipclock:fg', fgColor), [fgColor]);
   useEffect(() => store('flipclock:bg', bgColor), [bgColor]);
   useEffect(() => store('flipclock:tz', tz), [tz]);
-
   useEffect(() => {
     document.documentElement.style.setProperty('--fg', fgColor);
     document.documentElement.style.setProperty('--bg', bgColor);
@@ -150,7 +154,7 @@ function App(){
   const { hh, mm, ss, ampm } = useMemo(() => formatPartsInTZ(now, tz, twelveHour), [now, tz, twelveHour]);
   const zoneLabel = useMemo(() => tzShort(now, tz), [now, tz]);
 
-  // Mechanical coupling: hour flips just after minute rolls 59 -> 00
+  // minute rollover -> slight delayed hour flip
   const lastRef = useRef(null);
   const minuteRolled = useMemo(() => {
     const prev = lastRef.current;
@@ -158,7 +162,7 @@ function App(){
   }, [mm]);
   useEffect(() => { lastRef.current = { hh, mm, ss }; }, [hh, mm, ss]);
 
-  // Swipe up opens settings (iOS)
+  // Swipe up (iOS) to open settings
   const startY = useRef(null);
   const onTouchStart = e => { startY.current = e.touches[0].clientY; };
   const onTouchEnd   = e => {
@@ -174,7 +178,6 @@ function App(){
         <RoundedColon blink className="t-huge" />
         <TimeGroup label="minutes" value={mm} digitClass="t-huge digital7" />
         <TimeGroup label="seconds" value={ss} digitClass="t-small digital7" groupStyle={{ marginLeft: '.5rem', opacity: .8 }} />
-        {/* AM/PM (12h) and TZ label */}
         <span className="digital7 tz-chip">{twelveHour ? (ampm || '\u00A0') : '\u00A0'}</span>
         <span className="digital7 tz-chip" title={tz}>{zoneLabel}</span>
       </div>
@@ -182,22 +185,17 @@ function App(){
       <button className="handle" onClick={() => setPanelOpen(true)} aria-label="Open settings">Swipe up or click for settings</button>
 
       <SettingsPanel
-        open={panelOpen}
-        onClose={() => setPanelOpen(false)}
-        twelveHour={twelveHour}
-        onTwelveHour={setTwelveHour}
-        fgColor={fgColor}
-        bgColor={bgColor}
-        onFgColor={setFgColor}
-        onBgColor={setBgColor}
-        tz={tz}
-        onTz={setTz}
+        open={panelOpen} onClose={() => setPanelOpen(false)}
+        twelveHour={twelveHour} onTwelveHour={setTwelveHour}
+        fgColor={fgColor} bgColor={bgColor}
+        onFgColor={setFgColor} onBgColor={setBgColor}
+        tz={tz} onTz={setTz}
       />
     </div>
   );
 }
 
-/* One group of digits (e.g., "12") */
+/* Group of digits (e.g., "12") */
 function TimeGroup({ label, value, digitClass="", groupStyle, startDelayMs=0 }) {
   return (
     <div className="row" aria-label={label} style={groupStyle}>
@@ -208,11 +206,7 @@ function TimeGroup({ label, value, digitClass="", groupStyle, startDelayMs=0 }) 
   );
 }
 
-/* Split-flap leaf animation:
-   - Current leaf's TOP hinges down (falls) and hides behind.
-   - Next leaf's BOTTOM hinges up (appears) from top.
-   Both motions are clipped inside the digit rectangle.
-*/
+/* Split-flap leaf animation */
 function FlipDigit({ value, sizeClass, startDelayMs=0 }) {
   const [current, setCurrent] = useState(value);
   const [next, setNext] = useState(null);
@@ -226,7 +220,7 @@ function FlipDigit({ value, sizeClass, startDelayMs=0 }) {
         setCurrent(value);
         setNext(null);
         setAnim(false);
-      }, Math.max(0, startDelayMs) + 360); // slightly longer than staged flips
+      }, Math.max(0, startDelayMs) + 360);
       return () => { clearTimeout(start); clearTimeout(done); };
     }
   }, [value, current, startDelayMs]);
@@ -236,11 +230,11 @@ function FlipDigit({ value, sizeClass, startDelayMs=0 }) {
       {/* sizing glyph for stable box metrics */}
       <span style={{ opacity:0, visibility:'hidden' }}>8</span>
 
-      {/* Static faces: show CURRENT on top, NEXT on bottom (like two leaves on the wheel) */}
+      {/* Static faces: CURRENT top, NEXT bottom */}
       <span className="flip-face clip-top abs-fill"    style={{ display:'flex', alignItems:'flex-start', justifyContent:'center' }}>{current}</span>
       <span className="flip-face clip-bottom abs-fill" style={{ display:'flex', alignItems:'flex-end',   justifyContent:'center' }}>{next ?? current}</span>
 
-      {/* OUTGOING TOP leaf: hinges down and disappears behind */}
+      {/* OUTGOING TOP leaf */}
       {next !== null && (
         <span className={`flip-layer flip-upper clip-top leaf-shadow-top ${anim ? 'run-top-out' : ''}`}
               style={{ display:'flex', alignItems:'flex-start', justifyContent:'center' }}>
@@ -248,7 +242,7 @@ function FlipDigit({ value, sizeClass, startDelayMs=0 }) {
         </span>
       )}
 
-      {/* INCOMING BOTTOM leaf: hinges up (slightly delayed) */}
+      {/* INCOMING BOTTOM leaf */}
       {next !== null && (
         <span className={`flip-layer flip-lower clip-bottom leaf-shadow-bottom ${anim ? 'run-bottom-in' : ''}`}
               style={{ display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
@@ -259,7 +253,7 @@ function FlipDigit({ value, sizeClass, startDelayMs=0 }) {
   );
 }
 
-/* Centered colon, two round dots, synced blink */
+/* Colon */
 function RoundedColon({ blink=true, className="" }) {
   return (
     <span aria-hidden className={`${className} ${blink ? 'blink' : ''}`}
@@ -270,9 +264,8 @@ function RoundedColon({ blink=true, className="" }) {
   );
 }
 
-/* Settings UI (adds Time Zone control) */
+/* Settings with Time Zone */
 function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgColor, onFgColor, onBgColor, tz, onTz }) {
-  // swipe down to close
   const startY = React.useRef(null);
   const onTouchStart = e => { startY.current = e.touches[0].clientY; };
   const onTouchEnd   = e => {
@@ -287,7 +280,6 @@ function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgCol
     const val = customTz.trim();
     if (!val) return;
     try {
-      // Validate by attempting to format in that zone
       new Intl.DateTimeFormat('en-US', { timeZone: val }).format(new Date());
       onTz(val);
       setCustomTz('');
@@ -295,6 +287,14 @@ function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgCol
       alert('That time zone is not recognized. Try an IANA name like "Europe/Paris".');
     }
   };
+
+  // Build a bigger list but keep it manageable (sorted)
+  const bigList = React.useMemo(() => {
+    try {
+      const arr = Array.from(new Set(SUPPORTED_TZS.concat(FALLBACK_TZS))).sort();
+      return arr;
+    } catch { return FALLBACK_TZS.slice().sort(); }
+  }, []);
 
   return (
     <div className={`panel ${open ? 'open' : ''}`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} role="dialog" aria-modal="true">
@@ -308,17 +308,17 @@ function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgCol
 
           <fieldset className="grid1">
             <legend style={{ fontSize:14, fontWeight:500 }}>Time zone</legend>
-            <div className="between" style="gap:8px">
-              <select className="select" value={tz} onChange={(e) => onTz(e.target.value)} style="flex:1">
-                {COMMON_TZS.map(z => <option key={z} value={z}>{z}</option>)}
+            <div className="between" style={{ gap:8 }}>
+              <select className="select" value={tz} onChange={(e) => onTz(e.target.value)} style={{ flex:1 }}>
+                {bigList.map(z => <option key={z} value={z}>{z}</option>)}
               </select>
               <button className="btn" onClick={() => onTz('America/New_York')}>NY (Default)</button>
             </div>
-            <div className="between" style="gap:8px">
+            <div className="between" style={{ gap:8 }}>
               <input className="input" placeholder="Or type an IANA zone, e.g. Europe/Paris" value={customTz} onChange={e=>setCustomTz(e.target.value)} />
               <button className="btn" onClick={applyCustomTz}>Apply</button>
             </div>
-            <div style="font-size:12px; opacity:.8">
+            <div style={{ fontSize:12, opacity:.8 }}>
               Tip: Use standard IANA names like <code>America/New_York</code>, <code>Europe/London</code>, <code>Asia/Tokyo</code>.
             </div>
           </fieldset>
@@ -352,10 +352,8 @@ function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgCol
 }
 
 /* Helpers */
-function pad2(n){ return n.toString().padStart(2,'0'); }
 function getStored(k,f){ try{ const v = localStorage.getItem(k); return v ?? f; } catch { return f; } }
 function getStoredBool(k,f){ try{ const v = localStorage.getItem(k); return v ? v === 'true' : f; } catch { return f; } }
-function store(k,v){ try{ localStorage.setItem(k, v); } catch{} }
 
 /* Mount */
 const root = ReactDOM.createRoot(document.getElementById('root'));

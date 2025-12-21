@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Counter</title>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --text:#ffffff;
+
+      --green:#0f8a3a;
+      --green-border:#46d86b;        /* border: light green, darker than plus */
+      --green-plus:#8dffb0;          /* plus sign: lightest */
+
+      --orange:#c06a00;
+      --orange-border:#ffb15a;
+      --orange-icon:#ffd2a2;
+
+      --gray:#3a4656;
+      --gray-border:#a3b0c0;
+      --gray-icon:#d0dae6;
+
+      --red:#a81616;
+      --red-border:#ff7272;
+      --red-icon:#ffb3b3;
+
+      --small:56px;
+      --big:210px;
+
+      --shadow-outer: 0 14px 26px rgba(0,0,0,.55);
+      --shadow-inner: inset 0 1px 0 rgba(255,255,255,.25), inset 0 -6px 14px rgba(0,0,0,.35);
+    }
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    html, body{ height:100%; }
+
+    body{
+      margin:0;
+      display:grid;
+      place-items:center;
+      background: radial-gradient(1200px 700px at 50% 20%, #182437 0%, var(--bg) 55%, #070a0e 100%);
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      user-select:none;
+      overscroll-behavior:none;
+      touch-action: manipulation;
+    }
+
+    .phone{
+      width:min(390px, 100vw);
+      height:min(844px, 100vh);
+      padding: 22px 18px 22px;
+      border-radius: 42px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 30%, rgba(0,0,0,.10) 100%);
+      box-shadow: 0 30px 70px rgba(0,0,0,.65);
+      border: 1px solid rgba(255,255,255,.08);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .safe-top{ height: 14px; margin-bottom: 6px; opacity:.6; }
+
+    .wrap{
+      height: calc(100% - 20px);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap: 18px;
+      padding-bottom: 10px;
+    }
+
+    /* Exactly match the big button width so left/right align perfectly */
+    .controlsRow{
+      width: var(--big);
+      margin: 0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+
+    .count{
+      font-size: 64px;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-align:center;
+      text-shadow: 0 10px 24px rgba(0,0,0,.55);
+      padding: 6px 0 0;
+    }
+
+    .btn{
+      width: var(--small);
+      height: var(--small);
+      border-radius: 14px;
+      border: 3px solid transparent;
+      box-shadow: var(--shadow-outer), var(--shadow-inner);
+      display:grid;
+      place-items:center;
+      transform: translateZ(0);
+      cursor:pointer;
+      background: transparent;
+      padding: 0;
+    }
+
+    .btn:active{ transform: translateY(1px); filter: brightness(.98); }
+
+    .btn.big{ width: var(--big); height: var(--big); border-radius: 26px; }
+
+    .btn.orange{
+      background: linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.06) 20%, rgba(0,0,0,.25) 100%),
+                  linear-gradient(180deg, #e47a00 0%, var(--orange) 70%);
+      border-color: var(--orange-border);
+    }
+
+    .btn.gray{
+      background: linear-gradient(180deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.06) 20%, rgba(0,0,0,.25) 100%),
+                  linear-gradient(180deg, #566276 0%, var(--gray) 72%);
+      border-color: var(--gray-border);
+    }
+
+    .btn.red{
+      background: linear-gradient(180deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.05) 18%, rgba(0,0,0,.28) 100%),
+                  linear-gradient(180deg, #d11f1f 0%, var(--red) 72%);
+      border-color: var(--red-border);
+    }
+
+    .btn.green{
+      background: linear-gradient(180deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,.06) 18%, rgba(0,0,0,.30) 100%),
+                  linear-gradient(180deg, #14a046 0%, var(--green) 72%);
+      border-color: var(--green-border);
+    }
+
+    .icon{ width: 26px; height: 26px; display:block; }
+
+    .minus{
+      font-size: 34px;
+      font-weight: 900;
+      color: var(--orange-icon);
+      transform: translateY(-1px);
+      text-shadow: 0 4px 10px rgba(0,0,0,.45);
+    }
+
+    .runnerIcon{
+      width: 28px;
+      height: 28px;
+      display:block;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,.45));
+    }
+
+    .plus{
+      font-size: 112px;
+      font-weight: 900;
+      color: var(--green-plus);
+      line-height: 1;
+      transform: translateY(-3px);
+      text-shadow: 0 12px 24px rgba(0,0,0,.55);
+    }
+
+    .hint{
+      text-align:center;
+      font-size: 13px;
+      opacity:.75;
+      margin-top: 6px;
+      padding: 0 10px;
+    }
+
+    .footer{
+      position:absolute;
+      left:0;
+      right:0;
+      bottom: 10px;
+      display:flex;
+      justify-content:center;
+      pointer-events:none;
+      opacity:.35;
+      font-size:12px;
+    }
+
+    .pill{ width: 140px; height: 5px; border-radius: 999px; background: rgba(255,255,255,.45); }
+
+    .btn:focus-visible{ outline: 3px solid rgba(255,255,255,.55); outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <div class="phone" role="application" aria-label="Counter app">
+    <div class="safe-top"></div>
+
+    <div class="wrap">
+      <div class="controlsRow" aria-label="Controls">
+        <button id="minusBtn" class="btn orange" aria-label="Minus">
+          <span class="minus">−</span>
+        </button>
+
+        <button id="speedBtn" class="btn gray" aria-label="Speed">
+          <span id="runnerIcon"></span>
+        </button>
+
+        <button id="soundBtn" class="btn gray" aria-label="Sound on">
+          <span id="soundIcon"></span>
+        </button>
+
+        <button id="resetBtn" class="btn red" aria-label="Reset">
+          <span id="trashIcon"></span>
+        </button>
+      </div>
+
+      <div id="count" class="count" aria-live="polite">0</div>
+
+      <div style="display:flex; justify-content:center;">
+        <button id="plusBtn" class="btn big green" aria-label="Plus">
+          <span class="plus">+</span>
+        </button>
+      </div>
+
+      <div id="hint" class="hint">Tap to count. Hold for continuous.</div>
+    </div>
+
+    <div class="footer"><div class="pill"></div></div>
+  </div>
+
+  <script>
+    // NOTE: The prior error was caused by leftover, unmatched code after the speed button listeners.
+    // This file rewrites that section cleanly and adds basic sanity tests.
+
+    // ====== State ======
+    let value = 0;
+    let soundOn = true;
+
+    // Speed is represented as an interval in ms. Lower ms = faster.
+    const SPEED_MIN = 30;
+    const SPEED_MAX = 350;
+    let intervalMs = 333; // default is 1/3 second
+
+    const HOLD_THRESHOLD_MS = 333;
+
+    const countEl = document.getElementById('count');
+    const hintEl = document.getElementById('hint');
+
+    const plusBtn = document.getElementById('plusBtn');
+    const minusBtn = document.getElementById('minusBtn');
+    const speedBtn = document.getElementById('speedBtn');
+    const soundBtn = document.getElementById('soundBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // ====== Icons (inline SVG) ======
+    const speakerSvg = (color) => `
+      <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M4 10v4h3l5 4V6L7 10H4z" fill="${color}" opacity="0.95"/>
+        <path d="M16 8c1.7 1.6 1.7 6.4 0 8" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        <path d="M18.8 5.6c3 3 3 9.8 0 12.8" stroke="${color}" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+      </svg>
+    `;
+
+    const speakerMutedSvg = (color) => `
+      <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M4 10v4h3l5 4V6L7 10H4z" fill="${color}" opacity="0.95"/>
+        <path d="M16.5 9.5l4 4" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        <path d="M20.5 9.5l-4 4" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    `;
+
+    const runnerSvg = (color) => `
+      <svg class="runnerIcon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M14.6 5.2c0 1-0.8 1.8-1.8 1.8S11 6.2 11 5.2 11.8 3.4 12.8 3.4s1.8 0.8 1.8 1.8z" fill="${color}"/>
+        <path d="M10.4 20.5l1.7-4.3 1.6 1.5 1.2 2.8" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M7.2 12.2l4-2.2 2.8 1.1 2.8-1.4" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9.2 14.2l1.9 2.1" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        <path d="M13.4 11.1l-1.1 3.3" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        <path d="M16.3 20.2l-1.5-2.8 3.3-1.8" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+
+    const trashSvg = (color) => `
+      <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M9 3h6l1 2h4v2H4V5h4l1-2z" fill="${color}" opacity="0.95"/>
+        <path d="M7 9h10l-1 12H8L7 9z" fill="${color}" opacity="0.88"/>
+        <path d="M10 12v6" stroke="#1a0a0a" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
+        <path d="M14 12v6" stroke="#1a0a0a" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
+      </svg>
+    `;
+
+    const runnerIconWrap = document.getElementById('runnerIcon');
+    const soundIconWrap = document.getElementById('soundIcon');
+    const trashIconWrap = document.getElementById('trashIcon');
+
+    function renderIcons(){
+      const grayIcon = getComputedStyle(document.documentElement).getPropertyValue('--gray-icon').trim();
+      const redIcon = getComputedStyle(document.documentElement).getPropertyValue('--red-icon').trim();
+
+      runnerIconWrap.innerHTML = runnerSvg(grayIcon);
+
+      soundIconWrap.innerHTML = soundOn ? speakerSvg(grayIcon) : speakerMutedSvg(grayIcon);
+      soundBtn.setAttribute('aria-label', soundOn ? 'Sound on' : 'Sound off');
+
+      trashIconWrap.innerHTML = trashSvg(redIcon);
+    }
+
+    // ====== UI Update ======
+    function setValue(next){
+      value = next;
+      countEl.textContent = String(value);
+    }
+
+    // ====== Sound (Web Audio) ======
+    let audioCtx = null;
+
+    function ensureAudio(){
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function clickSound(){
+      if (!soundOn) return;
+      try{
+        ensureAudio();
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(1200, t);
+
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.12, t + 0.002);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(t);
+        osc.stop(t + 0.035);
+      }catch(_e){
+        // ignore audio errors
+      }
+    }
+
+    // ====== Helpers ======
+    function clamp(n, min, max){
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function inc(){
+      setValue(value + 1);
+      clickSound();
+    }
+
+    function dec(){
+      setValue(value - 1);
+      clickSound();
+    }
+
+    function reset(){
+      setValue(0);
+    }
+
+    function makeSlower(){
+      // Tap speed => slower counting (bigger interval)
+      intervalMs = clamp(Math.round(intervalMs * 1.18), SPEED_MIN, SPEED_MAX);
+      updateHint();
+    }
+
+    function makeFaster(){
+      // Hold speed => faster and faster (smaller interval, multiplicative)
+      intervalMs = clamp(Math.round(intervalMs * 0.92), SPEED_MIN, SPEED_MAX);
+      updateHint();
+    }
+
+    function updateHint(){
+      const rate = Math.round(1000 / intervalMs);
+      hintEl.textContent = `Speed: ~${rate}/sec · Tap to count. Hold for continuous.`;
+    }
+
+    // ====== Hold / Repeat handler for +/- ======
+    function makeHoldHandler({ element, onTap, onHoldTick }){
+      let holdTimer = null;
+      let repeatTimer = null;
+      let holding = false;
+      let pointerId = null;
+
+      const clearAll = () => {
+        if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+        if (repeatTimer) { clearInterval(repeatTimer); repeatTimer = null; }
+        holding = false;
+        pointerId = null;
+      };
+
+      const startHold = () => {
+        holding = true;
+        onHoldTick();
+        repeatTimer = setInterval(() => onHoldTick(), intervalMs);
+      };
+
+      element.addEventListener('pointerdown', (e) => {
+        pointerId = e.pointerId;
+        element.setPointerCapture(pointerId);
+        e.preventDefault();
+        holdTimer = setTimeout(startHold, HOLD_THRESHOLD_MS);
+      }, { passive: false });
+
+      element.addEventListener('pointerup', (e) => {
+        if (pointerId !== e.pointerId) return;
+        const wasHolding = holding;
+        clearAll();
+        if (!wasHolding) onTap();
+      });
+
+      element.addEventListener('pointercancel', (e) => {
+        if (pointerId !== e.pointerId) return;
+        clearAll();
+      });
+
+      element.addEventListener('lostpointercapture', () => {
+        if (holding) clearAll();
+      });
+
+      return {
+        refreshInterval: () => {
+          if (!holding) return;
+          if (repeatTimer) clearInterval(repeatTimer);
+          repeatTimer = setInterval(() => onHoldTick(), intervalMs);
+        }
+      };
+    }
+
+    // ====== Wiring ======
+    const plusHold = makeHoldHandler({ element: plusBtn, onTap: inc, onHoldTick: inc });
+    const minusHold = makeHoldHandler({ element: minusBtn, onTap: dec, onHoldTick: dec });
+
+    // Speed button: tap -> slower; hold (>1/3s) -> ramps faster and faster
+    let speedHoldTimer = null;
+    let speedRampTimer = null;
+    let speedPointerId = null;
+    let speedHolding = false;
+
+    function clearSpeedTimers(){
+      if (speedHoldTimer) { clearTimeout(speedHoldTimer); speedHoldTimer = null; }
+      if (speedRampTimer) { clearInterval(speedRampTimer); speedRampTimer = null; }
+      speedHolding = false;
+      speedPointerId = null;
+    }
+
+    speedBtn.addEventListener('pointerdown', (e) => {
+      speedPointerId = e.pointerId;
+      speedBtn.setPointerCapture(speedPointerId);
+      e.preventDefault();
+
+      speedHoldTimer = setTimeout(() => {
+        speedHolding = true;
+        // Ramp faster repeatedly while held; independent of intervalMs.
+        speedRampTimer = setInterval(() => {
+          makeFaster();
+          plusHold.refreshInterval();
+          minusHold.refreshInterval();
+        }, 80);
+      }, HOLD_THRESHOLD_MS);
+    }, { passive: false });
+
+    speedBtn.addEventListener('pointerup', (e) => {
+      if (speedPointerId !== e.pointerId) return;
+      const wasHolding = speedHolding;
+      clearSpeedTimers();
+      if (!wasHolding) {
+        makeSlower();
+        plusHold.refreshInterval();
+        minusHold.refreshInterval();
+      }
+    });
+
+    speedBtn.addEventListener('pointercancel', (e) => {
+      if (speedPointerId !== e.pointerId) return;
+      clearSpeedTimers();
+    });
+
+    speedBtn.addEventListener('lostpointercapture', () => {
+      if (speedHolding) clearSpeedTimers();
+    });
+
+    soundBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      soundOn = !soundOn;
+      renderIcons();
+    }, { passive: false });
+
+    resetBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      reset();
+    }, { passive: false });
+
+    // Prevent accidental double-tap zoom on iOS (best-effort)
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 250) e.preventDefault();
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    // ====== Basic tests (runs in console) ======
+    function runTests(){
+      const assert = (cond, msg) => { if (!cond) throw new Error(`Test failed: ${msg}`); };
+
+      // clamp
+      assert(clamp(5, 0, 10) === 5, 'clamp keeps value in range');
+      assert(clamp(-1, 0, 10) === 0, 'clamp clamps low');
+      assert(clamp(99, 0, 10) === 10, 'clamp clamps high');
+
+      // speed defaults
+      assert(intervalMs === 333, 'default interval is 333ms');
+
+      // speed tap is slower
+      const beforeSlow = intervalMs;
+      makeSlower();
+      assert(intervalMs >= beforeSlow, 'makeSlower increases or preserves interval');
+
+      // speed ramp is faster
+      const beforeFast = intervalMs;
+      makeFaster();
+      assert(intervalMs <= beforeFast, 'makeFaster decreases or preserves interval');
+
+      // reset
+      setValue(12);
+      reset();
+      assert(value === 0, 'reset sets value to 0');
+
+      // click sound toggle
+      const prevSound = soundOn;
+      soundOn = !prevSound;
+      assert(soundOn !== prevSound, 'sound toggles');
+      soundOn = prevSound;
+
+      console.log('All tests passed.');
+    }
+
+    // Initial render
+    renderIcons();
+    updateHint();
+    setValue(0);
+    runTests();
+  </script>
+</body>
+</html>

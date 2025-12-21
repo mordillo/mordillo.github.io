@@ -77,6 +77,58 @@
     }
 
     /* Exactly match the big button width so left/right align perfectly */
+    .maxRow{
+      width: var(--big);
+      margin: 0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      opacity: .95;
+    }
+
+    .maxLabel{
+      width: 100%;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+
+    .maxValue{
+      flex: 1;
+      text-align:center;
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: .4px;
+      opacity: .95;
+      text-shadow: 0 8px 18px rgba(0,0,0,.45);
+    }
+
+    .maxBtn{
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 3px solid var(--gray-border);
+      box-shadow: var(--shadow-outer), var(--shadow-inner);
+      background: linear-gradient(180deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.06) 20%, rgba(0,0,0,.25) 100%),
+                  linear-gradient(180deg, #566276 0%, var(--gray) 72%);
+      display:grid;
+      place-items:center;
+      padding:0;
+    }
+
+    .maxBtn:active{ transform: translateY(1px); filter: brightness(.98); }
+
+    .maxSym{
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--gray-icon);
+      transform: translateY(-1px);
+      text-shadow: 0 4px 10px rgba(0,0,0,.45);
+    }
+
+    /* Exactly match the big button width so left/right align perfectly */
     .controlsRow{
       width: var(--big);
       margin: 0 auto;
@@ -204,6 +256,18 @@
     <div class="safe-top"></div>
 
     <div class="wrap">
+      <div class="maxRow" aria-label="Maximum count">
+        <div class="maxLabel">
+          <button id="maxMinusBtn" class="maxBtn" aria-label="Decrease maximum" draggable="false">
+            <span class="maxSym">−</span>
+          </button>
+          <div id="maxValue" class="maxValue">10000</div>
+          <button id="maxPlusBtn" class="maxBtn" aria-label="Increase maximum" draggable="false">
+            <span class="maxSym">+</span>
+          </button>
+        </div>
+      </div>
+
       <div class="controlsRow" aria-label="Controls">
         <button id="minusBtn" class="btn orange" aria-label="Minus" draggable="false">
           <span class="minus">−</span>
@@ -241,11 +305,16 @@
     let value = 0;
     let soundOn = true;
 
+    // Max value (editable via +/- above the top row). Counter cannot exceed this.
+    // NOTE: step size for these +/- buttons is currently 100 (change if you prefer).
+    let maxValue = 10000;
+    const MAX_STEP = 100; // TODO: confirm desired step size (1? 10? 100? 1000?)
+
     // Speed is represented as counts per second for hold-repeat.
     // Default should be 30/sec.
     const RATE_MIN = 1;
     const RATE_MAX = 1000; // target max (best-effort)
-    let ratePerSec = 30;
+    let ratePerSec = 10;
 
     const HOLD_THRESHOLD_MS = 333;
 
@@ -257,6 +326,10 @@
     const speedBtn = document.getElementById('speedBtn');
     const soundBtn = document.getElementById('soundBtn');
     const resetBtn = document.getElementById('resetBtn');
+
+    const maxMinusBtn = document.getElementById('maxMinusBtn');
+    const maxPlusBtn = document.getElementById('maxPlusBtn');
+    const maxValueEl = document.getElementById('maxValue');
 
     // ====== Icons (inline SVG) ======
     const speakerSvg = (color) => `
@@ -313,6 +386,15 @@
     function setValue(next){
       value = next;
       countEl.textContent = String(value);
+    }
+
+    function setMaxValue(next){
+      // keep max non-negative
+      maxValue = Math.max(0, next);
+      maxValueEl.textContent = String(maxValue);
+      // clamp current value if needed
+      if (value > maxValue) setValue(maxValue);
+      updateHint();
     }
 
     // ====== Audio (iOS: robust unlock + fallback) ======
@@ -474,10 +556,11 @@
     }
 
     function updateHint(){
-      hintEl.textContent = `Rate: ${ratePerSec}/sec · Tap to count. Hold for continuous.`;
+      hintEl.textContent = `Max: ${maxValue} · Rate: ${ratePerSec}/sec · Tap to count. Hold for continuous.`;
     }
 
     function inc(){
+      if (value >= maxValue) return;
       setValue(value + 1);
       clickSound();
     }
@@ -657,13 +740,13 @@
       assert(clamp(-1, 0, 10) === 0, 'clamp clamps low');
       assert(clamp(99, 0, 10) === 10, 'clamp clamps high');
 
-      assert(ratePerSec === 30, 'default rate is 30/sec');
+      assert(ratePerSec === 10, 'default rate is 10/sec');
 
       const beforeSlow = ratePerSec;
       makeSlower();
       assert(ratePerSec <= beforeSlow, 'makeSlower reduces rate');
 
-      ratePerSec = 30;
+      ratePerSec = 10;
       const beforeFast = ratePerSec;
       makeFaster();
       assert(ratePerSec >= beforeFast, 'makeFaster increases rate');
@@ -676,12 +759,35 @@
       reset();
       assert(value === 0, 'reset sets value to 0');
 
+      // max clamp
+      setValue(50);
+      setMaxValue(40);
+      assert(value === 40, 'value clamps down to max');
+      setValue(40);
+      inc();
+      assert(value === 40, 'inc does not exceed max');
+
+      // restore
+      setMaxValue(10000);
+      setValue(0);
+
       console.log('All tests passed.');
     }
 
+    // Max controls
+    maxPlusBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      setMaxValue(maxValue + MAX_STEP);
+    }, { passive: false });
+
+    maxMinusBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      setMaxValue(maxValue - MAX_STEP);
+    }, { passive: false });
+
     // Initial render
     renderIcons();
-    updateHint();
+    setMaxValue(maxValue);
     setValue(0);
     runTests();
   </script>

@@ -242,10 +242,10 @@
     let soundOn = true;
 
     // Speed is represented as counts per second for hold-repeat.
-    // Default 333ms => ~3/sec.
+    // Default should be 30/sec.
     const RATE_MIN = 1;
-    const RATE_MAX = 1000; // target max (best-effort; browsers can’t actually fire 1000 distinct events/sec reliably)
-    let ratePerSec = 3;
+    const RATE_MAX = 1000; // target max (best-effort)
+    let ratePerSec = 30;
 
     const HOLD_THRESHOLD_MS = 333;
 
@@ -315,63 +315,154 @@
       countEl.textContent = String(value);
     }
 
-    // ====== Audio (iOS-friendly unlock) ======
+    // ====== Audio (iOS: robust unlock + fallback) ======
+    // Many iPhones won't play WebAudio unless it's started from a real touch gesture.
+    // Also, rapid successive WebAudio beeps can get dropped; so we:
+    // - unlock on first user gesture
+    // - use WebAudio when available
+    // - fall back to HTMLAudio (generated WAV)
+    // - throttle sound to a sane audible rate
+
     let audioCtx = null;
     let audioUnlocked = false;
 
-    function ensureAudio(){
+    let clickAudioPool = [];
+    let clickAudioIdx = 0;
+
+    function ensureAudioContext(){
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      // resume is async on iOS; fire-and-forget
-      if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+      return audioCtx;
     }
 
-    // Unlock audio on the first real user gesture.
-    function unlockAudioOnce(){
+    function pcmToWavUrl(samples, sampleRate){
+      const numChannels = 1;
+      const bitsPerSample = 16;
+      const byteRate = sampleRate * numChannels * bitsPerSample / 8;
+      const blockAlign = numChannels * bitsPerSample / 8;
+      const dataSize = samples.length * 2;
+      const buffer = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(buffer);
+
+      const writeStr = (off, str) => { for (let i=0;i<str.length;i++) view.setUint8(off+i, str.charCodeAt(i)); };
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, byteRate, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, bitsPerSample, true);
+      writeStr(36, 'data');
+      view.setUint32(40, dataSize, true);
+
+      let o = 44;
+      for (let i=0;i<samples.length;i++){
+        view.setInt16(o, samples[i], true);
+        o += 2;
+      }
+
+      const blob = new Blob([buffer], { type: 'audio/wav' });
+      return URL.createObjectURL(blob);
+    }
+
+    function buildClickPool(){
+      if (clickAudioPool.length) return;
+
+      const sr = 44100;
+      const ms = 10;
+      const n = Math.floor(sr * (ms/1000));
+      const samples = new Int16Array(n);
+
+      const f = 1900;
+      for (let i=0;i<n;i++){
+        const t = i / sr;
+        const env = Math.exp(-t * 160);
+        const s = Math.sign(Math.sin(2*Math.PI*f*t)) * env;
+        samples[i] = Math.max(-1, Math.min(1, s)) * 20000;
+      }
+
+      const url = pcmToWavUrl(samples, sr);
+      for (let i=0;i<10;i++){
+        const a = new Audio(url);
+        a.preload = 'auto';
+        clickAudioPool.push(a);
+      }
+    }
+
+    async function unlockAudioOnce(){
       if (audioUnlocked) return;
+      buildClickPool();
+
       try{
-        ensureAudio();
-        // Play a nearly-silent short blip to satisfy iOS gesture gating.
-        const t = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+        const ctx = ensureAudioContext();
+        if (ctx.state === 'suspended') await ctx.resume();
+
+        // short audible ping (helps confirm audio isn't blocked)
+        const t = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(440, t);
+        osc.frequency.setValueAtTime(880, t);
         gain.gain.setValueAtTime(0.0001, t);
-        gain.gain.exponentialRampToValueAtTime(0.0002, t + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.06, t + 0.0015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.02);
         osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        gain.connect(ctx.destination);
         osc.start(t);
-        osc.stop(t + 0.05);
+        osc.stop(t + 0.02);
+
+        // warm up HTMLAudio (must happen in a gesture handler)
+        const a = clickAudioPool[0];
+        a.currentTime = 0;
+        await a.play().catch(() => {});
+        a.pause();
+        a.currentTime = 0;
+
         audioUnlocked = true;
       }catch(_e){
         // ignore
       }
     }
 
-    // A slightly louder, shorter click for phones.
+    let lastClickAt = 0;
     function clickSound(){
       if (!soundOn) return;
+
+      // Throttle so iOS doesn't drop/skip and so it remains audible.
+      const now = performance.now();
+      if (now - lastClickAt < 14) return; // ~70/sec max
+      lastClickAt = now;
+
+      // Prefer WebAudio
       try{
-        ensureAudio();
-        if (!audioCtx || audioCtx.state === 'suspended') return;
+        if (audioCtx && audioCtx.state === 'running'){
+          const t = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(1600, t);
+          gain.gain.setValueAtTime(0.0001, t);
+          gain.gain.exponentialRampToValueAtTime(0.12, t + 0.0012);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.012);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(t);
+          osc.stop(t + 0.013);
+          return;
+        }
+      }catch(_e){
+        // fall through
+      }
 
-        const t = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(1400, t);
-
-        gain.gain.setValueAtTime(0.0001, t);
-        gain.gain.exponentialRampToValueAtTime(0.22, t + 0.002);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.018);
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start(t);
-        osc.stop(t + 0.02);
+      // Fallback: HTMLAudio
+      try{
+        if (!clickAudioPool.length) buildClickPool();
+        const a = clickAudioPool[clickAudioIdx++ % clickAudioPool.length];
+        a.currentTime = 0;
+        a.play().catch(() => {});
       }catch(_e){
         // ignore
       }
@@ -413,15 +504,14 @@
     }
 
     // ====== Hold-to-repeat using requestAnimationFrame ======
-    // This avoids setInterval limitations and allows “up to 1000/sec” as best-effort
-    // by batching multiple increments per frame.
+    // Best-effort high-rate counting by batching ticks per frame.
     function makeHoldRepeater({ element, onTap, onTick }){
       let holdTimer = null;
       let holding = false;
       let pointerId = null;
       let rafId = null;
       let lastTs = 0;
-      let carry = 0; // fractional counts carry over between frames
+      let carry = 0;
 
       function stop(){
         if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
@@ -435,7 +525,7 @@
       function loop(ts){
         if (!holding) return;
         if (!lastTs) lastTs = ts;
-        const dt = (ts - lastTs) / 1000; // seconds
+        const dt = (ts - lastTs) / 1000;
         lastTs = ts;
 
         const target = ratePerSec * dt + carry;
@@ -443,8 +533,6 @@
         carry = target - whole;
 
         if (whole > 0){
-          // Batch ticks to approximate high rates.
-          // NOTE: At very high rates this will update the number a lot; that’s expected.
           for (let i = 0; i < whole; i++) onTick();
         }
 
@@ -485,7 +573,7 @@
       return { stop };
     }
 
-    // ====== Wire up +/- (tap or hold) ======
+    // ====== Wire up +/- ======
     makeHoldRepeater({ element: plusBtn, onTap: inc, onTick: inc });
     makeHoldRepeater({ element: minusBtn, onTap: dec, onTick: dec });
 
@@ -511,10 +599,9 @@
 
       speedHoldTimer = setTimeout(() => {
         speedHolding = true;
-        // Ramp toward 1000/sec quickly while held.
         speedRampTimer = setInterval(() => {
           makeFaster();
-        }, 90);
+        }, 85);
       }, HOLD_THRESHOLD_MS);
     }, { passive: false });
 
@@ -551,6 +638,9 @@
     document.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('selectstart', (e) => e.preventDefault());
 
+    // Extra: ensure unlock also happens for browsers that fire touch before pointer
+    document.addEventListener('touchstart', () => { unlockAudioOnce(); }, { passive: true, once: true });
+
     // Prevent accidental double-tap zoom on iOS (best-effort)
     let lastTouchEnd = 0;
     document.addEventListener('touchend', (e) => {
@@ -563,30 +653,25 @@
     function runTests(){
       const assert = (cond, msg) => { if (!cond) throw new Error(`Test failed: ${msg}`); };
 
-      // clamp
       assert(clamp(5, 0, 10) === 5, 'clamp keeps value in range');
       assert(clamp(-1, 0, 10) === 0, 'clamp clamps low');
       assert(clamp(99, 0, 10) === 10, 'clamp clamps high');
 
-      // rate defaults
-      assert(ratePerSec === 3, 'default rate is 3/sec');
+      assert(ratePerSec === 30, 'default rate is 30/sec');
 
-      // slower/faster bounds
       const beforeSlow = ratePerSec;
       makeSlower();
       assert(ratePerSec <= beforeSlow, 'makeSlower reduces rate');
 
-      ratePerSec = 3;
+      ratePerSec = 30;
       const beforeFast = ratePerSec;
       makeFaster();
       assert(ratePerSec >= beforeFast, 'makeFaster increases rate');
 
-      // cap
       ratePerSec = 999;
       makeFaster();
       assert(ratePerSec <= RATE_MAX, 'rate does not exceed max');
 
-      // reset
       setValue(12);
       reset();
       assert(value === 0, 'reset sets value to 0');

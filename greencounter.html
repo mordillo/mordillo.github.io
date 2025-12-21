@@ -103,25 +103,26 @@
     input[type=range]{
       -webkit-appearance:none;
       width:100%;
-      height:8px;
+      height:10px;
       border-radius:999px;
-      background: linear-gradient(90deg, var(--gray-border), var(--gray));
+      background: rgba(255,255,255,.08);
       outline:none;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,.45);
     }
 
     input[type=range]::-webkit-slider-thumb{
       -webkit-appearance:none;
-      width:26px;
-      height:26px;
+      width:28px;
+      height:28px;
       border-radius:50%;
       background: linear-gradient(180deg, #ffffff 0%, #dfe6ef 100%);
       border:3px solid var(--gray-border);
-      box-shadow: 0 6px 14px rgba(0,0,0,.45);
+      box-shadow: 0 10px 18px rgba(0,0,0,.45);
     }
 
     input[type=range]::-moz-range-thumb{
-      width:26px;
-      height:26px;
+      width:28px;
+      height:28px;
       border-radius:50%;
       background:#ffffff;
       border:3px solid var(--gray-border);
@@ -150,6 +151,7 @@
       color:inherit;
       -webkit-appearance:none;
       appearance:none;
+      padding:0;
     }
 
     .btn{
@@ -161,6 +163,7 @@
       display:grid;
       place-items:center;
       cursor:pointer;
+      transform: translateZ(0);
     }
 
     .btn *{ pointer-events:none; }
@@ -174,86 +177,472 @@
     .btn.red{ background:linear-gradient(180deg,#d11f1f,var(--red)); border-color:var(--red-border); }
     .btn.green{ background:linear-gradient(180deg,#14a046,var(--green)); border-color:var(--green-border); }
 
-    .minus{ font-size:34px; font-weight:900; color:var(--orange-icon); }
-    .runnerIcon{ width:28px; height:28px; }
-    .plus{ font-size:112px; font-weight:900; color:var(--green-plus); }
+    .minus{ font-size:34px; font-weight:900; color:var(--orange-icon); transform: translateY(-1px); }
+    .runnerIcon{ font-size:22px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
+    .soundIcon{ font-size:22px; }
+    .trashIcon{ font-size:22px; }
+    .plus{ font-size:112px; font-weight:900; color:var(--green-plus); transform: translateY(-4px); }
 
     .hint{ font-size:13px; text-align:center; opacity:.75; }
+
+    .btn:focus-visible{ outline: 3px solid rgba(255,255,255,.55); outline-offset: 3px; }
   </style>
 </head>
 <body>
-<div class="phone">
-  <div class="safe-top"></div>
-  <div class="wrap">
+  <div class="phone" role="application" aria-label="Counter app">
+    <div class="safe-top"></div>
 
-    <!-- Max slider -->
-    <div class="maxRow">
-      <div class="maxHeader">
-        <span>Max</span>
-        <span id="maxValue" class="maxValue">10000</span>
+    <div class="wrap">
+      <!-- Max slider -->
+      <div class="maxRow" aria-label="Maximum count">
+        <div class="maxHeader">
+          <span>Max</span>
+          <span id="maxValue" class="maxValue">10000</span>
+        </div>
+        <input id="maxSlider" type="range" min="0" max="100000" step="100" value="10000" />
       </div>
-      <input id="maxSlider" type="range" min="0" max="100000" step="100" value="10000" />
+
+      <!-- Controls -->
+      <div class="controlsRow" aria-label="Controls">
+        <button id="minusBtn" class="btn orange" aria-label="Minus" draggable="false">
+          <span class="minus">−</span>
+        </button>
+        <button id="speedBtn" class="btn gray" aria-label="Speed" draggable="false">
+          <span class="runnerIcon" aria-hidden="true">🏃</span>
+        </button>
+        <button id="soundBtn" class="btn gray" aria-label="Sound on" draggable="false">
+          <span id="soundIcon" class="soundIcon" aria-hidden="true">🔊</span>
+        </button>
+        <button id="resetBtn" class="btn red" aria-label="Reset" draggable="false">
+          <span class="trashIcon" aria-hidden="true">🗑</span>
+        </button>
+      </div>
+
+      <div id="count" class="count" aria-live="polite">0</div>
+
+      <div style="display:flex;justify-content:center;">
+        <button id="plusBtn" class="btn big green" aria-label="Plus" draggable="false">
+          <span class="plus">+</span>
+        </button>
+      </div>
+
+      <div id="hint" class="hint">Max: 10000 · Rate: 10/sec</div>
     </div>
-
-    <!-- Controls -->
-    <div class="controlsRow">
-      <button id="minusBtn" class="btn orange"><span class="minus">−</span></button>
-      <button id="speedBtn" class="btn gray"><span class="runnerIcon">🏃</span></button>
-      <button id="soundBtn" class="btn gray">🔊</button>
-      <button id="resetBtn" class="btn red">🗑</button>
-    </div>
-
-    <div id="count" class="count">0</div>
-
-    <div style="display:flex;justify-content:center;">
-      <button id="plusBtn" class="btn big green"><span class="plus">+</span></button>
-    </div>
-
-    <div id="hint" class="hint">Max: 10000 · Rate: 10/sec</div>
   </div>
-</div>
 
-<script>
-  let value = 0;
-  let maxValue = 10000;
-  let ratePerSec = 10;
+  <script>
+    // ====== Behavior targets ======
+    // - Hold +/- for continuous counting (starts after 1/3s)
+    // - Speed button: tap slows down, hold accelerates toward 1000/sec
+    // - Sound button toggles icon and click sound
+    // - Max slider clamps the counter
 
-  const countEl = document.getElementById('count');
-  const maxValueEl = document.getElementById('maxValue');
-  const maxSlider = document.getElementById('maxSlider');
-  const hintEl = document.getElementById('hint');
+    // ====== State ======
+    let value = 0;
+    let maxValue = 10000;
 
-  const plusBtn = document.getElementById('plusBtn');
-  const minusBtn = document.getElementById('minusBtn');
-  const resetBtn = document.getElementById('resetBtn');
+    const RATE_MIN = 1;
+    const RATE_MAX = 1000; // requested max
+    let ratePerSec = 10;   // requested default
 
-  function updateHint(){
-    hintEl.textContent = `Max: ${maxValue} · Rate: ${ratePerSec}/sec`;
-  }
+    const HOLD_THRESHOLD_MS = 333;
 
-  function setValue(v){
-    value = Math.min(v, maxValue);
-    countEl.textContent = value;
-  }
+    // ====== Elements ======
+    const countEl = document.getElementById('count');
+    const hintEl = document.getElementById('hint');
 
-  maxSlider.addEventListener('input', () => {
-    maxValue = parseInt(maxSlider.value, 10);
-    maxValueEl.textContent = maxValue;
-    if (value > maxValue) setValue(maxValue);
+    const maxValueEl = document.getElementById('maxValue');
+    const maxSlider = document.getElementById('maxSlider');
+
+    const plusBtn = document.getElementById('plusBtn');
+    const minusBtn = document.getElementById('minusBtn');
+    const speedBtn = document.getElementById('speedBtn');
+    const soundBtn = document.getElementById('soundBtn');
+    const soundIcon = document.getElementById('soundIcon');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // ====== No-selection hardening for iOS ======
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    document.addEventListener('selectstart', (e) => e.preventDefault());
+
+    // ====== UI ======
+    function updateHint(){
+      hintEl.textContent = `Max: ${maxValue} · Rate: ${ratePerSec}/sec`;
+    }
+
+    function setValue(next){
+      value = next;
+      if (value > maxValue) value = maxValue;
+      countEl.textContent = String(value);
+    }
+
+    function setMaxValue(next){
+      maxValue = Math.max(0, next);
+      maxValueEl.textContent = String(maxValue);
+      if (value > maxValue) setValue(maxValue);
+      updateHint();
+    }
+
+    // ====== Sound (WebAudio + HTMLAudio fallback) ======
+    let soundOn = true;
+    let audioCtx = null;
+    let audioUnlocked = false;
+
+    let clickPool = [];
+    let clickPoolIdx = 0;
+
+    function ensureAudioContext(){
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function pcmToWavUrl(samples, sampleRate){
+      const numChannels = 1;
+      const bitsPerSample = 16;
+      const byteRate = sampleRate * numChannels * bitsPerSample / 8;
+      const blockAlign = numChannels * bitsPerSample / 8;
+      const dataSize = samples.length * 2;
+      const buffer = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(buffer);
+
+      const writeStr = (off, str) => { for (let i=0;i<str.length;i++) view.setUint8(off+i, str.charCodeAt(i)); };
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, byteRate, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, bitsPerSample, true);
+      writeStr(36, 'data');
+      view.setUint32(40, dataSize, true);
+
+      let o = 44;
+      for (let i=0;i<samples.length;i++){
+        view.setInt16(o, samples[i], true);
+        o += 2;
+      }
+      const blob = new Blob([buffer], { type: 'audio/wav' });
+      return URL.createObjectURL(blob);
+    }
+
+    function buildClickPool(){
+      if (clickPool.length) return;
+
+      // short click ~10ms
+      const sr = 44100;
+      const ms = 10;
+      const n = Math.floor(sr * (ms/1000));
+      const samples = new Int16Array(n);
+      const f = 1900;
+      for (let i=0;i<n;i++){
+        const t = i / sr;
+        const env = Math.exp(-t * 180);
+        const s = Math.sign(Math.sin(2*Math.PI*f*t)) * env;
+        samples[i] = Math.max(-1, Math.min(1, s)) * 22000;
+      }
+
+      const url = pcmToWavUrl(samples, sr);
+      for (let i=0;i<10;i++){
+        const a = new Audio(url);
+        a.preload = 'auto';
+        clickPool.push(a);
+      }
+    }
+
+    async function unlockAudioOnce(){
+      if (audioUnlocked) return;
+      buildClickPool();
+
+      try{
+        const ctx = ensureAudioContext();
+        if (ctx.state === 'suspended') await ctx.resume();
+
+        // warm HTMLAudio inside gesture
+        const a = clickPool[0];
+        a.currentTime = 0;
+        await a.play().catch(() => {});
+        a.pause();
+        a.currentTime = 0;
+
+        audioUnlocked = true;
+      }catch(_e){
+        // ignore
+      }
+    }
+
+    // Keep click sound audible: throttle playback rate.
+    // Counter can still run faster than this.
+    const SOUND_MAX_PER_SEC = 60;
+    const SOUND_MIN_GAP_MS = Math.floor(1000 / SOUND_MAX_PER_SEC);
+    let lastSoundAt = 0;
+
+    function playClick(){
+      if (!soundOn) return;
+
+      const now = performance.now();
+      if (now - lastSoundAt < SOUND_MIN_GAP_MS) return;
+      lastSoundAt = now;
+
+      // Prefer WebAudio if running
+      try{
+        if (audioCtx && audioCtx.state === 'running'){
+          const t = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(1700, t);
+          gain.gain.setValueAtTime(0.0001, t);
+          gain.gain.exponentialRampToValueAtTime(0.12, t + 0.0012);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.012);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(t);
+          osc.stop(t + 0.013);
+          return;
+        }
+      }catch(_e){
+        // fall through
+      }
+
+      // Fallback: HTMLAudio
+      try{
+        if (!clickPool.length) buildClickPool();
+        const a = clickPool[clickPoolIdx++ % clickPool.length];
+        a.currentTime = 0;
+        a.play().catch(() => {});
+      }catch(_e){
+        // ignore
+      }
+    }
+
+    // Extra unlock hook for browsers that fire touch before pointer
+    document.addEventListener('touchstart', () => { unlockAudioOnce(); }, { passive: true, once: true });
+
+    // ====== Counter operations ======
+    function inc(){
+      if (value >= maxValue) return;
+      setValue(value + 1);
+      playClick();
+    }
+
+    function dec(){
+      setValue(value - 1);
+      playClick();
+    }
+
+    function reset(){
+      setValue(0);
+    }
+
+    // ====== Hold-to-repeat (rAF batching) ======
+    function makeHoldRepeater({ element, onTap, onTick }){
+      let holdTimer = null;
+      let holding = false;
+      let pointerId = null;
+
+      let rafId = null;
+      let lastTs = 0;
+      let carry = 0;
+
+      function stop(){
+        if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+        holding = false;
+        pointerId = null;
+        lastTs = 0;
+        carry = 0;
+      }
+
+      function loop(ts){
+        if (!holding) return;
+        if (!lastTs) lastTs = ts;
+        const dt = (ts - lastTs) / 1000;
+        lastTs = ts;
+
+        // batch ticks
+        const target = ratePerSec * dt + carry;
+        const whole = Math.floor(target);
+        carry = target - whole;
+
+        if (whole > 0){
+          for (let i=0;i<whole;i++) onTick();
+        }
+
+        rafId = requestAnimationFrame(loop);
+      }
+
+      element.addEventListener('pointerdown', (e) => {
+        unlockAudioOnce();
+
+        pointerId = e.pointerId;
+        element.setPointerCapture(pointerId);
+        e.preventDefault();
+
+        holdTimer = setTimeout(() => {
+          holding = true;
+          lastTs = 0;
+          carry = 0;
+          rafId = requestAnimationFrame(loop);
+        }, HOLD_THRESHOLD_MS);
+      }, { passive: false });
+
+      element.addEventListener('pointerup', (e) => {
+        if (pointerId !== e.pointerId) return;
+        const wasHolding = holding;
+        stop();
+        if (!wasHolding) onTap();
+      });
+
+      element.addEventListener('pointercancel', (e) => {
+        if (pointerId !== e.pointerId) return;
+        stop();
+      });
+
+      element.addEventListener('lostpointercapture', () => {
+        stop();
+      });
+    }
+
+    makeHoldRepeater({ element: plusBtn, onTap: inc, onTick: inc });
+    makeHoldRepeater({ element: minusBtn, onTap: dec, onTick: dec });
+
+    // ====== Speed button ======
+    // Tap => slower (reduce rate)
+    // Hold (>1/3s) => ramp faster toward 1000/sec
+    let speedHoldTimer = null;
+    let speedRampTimer = null;
+    let speedPointerId = null;
+    let speedHolding = false;
+
+    function clamp(n, min, max){
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function slowDown(){
+      ratePerSec = clamp(Math.max(RATE_MIN, Math.floor(ratePerSec * 0.85)), RATE_MIN, RATE_MAX);
+      updateHint();
+    }
+
+    function speedUp(){
+      ratePerSec = clamp(Math.min(RATE_MAX, Math.ceil(ratePerSec * 1.15) + 1), RATE_MIN, RATE_MAX);
+      updateHint();
+    }
+
+    function clearSpeedTimers(){
+      if (speedHoldTimer) { clearTimeout(speedHoldTimer); speedHoldTimer = null; }
+      if (speedRampTimer) { clearInterval(speedRampTimer); speedRampTimer = null; }
+      speedHolding = false;
+      speedPointerId = null;
+    }
+
+    speedBtn.addEventListener('pointerdown', (e) => {
+      unlockAudioOnce();
+
+      speedPointerId = e.pointerId;
+      speedBtn.setPointerCapture(speedPointerId);
+      e.preventDefault();
+
+      speedHoldTimer = setTimeout(() => {
+        speedHolding = true;
+        speedRampTimer = setInterval(() => {
+          speedUp();
+        }, 85);
+      }, HOLD_THRESHOLD_MS);
+    }, { passive: false });
+
+    speedBtn.addEventListener('pointerup', (e) => {
+      if (speedPointerId !== e.pointerId) return;
+      const wasHolding = speedHolding;
+      clearSpeedTimers();
+      if (!wasHolding) slowDown();
+    });
+
+    speedBtn.addEventListener('pointercancel', (e) => {
+      if (speedPointerId !== e.pointerId) return;
+      clearSpeedTimers();
+    });
+
+    speedBtn.addEventListener('lostpointercapture', () => {
+      clearSpeedTimers();
+    });
+
+    // ====== Sound button ======
+    soundBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      unlockAudioOnce();
+
+      soundOn = !soundOn;
+      soundIcon.textContent = soundOn ? '🔊' : '🔇';
+      soundBtn.setAttribute('aria-label', soundOn ? 'Sound on' : 'Sound off');
+
+      // small confirmation click when turning on
+      if (soundOn) playClick();
+    }, { passive: false });
+
+    // ====== Reset ======
+    resetBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      reset();
+    }, { passive: false });
+
+    // ====== Max slider ======
+    maxSlider.addEventListener('input', () => {
+      setMaxValue(parseInt(maxSlider.value, 10));
+    });
+
+    // ====== Prevent accidental double-tap zoom on iOS (best-effort) ======
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 250) e.preventDefault();
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    // ====== Tests (console) ======
+    function runTests(){
+      const assert = (cond, msg) => { if (!cond) throw new Error(`Test failed: ${msg}`); };
+
+      // defaults
+      assert(ratePerSec === 10, 'default rate is 10/sec');
+      assert(maxValue === 10000, 'default max is 10000');
+
+      // clamp to max
+      setValue(100);
+      setMaxValue(40);
+      assert(value === 40, 'value clamps down when max decreases');
+
+      // inc respects max
+      setMaxValue(2);
+      setValue(2);
+      inc();
+      assert(value === 2, 'inc does not exceed max');
+
+      // speed bounds
+      ratePerSec = 1;
+      slowDown();
+      assert(ratePerSec === 1, 'slowDown does not go below min');
+      ratePerSec = 999;
+      speedUp();
+      assert(ratePerSec <= 1000, 'speedUp does not exceed max');
+
+      // restore
+      ratePerSec = 10;
+      setMaxValue(10000);
+      setValue(0);
+      updateHint();
+
+      console.log('All tests passed.');
+    }
+
+    // Initial render
+    setMaxValue(10000);
+    setValue(0);
     updateHint();
-  });
-
-  plusBtn.addEventListener('click', () => {
-    if (value < maxValue) setValue(value + 1);
-  });
-
-  minusBtn.addEventListener('click', () => {
-    setValue(value - 1);
-  });
-
-  resetBtn.addEventListener('click', () => setValue(0));
-
-  updateHint();
-</script>
+    runTests();
+  </script>
 </body>
 </html>

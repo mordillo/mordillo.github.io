@@ -10,8 +10,8 @@
       --text:#ffffff;
 
       --green:#0f8a3a;
-      --green-border:#46d86b;        /* border: light green, darker than plus */
-      --green-plus:#8dffb0;          /* plus sign: lightest */
+      --green-border:#46d86b;
+      --green-plus:#8dffb0;
 
       --orange:#c06a00;
       --orange-border:#ffb15a;
@@ -72,63 +72,62 @@
       display:flex;
       flex-direction:column;
       justify-content:center;
-      gap: 18px;
+      gap: 16px;
       padding-bottom: 10px;
     }
 
-    /* Exactly match the big button width so left/right align perfectly */
+    /* Max slider row */
     .maxRow{
       width: var(--big);
       margin: 0 auto;
       display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      opacity: .95;
+      flex-direction:column;
+      gap: 6px;
     }
 
-    .maxLabel{
-      width: 100%;
+    .maxHeader{
       display:flex;
-      align-items:center;
       justify-content:space-between;
-      gap: 10px;
+      align-items:center;
+      font-size:14px;
+      font-weight:700;
+      opacity:.9;
     }
 
     .maxValue{
-      flex: 1;
-      text-align:center;
-      font-weight: 800;
-      font-size: 18px;
-      letter-spacing: .4px;
-      opacity: .95;
-      text-shadow: 0 8px 18px rgba(0,0,0,.45);
+      font-size:18px;
+      font-weight:800;
+      letter-spacing:.4px;
     }
 
-    .maxBtn{
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      border: 3px solid var(--gray-border);
-      box-shadow: var(--shadow-outer), var(--shadow-inner);
-      background: linear-gradient(180deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.06) 20%, rgba(0,0,0,.25) 100%),
-                  linear-gradient(180deg, #566276 0%, var(--gray) 72%);
-      display:grid;
-      place-items:center;
-      padding:0;
+    input[type=range]{
+      -webkit-appearance:none;
+      width:100%;
+      height:8px;
+      border-radius:999px;
+      background: linear-gradient(90deg, var(--gray-border), var(--gray));
+      outline:none;
     }
 
-    .maxBtn:active{ transform: translateY(1px); filter: brightness(.98); }
-
-    .maxSym{
-      font-size: 28px;
-      font-weight: 900;
-      color: var(--gray-icon);
-      transform: translateY(-1px);
-      text-shadow: 0 4px 10px rgba(0,0,0,.45);
+    input[type=range]::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      width:26px;
+      height:26px;
+      border-radius:50%;
+      background: linear-gradient(180deg, #ffffff 0%, #dfe6ef 100%);
+      border:3px solid var(--gray-border);
+      box-shadow: 0 6px 14px rgba(0,0,0,.45);
     }
 
-    /* Exactly match the big button width so left/right align perfectly */
+    input[type=range]::-moz-range-thumb{
+      width:26px;
+      height:26px;
+      border-radius:50%;
+      background:#ffffff;
+      border:3px solid var(--gray-border);
+    }
+
+    /* Controls row */
     .controlsRow{
       width: var(--big);
       margin: 0 auto;
@@ -138,658 +137,123 @@
     }
 
     .count{
-      font-size: 64px;
-      line-height: 1;
-      font-weight: 800;
-      letter-spacing: .5px;
+      font-size:64px;
+      font-weight:800;
       text-align:center;
       text-shadow: 0 10px 24px rgba(0,0,0,.55);
-      padding: 6px 0 0;
     }
 
     button{
       font: inherit;
-      border: none;
-      background: none;
-      color: inherit;
-      -webkit-appearance: none;
-      appearance: none;
+      border:none;
+      background:none;
+      color:inherit;
+      -webkit-appearance:none;
+      appearance:none;
     }
 
     .btn{
       width: var(--small);
       height: var(--small);
-      border-radius: 14px;
-      border: 3px solid transparent;
+      border-radius:14px;
+      border:3px solid transparent;
       box-shadow: var(--shadow-outer), var(--shadow-inner);
       display:grid;
       place-items:center;
-      transform: translateZ(0);
       cursor:pointer;
-      padding: 0;
-      outline: none;
     }
 
-    .btn *{ pointer-events:none; } /* taps always hit the button, not the icon/text */
+    .btn *{ pointer-events:none; }
 
     .btn:active{ transform: translateY(1px); filter: brightness(.98); }
 
-    .btn.big{ width: var(--big); height: var(--big); border-radius: 26px; }
+    .btn.big{ width:var(--big); height:var(--big); border-radius:26px; }
 
-    .btn.orange{
-      background: linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.06) 20%, rgba(0,0,0,.25) 100%),
-                  linear-gradient(180deg, #e47a00 0%, var(--orange) 70%);
-      border-color: var(--orange-border);
-    }
+    .btn.orange{ background:linear-gradient(180deg,#e47a00,var(--orange)); border-color:var(--orange-border); }
+    .btn.gray{ background:linear-gradient(180deg,#566276,var(--gray)); border-color:var(--gray-border); }
+    .btn.red{ background:linear-gradient(180deg,#d11f1f,var(--red)); border-color:var(--red-border); }
+    .btn.green{ background:linear-gradient(180deg,#14a046,var(--green)); border-color:var(--green-border); }
 
-    .btn.gray{
-      background: linear-gradient(180deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.06) 20%, rgba(0,0,0,.25) 100%),
-                  linear-gradient(180deg, #566276 0%, var(--gray) 72%);
-      border-color: var(--gray-border);
-    }
+    .minus{ font-size:34px; font-weight:900; color:var(--orange-icon); }
+    .runnerIcon{ width:28px; height:28px; }
+    .plus{ font-size:112px; font-weight:900; color:var(--green-plus); }
 
-    .btn.red{
-      background: linear-gradient(180deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.05) 18%, rgba(0,0,0,.28) 100%),
-                  linear-gradient(180deg, #d11f1f 0%, var(--red) 72%);
-      border-color: var(--red-border);
-    }
-
-    .btn.green{
-      background: linear-gradient(180deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,.06) 18%, rgba(0,0,0,.30) 100%),
-                  linear-gradient(180deg, #14a046 0%, var(--green) 72%);
-      border-color: var(--green-border);
-    }
-
-    .icon{ width: 26px; height: 26px; display:block; }
-
-    .minus{
-      font-size: 34px;
-      font-weight: 900;
-      color: var(--orange-icon);
-      transform: translateY(-1px);
-      text-shadow: 0 4px 10px rgba(0,0,0,.45);
-    }
-
-    .runnerIcon{
-      width: 28px;
-      height: 28px;
-      display:block;
-      filter: drop-shadow(0 4px 10px rgba(0,0,0,.45));
-    }
-
-    .plus{
-      font-size: 112px;
-      font-weight: 900;
-      color: var(--green-plus);
-      line-height: 1;
-      transform: translateY(-3px);
-      text-shadow: 0 12px 24px rgba(0,0,0,.55);
-    }
-
-    .hint{
-      text-align:center;
-      font-size: 13px;
-      opacity:.75;
-      margin-top: 6px;
-      padding: 0 10px;
-    }
-
-    .footer{
-      position:absolute;
-      left:0;
-      right:0;
-      bottom: 10px;
-      display:flex;
-      justify-content:center;
-      pointer-events:none;
-      opacity:.35;
-      font-size:12px;
-    }
-
-    .pill{ width: 140px; height: 5px; border-radius: 999px; background: rgba(255,255,255,.45); }
-
-    .btn:focus-visible{ outline: 3px solid rgba(255,255,255,.55); outline-offset: 3px; }
+    .hint{ font-size:13px; text-align:center; opacity:.75; }
   </style>
 </head>
 <body>
-  <div class="phone" role="application" aria-label="Counter app">
-    <div class="safe-top"></div>
+<div class="phone">
+  <div class="safe-top"></div>
+  <div class="wrap">
 
-    <div class="wrap">
-      <div class="maxRow" aria-label="Maximum count">
-        <div class="maxLabel">
-          <button id="maxMinusBtn" class="maxBtn" aria-label="Decrease maximum" draggable="false">
-            <span class="maxSym">−</span>
-          </button>
-          <div id="maxValue" class="maxValue">10000</div>
-          <button id="maxPlusBtn" class="maxBtn" aria-label="Increase maximum" draggable="false">
-            <span class="maxSym">+</span>
-          </button>
-        </div>
+    <!-- Max slider -->
+    <div class="maxRow">
+      <div class="maxHeader">
+        <span>Max</span>
+        <span id="maxValue" class="maxValue">10000</span>
       </div>
-
-      <div class="controlsRow" aria-label="Controls">
-        <button id="minusBtn" class="btn orange" aria-label="Minus" draggable="false">
-          <span class="minus">−</span>
-        </button>
-
-        <button id="speedBtn" class="btn gray" aria-label="Speed" draggable="false">
-          <span id="runnerIcon"></span>
-        </button>
-
-        <button id="soundBtn" class="btn gray" aria-label="Sound on" draggable="false">
-          <span id="soundIcon"></span>
-        </button>
-
-        <button id="resetBtn" class="btn red" aria-label="Reset" draggable="false">
-          <span id="trashIcon"></span>
-        </button>
-      </div>
-
-      <div id="count" class="count" aria-live="polite">0</div>
-
-      <div style="display:flex; justify-content:center;">
-        <button id="plusBtn" class="btn big green" aria-label="Plus" draggable="false">
-          <span class="plus">+</span>
-        </button>
-      </div>
-
-      <div id="hint" class="hint">Tap to count. Hold for continuous.</div>
+      <input id="maxSlider" type="range" min="0" max="100000" step="100" value="10000" />
     </div>
 
-    <div class="footer"><div class="pill"></div></div>
+    <!-- Controls -->
+    <div class="controlsRow">
+      <button id="minusBtn" class="btn orange"><span class="minus">−</span></button>
+      <button id="speedBtn" class="btn gray"><span class="runnerIcon">🏃</span></button>
+      <button id="soundBtn" class="btn gray">🔊</button>
+      <button id="resetBtn" class="btn red">🗑</button>
+    </div>
+
+    <div id="count" class="count">0</div>
+
+    <div style="display:flex;justify-content:center;">
+      <button id="plusBtn" class="btn big green"><span class="plus">+</span></button>
+    </div>
+
+    <div id="hint" class="hint">Max: 10000 · Rate: 10/sec</div>
   </div>
-
-  <script>
-    // ====== State ======
-    let value = 0;
-    let soundOn = true;
-
-    // Max value (editable via +/- above the top row). Counter cannot exceed this.
-    // NOTE: step size for these +/- buttons is currently 100 (change if you prefer).
-    let maxValue = 10000;
-    const MAX_STEP = 100; // TODO: confirm desired step size (1? 10? 100? 1000?)
-
-    // Speed is represented as counts per second for hold-repeat.
-    // Default should be 30/sec.
-    const RATE_MIN = 1;
-    const RATE_MAX = 1000; // target max (best-effort)
-    let ratePerSec = 10;
-
-    const HOLD_THRESHOLD_MS = 333;
-
-    const countEl = document.getElementById('count');
-    const hintEl = document.getElementById('hint');
-
-    const plusBtn = document.getElementById('plusBtn');
-    const minusBtn = document.getElementById('minusBtn');
-    const speedBtn = document.getElementById('speedBtn');
-    const soundBtn = document.getElementById('soundBtn');
-    const resetBtn = document.getElementById('resetBtn');
-
-    const maxMinusBtn = document.getElementById('maxMinusBtn');
-    const maxPlusBtn = document.getElementById('maxPlusBtn');
-    const maxValueEl = document.getElementById('maxValue');
-
-    // ====== Icons (inline SVG) ======
-    const speakerSvg = (color) => `
-      <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M4 10v4h3l5 4V6L7 10H4z" fill="${color}" opacity="0.95"/>
-        <path d="M16 8c1.7 1.6 1.7 6.4 0 8" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
-        <path d="M18.8 5.6c3 3 3 9.8 0 12.8" stroke="${color}" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
-      </svg>
-    `;
-
-    const speakerMutedSvg = (color) => `
-      <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M4 10v4h3l5 4V6L7 10H4z" fill="${color}" opacity="0.95"/>
-        <path d="M16.5 9.5l4 4" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
-        <path d="M20.5 9.5l-4 4" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    `;
-
-    const runnerSvg = (color) => `
-      <svg class="runnerIcon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M14.6 5.2c0 1-0.8 1.8-1.8 1.8S11 6.2 11 5.2 11.8 3.4 12.8 3.4s1.8 0.8 1.8 1.8z" fill="${color}"/>
-        <path d="M10.4 20.5l1.7-4.3 1.6 1.5 1.2 2.8" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M7.2 12.2l4-2.2 2.8 1.1 2.8-1.4" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M9.2 14.2l1.9 2.1" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
-        <path d="M13.4 11.1l-1.1 3.3" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
-        <path d="M16.3 20.2l-1.5-2.8 3.3-1.8" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    `;
-
-    const trashSvg = (color) => `
-      <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M9 3h6l1 2h4v2H4V5h4l1-2z" fill="${color}" opacity="0.95"/>
-        <path d="M7 9h10l-1 12H8L7 9z" fill="${color}" opacity="0.88"/>
-        <path d="M10 12v6" stroke="#1a0a0a" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
-        <path d="M14 12v6" stroke="#1a0a0a" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
-      </svg>
-    `;
-
-    const runnerIconWrap = document.getElementById('runnerIcon');
-    const soundIconWrap = document.getElementById('soundIcon');
-    const trashIconWrap = document.getElementById('trashIcon');
-
-    function renderIcons(){
-      const grayIcon = getComputedStyle(document.documentElement).getPropertyValue('--gray-icon').trim();
-      const redIcon = getComputedStyle(document.documentElement).getPropertyValue('--red-icon').trim();
-
-      runnerIconWrap.innerHTML = runnerSvg(grayIcon);
-      soundIconWrap.innerHTML = soundOn ? speakerSvg(grayIcon) : speakerMutedSvg(grayIcon);
-      soundBtn.setAttribute('aria-label', soundOn ? 'Sound on' : 'Sound off');
-      trashIconWrap.innerHTML = trashSvg(redIcon);
-    }
-
-    // ====== UI Update ======
-    function setValue(next){
-      value = next;
-      countEl.textContent = String(value);
-    }
-
-    function setMaxValue(next){
-      // keep max non-negative
-      maxValue = Math.max(0, next);
-      maxValueEl.textContent = String(maxValue);
-      // clamp current value if needed
-      if (value > maxValue) setValue(maxValue);
-      updateHint();
-    }
-
-    // ====== Audio (iOS: robust unlock + fallback) ======
-    // Many iPhones won't play WebAudio unless it's started from a real touch gesture.
-    // Also, rapid successive WebAudio beeps can get dropped; so we:
-    // - unlock on first user gesture
-    // - use WebAudio when available
-    // - fall back to HTMLAudio (generated WAV)
-    // - throttle sound to a sane audible rate
-
-    let audioCtx = null;
-    let audioUnlocked = false;
-
-    let clickAudioPool = [];
-    let clickAudioIdx = 0;
-
-    function ensureAudioContext(){
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      return audioCtx;
-    }
-
-    function pcmToWavUrl(samples, sampleRate){
-      const numChannels = 1;
-      const bitsPerSample = 16;
-      const byteRate = sampleRate * numChannels * bitsPerSample / 8;
-      const blockAlign = numChannels * bitsPerSample / 8;
-      const dataSize = samples.length * 2;
-      const buffer = new ArrayBuffer(44 + dataSize);
-      const view = new DataView(buffer);
-
-      const writeStr = (off, str) => { for (let i=0;i<str.length;i++) view.setUint8(off+i, str.charCodeAt(i)); };
-      writeStr(0, 'RIFF');
-      view.setUint32(4, 36 + dataSize, true);
-      writeStr(8, 'WAVE');
-      writeStr(12, 'fmt ');
-      view.setUint32(16, 16, true);
-      view.setUint16(20, 1, true);
-      view.setUint16(22, numChannels, true);
-      view.setUint32(24, sampleRate, true);
-      view.setUint32(28, byteRate, true);
-      view.setUint16(32, blockAlign, true);
-      view.setUint16(34, bitsPerSample, true);
-      writeStr(36, 'data');
-      view.setUint32(40, dataSize, true);
-
-      let o = 44;
-      for (let i=0;i<samples.length;i++){
-        view.setInt16(o, samples[i], true);
-        o += 2;
-      }
-
-      const blob = new Blob([buffer], { type: 'audio/wav' });
-      return URL.createObjectURL(blob);
-    }
-
-    function buildClickPool(){
-      if (clickAudioPool.length) return;
-
-      const sr = 44100;
-      const ms = 10;
-      const n = Math.floor(sr * (ms/1000));
-      const samples = new Int16Array(n);
-
-      const f = 1900;
-      for (let i=0;i<n;i++){
-        const t = i / sr;
-        const env = Math.exp(-t * 160);
-        const s = Math.sign(Math.sin(2*Math.PI*f*t)) * env;
-        samples[i] = Math.max(-1, Math.min(1, s)) * 20000;
-      }
-
-      const url = pcmToWavUrl(samples, sr);
-      for (let i=0;i<10;i++){
-        const a = new Audio(url);
-        a.preload = 'auto';
-        clickAudioPool.push(a);
-      }
-    }
-
-    async function unlockAudioOnce(){
-      if (audioUnlocked) return;
-      buildClickPool();
-
-      try{
-        const ctx = ensureAudioContext();
-        if (ctx.state === 'suspended') await ctx.resume();
-
-        // short audible ping (helps confirm audio isn't blocked)
-        const t = ctx.currentTime;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, t);
-        gain.gain.setValueAtTime(0.0001, t);
-        gain.gain.exponentialRampToValueAtTime(0.06, t + 0.0015);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.02);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(t);
-        osc.stop(t + 0.02);
-
-        // warm up HTMLAudio (must happen in a gesture handler)
-        const a = clickAudioPool[0];
-        a.currentTime = 0;
-        await a.play().catch(() => {});
-        a.pause();
-        a.currentTime = 0;
-
-        audioUnlocked = true;
-      }catch(_e){
-        // ignore
-      }
-    }
-
-    let lastClickAt = 0;
-    function clickSound(){
-      if (!soundOn) return;
-
-      // Throttle so iOS doesn't drop/skip and so it remains audible.
-      const now = performance.now();
-      if (now - lastClickAt < 14) return; // ~70/sec max
-      lastClickAt = now;
-
-      // Prefer WebAudio
-      try{
-        if (audioCtx && audioCtx.state === 'running'){
-          const t = audioCtx.currentTime;
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'square';
-          osc.frequency.setValueAtTime(1600, t);
-          gain.gain.setValueAtTime(0.0001, t);
-          gain.gain.exponentialRampToValueAtTime(0.12, t + 0.0012);
-          gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.012);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(t);
-          osc.stop(t + 0.013);
-          return;
-        }
-      }catch(_e){
-        // fall through
-      }
-
-      // Fallback: HTMLAudio
-      try{
-        if (!clickAudioPool.length) buildClickPool();
-        const a = clickAudioPool[clickAudioIdx++ % clickAudioPool.length];
-        a.currentTime = 0;
-        a.play().catch(() => {});
-      }catch(_e){
-        // ignore
-      }
-    }
-
-    // ====== Helpers ======
-    function clamp(n, min, max){
-      return Math.max(min, Math.min(max, n));
-    }
-
-    function updateHint(){
-      hintEl.textContent = `Max: ${maxValue} · Rate: ${ratePerSec}/sec · Tap to count. Hold for continuous.`;
-    }
-
-    function inc(){
-      if (value >= maxValue) return;
-      setValue(value + 1);
-      clickSound();
-    }
-
-    function dec(){
-      setValue(value - 1);
-      clickSound();
-    }
-
-    function reset(){
-      setValue(0);
-    }
-
-    function makeSlower(){
-      // Tap speed => slower
-      ratePerSec = clamp(Math.max(RATE_MIN, Math.floor(ratePerSec * 0.85)), RATE_MIN, RATE_MAX);
-      updateHint();
-    }
-
-    function makeFaster(){
-      // Hold speed => ramps faster and faster
-      ratePerSec = clamp(Math.min(RATE_MAX, Math.ceil(ratePerSec * 1.12) + 1), RATE_MIN, RATE_MAX);
-      updateHint();
-    }
-
-    // ====== Hold-to-repeat using requestAnimationFrame ======
-    // Best-effort high-rate counting by batching ticks per frame.
-    function makeHoldRepeater({ element, onTap, onTick }){
-      let holdTimer = null;
-      let holding = false;
-      let pointerId = null;
-      let rafId = null;
-      let lastTs = 0;
-      let carry = 0;
-
-      function stop(){
-        if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-        holding = false;
-        pointerId = null;
-        lastTs = 0;
-        carry = 0;
-      }
-
-      function loop(ts){
-        if (!holding) return;
-        if (!lastTs) lastTs = ts;
-        const dt = (ts - lastTs) / 1000;
-        lastTs = ts;
-
-        const target = ratePerSec * dt + carry;
-        const whole = Math.floor(target);
-        carry = target - whole;
-
-        if (whole > 0){
-          for (let i = 0; i < whole; i++) onTick();
-        }
-
-        rafId = requestAnimationFrame(loop);
-      }
-
-      element.addEventListener('pointerdown', (e) => {
-        unlockAudioOnce();
-
-        pointerId = e.pointerId;
-        element.setPointerCapture(pointerId);
-        e.preventDefault();
-
-        holdTimer = setTimeout(() => {
-          holding = true;
-          lastTs = 0;
-          carry = 0;
-          rafId = requestAnimationFrame(loop);
-        }, HOLD_THRESHOLD_MS);
-      }, { passive: false });
-
-      element.addEventListener('pointerup', (e) => {
-        if (pointerId !== e.pointerId) return;
-        const wasHolding = holding;
-        stop();
-        if (!wasHolding) onTap();
-      });
-
-      element.addEventListener('pointercancel', (e) => {
-        if (pointerId !== e.pointerId) return;
-        stop();
-      });
-
-      element.addEventListener('lostpointercapture', () => {
-        stop();
-      });
-
-      return { stop };
-    }
-
-    // ====== Wire up +/- ======
-    makeHoldRepeater({ element: plusBtn, onTap: inc, onTick: inc });
-    makeHoldRepeater({ element: minusBtn, onTap: dec, onTick: dec });
-
-    // ====== Speed button (tap slower, hold ramps faster) ======
-    let speedHoldTimer = null;
-    let speedRampTimer = null;
-    let speedPointerId = null;
-    let speedHolding = false;
-
-    function clearSpeedTimers(){
-      if (speedHoldTimer) { clearTimeout(speedHoldTimer); speedHoldTimer = null; }
-      if (speedRampTimer) { clearInterval(speedRampTimer); speedRampTimer = null; }
-      speedHolding = false;
-      speedPointerId = null;
-    }
-
-    speedBtn.addEventListener('pointerdown', (e) => {
-      unlockAudioOnce();
-
-      speedPointerId = e.pointerId;
-      speedBtn.setPointerCapture(speedPointerId);
-      e.preventDefault();
-
-      speedHoldTimer = setTimeout(() => {
-        speedHolding = true;
-        speedRampTimer = setInterval(() => {
-          makeFaster();
-        }, 85);
-      }, HOLD_THRESHOLD_MS);
-    }, { passive: false });
-
-    speedBtn.addEventListener('pointerup', (e) => {
-      if (speedPointerId !== e.pointerId) return;
-      const wasHolding = speedHolding;
-      clearSpeedTimers();
-      if (!wasHolding) makeSlower();
-    });
-
-    speedBtn.addEventListener('pointercancel', (e) => {
-      if (speedPointerId !== e.pointerId) return;
-      clearSpeedTimers();
-    });
-
-    speedBtn.addEventListener('lostpointercapture', () => {
-      clearSpeedTimers();
-    });
-
-    // ====== Sound + Reset ======
-    soundBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      unlockAudioOnce();
-      soundOn = !soundOn;
-      renderIcons();
-    }, { passive: false });
-
-    resetBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      reset();
-    }, { passive: false });
-
-    // ====== Kill iOS selection / context menus ======
-    document.addEventListener('contextmenu', (e) => e.preventDefault());
-    document.addEventListener('selectstart', (e) => e.preventDefault());
-
-    // Extra: ensure unlock also happens for browsers that fire touch before pointer
-    document.addEventListener('touchstart', () => { unlockAudioOnce(); }, { passive: true, once: true });
-
-    // Prevent accidental double-tap zoom on iOS (best-effort)
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', (e) => {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 250) e.preventDefault();
-      lastTouchEnd = now;
-    }, { passive: false });
-
-    // ====== Basic tests (runs in console) ======
-    function runTests(){
-      const assert = (cond, msg) => { if (!cond) throw new Error(`Test failed: ${msg}`); };
-
-      assert(clamp(5, 0, 10) === 5, 'clamp keeps value in range');
-      assert(clamp(-1, 0, 10) === 0, 'clamp clamps low');
-      assert(clamp(99, 0, 10) === 10, 'clamp clamps high');
-
-      assert(ratePerSec === 10, 'default rate is 10/sec');
-
-      const beforeSlow = ratePerSec;
-      makeSlower();
-      assert(ratePerSec <= beforeSlow, 'makeSlower reduces rate');
-
-      ratePerSec = 10;
-      const beforeFast = ratePerSec;
-      makeFaster();
-      assert(ratePerSec >= beforeFast, 'makeFaster increases rate');
-
-      ratePerSec = 999;
-      makeFaster();
-      assert(ratePerSec <= RATE_MAX, 'rate does not exceed max');
-
-      setValue(12);
-      reset();
-      assert(value === 0, 'reset sets value to 0');
-
-      // max clamp
-      setValue(50);
-      setMaxValue(40);
-      assert(value === 40, 'value clamps down to max');
-      setValue(40);
-      inc();
-      assert(value === 40, 'inc does not exceed max');
-
-      // restore
-      setMaxValue(10000);
-      setValue(0);
-
-      console.log('All tests passed.');
-    }
-
-    // Max controls
-    maxPlusBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      setMaxValue(maxValue + MAX_STEP);
-    }, { passive: false });
-
-    maxMinusBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      setMaxValue(maxValue - MAX_STEP);
-    }, { passive: false });
-
-    // Initial render
-    renderIcons();
-    setMaxValue(maxValue);
-    setValue(0);
-    runTests();
-  </script>
+</div>
+
+<script>
+  let value = 0;
+  let maxValue = 10000;
+  let ratePerSec = 10;
+
+  const countEl = document.getElementById('count');
+  const maxValueEl = document.getElementById('maxValue');
+  const maxSlider = document.getElementById('maxSlider');
+  const hintEl = document.getElementById('hint');
+
+  const plusBtn = document.getElementById('plusBtn');
+  const minusBtn = document.getElementById('minusBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  function updateHint(){
+    hintEl.textContent = `Max: ${maxValue} · Rate: ${ratePerSec}/sec`;
+  }
+
+  function setValue(v){
+    value = Math.min(v, maxValue);
+    countEl.textContent = value;
+  }
+
+  maxSlider.addEventListener('input', () => {
+    maxValue = parseInt(maxSlider.value, 10);
+    maxValueEl.textContent = maxValue;
+    if (value > maxValue) setValue(maxValue);
+    updateHint();
+  });
+
+  plusBtn.addEventListener('click', () => {
+    if (value < maxValue) setValue(value + 1);
+  });
+
+  minusBtn.addEventListener('click', () => {
+    setValue(value - 1);
+  });
+
+  resetBtn.addEventListener('click', () => setValue(0));
+
+  updateHint();
+</script>
 </body>
 </html>

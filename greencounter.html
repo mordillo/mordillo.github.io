@@ -32,7 +32,14 @@
       --shadow-inner: inset 0 1px 0 rgba(255,255,255,.25), inset 0 -6px 14px rgba(0,0,0,.35);
     }
 
-    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
     html, body{ height:100%; }
 
     body{
@@ -42,7 +49,6 @@
       background: radial-gradient(1200px 700px at 50% 20%, #182437 0%, var(--bg) 55%, #070a0e 100%);
       color:var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      user-select:none;
       overscroll-behavior:none;
       touch-action: manipulation;
     }
@@ -89,6 +95,15 @@
       padding: 6px 0 0;
     }
 
+    button{
+      font: inherit;
+      border: none;
+      background: none;
+      color: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
     .btn{
       width: var(--small);
       height: var(--small);
@@ -99,9 +114,11 @@
       place-items:center;
       transform: translateZ(0);
       cursor:pointer;
-      background: transparent;
       padding: 0;
+      outline: none;
     }
+
+    .btn *{ pointer-events:none; } /* taps always hit the button, not the icon/text */
 
     .btn:active{ transform: translateY(1px); filter: brightness(.98); }
 
@@ -188,19 +205,19 @@
 
     <div class="wrap">
       <div class="controlsRow" aria-label="Controls">
-        <button id="minusBtn" class="btn orange" aria-label="Minus">
+        <button id="minusBtn" class="btn orange" aria-label="Minus" draggable="false">
           <span class="minus">−</span>
         </button>
 
-        <button id="speedBtn" class="btn gray" aria-label="Speed">
+        <button id="speedBtn" class="btn gray" aria-label="Speed" draggable="false">
           <span id="runnerIcon"></span>
         </button>
 
-        <button id="soundBtn" class="btn gray" aria-label="Sound on">
+        <button id="soundBtn" class="btn gray" aria-label="Sound on" draggable="false">
           <span id="soundIcon"></span>
         </button>
 
-        <button id="resetBtn" class="btn red" aria-label="Reset">
+        <button id="resetBtn" class="btn red" aria-label="Reset" draggable="false">
           <span id="trashIcon"></span>
         </button>
       </div>
@@ -208,7 +225,7 @@
       <div id="count" class="count" aria-live="polite">0</div>
 
       <div style="display:flex; justify-content:center;">
-        <button id="plusBtn" class="btn big green" aria-label="Plus">
+        <button id="plusBtn" class="btn big green" aria-label="Plus" draggable="false">
           <span class="plus">+</span>
         </button>
       </div>
@@ -220,17 +237,15 @@
   </div>
 
   <script>
-    // NOTE: The prior error was caused by leftover, unmatched code after the speed button listeners.
-    // This file rewrites that section cleanly and adds basic sanity tests.
-
     // ====== State ======
     let value = 0;
     let soundOn = true;
 
-    // Speed is represented as an interval in ms. Lower ms = faster.
-    const SPEED_MIN = 30;
-    const SPEED_MAX = 350;
-    let intervalMs = 333; // default is 1/3 second
+    // Speed is represented as counts per second for hold-repeat.
+    // Default 333ms => ~3/sec.
+    const RATE_MIN = 1;
+    const RATE_MAX = 1000; // target max (best-effort; browsers can’t actually fire 1000 distinct events/sec reliably)
+    let ratePerSec = 3;
 
     const HOLD_THRESHOLD_MS = 333;
 
@@ -289,10 +304,8 @@
       const redIcon = getComputedStyle(document.documentElement).getPropertyValue('--red-icon').trim();
 
       runnerIconWrap.innerHTML = runnerSvg(grayIcon);
-
       soundIconWrap.innerHTML = soundOn ? speakerSvg(grayIcon) : speakerMutedSvg(grayIcon);
       soundBtn.setAttribute('aria-label', soundOn ? 'Sound on' : 'Sound off');
-
       trashIconWrap.innerHTML = trashSvg(redIcon);
     }
 
@@ -302,42 +315,75 @@
       countEl.textContent = String(value);
     }
 
-    // ====== Sound (Web Audio) ======
+    // ====== Audio (iOS-friendly unlock) ======
     let audioCtx = null;
+    let audioUnlocked = false;
 
     function ensureAudio(){
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+      // resume is async on iOS; fire-and-forget
+      if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
     }
 
+    // Unlock audio on the first real user gesture.
+    function unlockAudioOnce(){
+      if (audioUnlocked) return;
+      try{
+        ensureAudio();
+        // Play a nearly-silent short blip to satisfy iOS gesture gating.
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, t);
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.0002, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + 0.05);
+        audioUnlocked = true;
+      }catch(_e){
+        // ignore
+      }
+    }
+
+    // A slightly louder, shorter click for phones.
     function clickSound(){
       if (!soundOn) return;
       try{
         ensureAudio();
+        if (!audioCtx || audioCtx.state === 'suspended') return;
+
         const t = audioCtx.currentTime;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
         osc.type = 'square';
-        osc.frequency.setValueAtTime(1200, t);
+        osc.frequency.setValueAtTime(1400, t);
 
         gain.gain.setValueAtTime(0.0001, t);
-        gain.gain.exponentialRampToValueAtTime(0.12, t + 0.002);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.22, t + 0.002);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.018);
 
         osc.connect(gain);
         gain.connect(audioCtx.destination);
 
         osc.start(t);
-        osc.stop(t + 0.035);
+        osc.stop(t + 0.02);
       }catch(_e){
-        // ignore audio errors
+        // ignore
       }
     }
 
     // ====== Helpers ======
     function clamp(n, min, max){
       return Math.max(min, Math.min(max, n));
+    }
+
+    function updateHint(){
+      hintEl.textContent = `Rate: ${ratePerSec}/sec · Tap to count. Hold for continuous.`;
     }
 
     function inc(){
@@ -355,79 +401,95 @@
     }
 
     function makeSlower(){
-      // Tap speed => slower counting (bigger interval)
-      intervalMs = clamp(Math.round(intervalMs * 1.18), SPEED_MIN, SPEED_MAX);
+      // Tap speed => slower
+      ratePerSec = clamp(Math.max(RATE_MIN, Math.floor(ratePerSec * 0.85)), RATE_MIN, RATE_MAX);
       updateHint();
     }
 
     function makeFaster(){
-      // Hold speed => faster and faster (smaller interval, multiplicative)
-      intervalMs = clamp(Math.round(intervalMs * 0.92), SPEED_MIN, SPEED_MAX);
+      // Hold speed => ramps faster and faster
+      ratePerSec = clamp(Math.min(RATE_MAX, Math.ceil(ratePerSec * 1.12) + 1), RATE_MIN, RATE_MAX);
       updateHint();
     }
 
-    function updateHint(){
-      const rate = Math.round(1000 / intervalMs);
-      hintEl.textContent = `Speed: ~${rate}/sec · Tap to count. Hold for continuous.`;
-    }
-
-    // ====== Hold / Repeat handler for +/- ======
-    function makeHoldHandler({ element, onTap, onHoldTick }){
+    // ====== Hold-to-repeat using requestAnimationFrame ======
+    // This avoids setInterval limitations and allows “up to 1000/sec” as best-effort
+    // by batching multiple increments per frame.
+    function makeHoldRepeater({ element, onTap, onTick }){
       let holdTimer = null;
-      let repeatTimer = null;
       let holding = false;
       let pointerId = null;
+      let rafId = null;
+      let lastTs = 0;
+      let carry = 0; // fractional counts carry over between frames
 
-      const clearAll = () => {
+      function stop(){
         if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-        if (repeatTimer) { clearInterval(repeatTimer); repeatTimer = null; }
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
         holding = false;
         pointerId = null;
-      };
+        lastTs = 0;
+        carry = 0;
+      }
 
-      const startHold = () => {
-        holding = true;
-        onHoldTick();
-        repeatTimer = setInterval(() => onHoldTick(), intervalMs);
-      };
+      function loop(ts){
+        if (!holding) return;
+        if (!lastTs) lastTs = ts;
+        const dt = (ts - lastTs) / 1000; // seconds
+        lastTs = ts;
+
+        const target = ratePerSec * dt + carry;
+        const whole = Math.floor(target);
+        carry = target - whole;
+
+        if (whole > 0){
+          // Batch ticks to approximate high rates.
+          // NOTE: At very high rates this will update the number a lot; that’s expected.
+          for (let i = 0; i < whole; i++) onTick();
+        }
+
+        rafId = requestAnimationFrame(loop);
+      }
 
       element.addEventListener('pointerdown', (e) => {
+        unlockAudioOnce();
+
         pointerId = e.pointerId;
         element.setPointerCapture(pointerId);
         e.preventDefault();
-        holdTimer = setTimeout(startHold, HOLD_THRESHOLD_MS);
+
+        holdTimer = setTimeout(() => {
+          holding = true;
+          lastTs = 0;
+          carry = 0;
+          rafId = requestAnimationFrame(loop);
+        }, HOLD_THRESHOLD_MS);
       }, { passive: false });
 
       element.addEventListener('pointerup', (e) => {
         if (pointerId !== e.pointerId) return;
         const wasHolding = holding;
-        clearAll();
+        stop();
         if (!wasHolding) onTap();
       });
 
       element.addEventListener('pointercancel', (e) => {
         if (pointerId !== e.pointerId) return;
-        clearAll();
+        stop();
       });
 
       element.addEventListener('lostpointercapture', () => {
-        if (holding) clearAll();
+        stop();
       });
 
-      return {
-        refreshInterval: () => {
-          if (!holding) return;
-          if (repeatTimer) clearInterval(repeatTimer);
-          repeatTimer = setInterval(() => onHoldTick(), intervalMs);
-        }
-      };
+      return { stop };
     }
 
-    // ====== Wiring ======
-    const plusHold = makeHoldHandler({ element: plusBtn, onTap: inc, onHoldTick: inc });
-    const minusHold = makeHoldHandler({ element: minusBtn, onTap: dec, onHoldTick: dec });
+    // ====== Wire up +/- (tap or hold) ======
+    makeHoldRepeater({ element: plusBtn, onTap: inc, onTick: inc });
+    makeHoldRepeater({ element: minusBtn, onTap: dec, onTick: dec });
 
-    // Speed button: tap -> slower; hold (>1/3s) -> ramps faster and faster
+    // ====== Speed button (tap slower, hold ramps faster) ======
     let speedHoldTimer = null;
     let speedRampTimer = null;
     let speedPointerId = null;
@@ -441,18 +503,18 @@
     }
 
     speedBtn.addEventListener('pointerdown', (e) => {
+      unlockAudioOnce();
+
       speedPointerId = e.pointerId;
       speedBtn.setPointerCapture(speedPointerId);
       e.preventDefault();
 
       speedHoldTimer = setTimeout(() => {
         speedHolding = true;
-        // Ramp faster repeatedly while held; independent of intervalMs.
+        // Ramp toward 1000/sec quickly while held.
         speedRampTimer = setInterval(() => {
           makeFaster();
-          plusHold.refreshInterval();
-          minusHold.refreshInterval();
-        }, 80);
+        }, 90);
       }, HOLD_THRESHOLD_MS);
     }, { passive: false });
 
@@ -460,11 +522,7 @@
       if (speedPointerId !== e.pointerId) return;
       const wasHolding = speedHolding;
       clearSpeedTimers();
-      if (!wasHolding) {
-        makeSlower();
-        plusHold.refreshInterval();
-        minusHold.refreshInterval();
-      }
+      if (!wasHolding) makeSlower();
     });
 
     speedBtn.addEventListener('pointercancel', (e) => {
@@ -473,11 +531,13 @@
     });
 
     speedBtn.addEventListener('lostpointercapture', () => {
-      if (speedHolding) clearSpeedTimers();
+      clearSpeedTimers();
     });
 
+    // ====== Sound + Reset ======
     soundBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      unlockAudioOnce();
       soundOn = !soundOn;
       renderIcons();
     }, { passive: false });
@@ -486,6 +546,10 @@
       e.preventDefault();
       reset();
     }, { passive: false });
+
+    // ====== Kill iOS selection / context menus ======
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    document.addEventListener('selectstart', (e) => e.preventDefault());
 
     // Prevent accidental double-tap zoom on iOS (best-effort)
     let lastTouchEnd = 0;
@@ -504,29 +568,28 @@
       assert(clamp(-1, 0, 10) === 0, 'clamp clamps low');
       assert(clamp(99, 0, 10) === 10, 'clamp clamps high');
 
-      // speed defaults
-      assert(intervalMs === 333, 'default interval is 333ms');
+      // rate defaults
+      assert(ratePerSec === 3, 'default rate is 3/sec');
 
-      // speed tap is slower
-      const beforeSlow = intervalMs;
+      // slower/faster bounds
+      const beforeSlow = ratePerSec;
       makeSlower();
-      assert(intervalMs >= beforeSlow, 'makeSlower increases or preserves interval');
+      assert(ratePerSec <= beforeSlow, 'makeSlower reduces rate');
 
-      // speed ramp is faster
-      const beforeFast = intervalMs;
+      ratePerSec = 3;
+      const beforeFast = ratePerSec;
       makeFaster();
-      assert(intervalMs <= beforeFast, 'makeFaster decreases or preserves interval');
+      assert(ratePerSec >= beforeFast, 'makeFaster increases rate');
+
+      // cap
+      ratePerSec = 999;
+      makeFaster();
+      assert(ratePerSec <= RATE_MAX, 'rate does not exceed max');
 
       // reset
       setValue(12);
       reset();
       assert(value === 0, 'reset sets value to 0');
-
-      // click sound toggle
-      const prevSound = soundOn;
-      soundOn = !prevSound;
-      assert(soundOn !== prevSound, 'sound toggles');
-      soundOn = prevSound;
 
       console.log('All tests passed.');
     }

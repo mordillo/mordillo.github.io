@@ -1,362 +1,362 @@
 <!doctype html>
 <html lang="en">
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Flip Clock — Split-Flap with Time Zone</title>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Flip Clock — Split-Flap with Time Zone</title>
 
-<!-- React + ReactDOM + Babel for inline JSX -->
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- React + ReactDOM + Babel for inline JSX -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-<style>
-  :root { --fg:#111; --bg:#fff; --hinge:1000px; }
-  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); }
-  .page { min-height:100vh; display:flex; align-items:center; justify-content:center; user-select:none; padding:12px; box-sizing:border-box; }
-  .row  { display:flex; align-items:center; gap:.75rem; }
+  <style>
+    :root { --fg:#111; --bg:#fff; --hinge:1000px; }
+    html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); }
+    .page { min-height:100vh; display:flex; align-items:center; justify-content:center; user-select:none; padding:12px; box-sizing:border-box; }
+    .row  { display:flex; align-items:center; gap:.75rem; }
 
-  /* Digital-7-ish stack */
-  .digital7 { font-family:'Digital-7','DS-Digital','Segment7','DSEG7 Classic','Seven Segment',ui-monospace,Menlo,Consolas,'Courier New',monospace; letter-spacing:.04em; }
+    /* Digital-7-ish stack */
+    .digital7 { font-family:'Digital-7','DS-Digital','Segment7','DSEG7 Classic','Seven Segment',ui-monospace,Menlo,Consolas,'Courier New',monospace; letter-spacing:.04em; }
 
-  /* Colon blink */
-  @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
-  .blink { animation: blink 1s steps(1,end) infinite; }
-  .colon-dot { width:.18em; height:.18em; border-radius:9999px; display:block; background:currentColor; }
+    /* Colon blink */
+    @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+    .blink { animation: blink 1s steps(1,end) infinite; }
+    .colon-dot { width:.18em; height:.18em; border-radius:9999px; display:block; background:currentColor; }
 
-  /* Sizes (mobile-first) */
-  .t-huge { font-size:11vw; }
-  .t-small { font-size:6.2vw; }
-  .tz-chip { font-size:4vw; opacity:.75; line-height:1; margin-left:.5rem; }
-  @media (min-width:768px){
-    .t-huge  { font-size:9vw; }
-    .t-small { font-size:4.6vw; }
-    .tz-chip { font-size:3vw; }
-  }
-
-  /* Settings handle & panel */
-  .handle { position:fixed; left:50%; bottom:.75rem; transform:translateX(-50%); padding:.25rem .6rem; border:1px solid currentColor; border-radius:9999px; opacity:.65; background:transparent; color:inherit; transition:opacity .2s; }
-  .handle:hover { opacity:1; }
-  .panel { position:fixed; left:0; right:0; bottom:0; transform:translateY(100%); transition:transform .3s ease-out; z-index:50; }
-  .panel.open { transform:translateY(0); }
-  .card { margin:0 auto; max-width:720px; background:#fff; color:#111; border:1px solid #0000001a; border-top-left-radius:16px; border-top-right-radius:16px; box-shadow:0 8px 24px #00000026; }
-  .drag { display:flex; justify-content:center; padding:8px 0; }
-  .drag > div { height:6px; width:48px; border-radius:9999px; background:#e5e5e5; }
-  .card-body { padding:8px 20px 20px; display:grid; gap:16px; }
-  .between { display:flex; align-items:center; justify-content:space-between; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  .grid1 { display:grid; grid-template-columns:1fr; gap:12px; }
-  .radio-row { display:flex; align-items:center; gap:8px; font-size:14px; }
-  .color { height:36px; width:64px; padding:0; border-radius:6px; border:1px solid #d4d4d4; background:transparent; }
-  .btn { font-size:14px; padding:.25rem .75rem; border:1px solid #d4d4d4; border-radius:6px; background:#fff; }
-
-  .select { height:36px; border:1px solid #d4d4d4; border-radius:6px; padding:0 8px; background:#fff; font-size:14px; width:100%; box-sizing:border-box; }
-  .input  { height:36px; border:1px solid #d4d4d4; border-radius:6px; padding:0 8px; background:#fff; font-size:14px; width:100%; box-sizing:border-box; }
-
-  /* === Split-flap (true hinged) === */
-  .flip-digit { position:relative; display:inline-block; line-height:1; overflow:hidden; perspective:var(--hinge); }
-  .abs-fill  { position:absolute; inset:0; }
-  .flip-face { line-height:1; }
-  /* slight overlap to avoid hairline seam */
-  .clip-top    { clip-path: inset(0 0 50.1% 0); }
-  .clip-bottom { clip-path: inset(49.9% 0 0 0); }
-
-  /* Animated halves (leaves) */
-  .flip-layer  { position:absolute; inset:0; transform-style:preserve-3d; backface-visibility:hidden; }
-  .flip-upper  { top:0;    transform-origin:center bottom; z-index:3; }
-  .flip-lower  { bottom:0; transform-origin:center top;    z-index:2; }
-
-  /* Subtle leaf shading */
-  .leaf-shadow-top::after { content:""; position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,.18), transparent 60%); pointer-events:none; }
-  .leaf-shadow-bottom::before { content:""; position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,.15), transparent 60%); pointer-events:none; }
-
-  /* Motion curves */
-  @keyframes flipTopOut   { from { transform: rotateX(  0deg); } to { transform: rotateX(-90deg); } }
-  @keyframes flipBottomIn { from { transform: rotateX( 90deg); } to { transform: rotateX(  0deg); } }
-  .run-top-out   { animation: flipTopOut   .22s cubic-bezier(.33,.01,.67,.99) forwards; }
-  .run-bottom-in { animation: flipBottomIn .22s cubic-bezier(.25,.6,.2,1)  .12s forwards; }
-</style>
-
-<div id="root" class="page"></div>
-
-<script type="text/babel" data-presets="react">
-const { useEffect, useMemo, useRef, useState } = React;
-
-/* ---------- Time zone helpers ---------- */
-const DEFAULT_TZ = getStored('flipclock:tz', 'America/New_York');
-
-// Try to use the browser's full IANA list; fall back to a large curated list
-const FALLBACK_TZS = [
-  // Americas
-  'America/Adak','America/Anchorage','America/Los_Angeles','America/Denver','America/Phoenix','America/Chicago',
-  'America/New_York','America/Toronto','America/Halifax','America/St_Johns','America/Sao_Paulo','America/Argentina/Buenos_Aires',
-  'America/Bogota','America/Lima','America/Mexico_City','America/Guatemala','America/Montevideo','America/Santiago',
-  // Europe & Africa
-  'UTC','Europe/London','Europe/Dublin','Europe/Lisbon','Atlantic/Canary','Europe/Paris','Europe/Berlin','Europe/Madrid',
-  'Europe/Rome','Europe/Amsterdam','Europe/Brussels','Europe/Vienna','Europe/Stockholm','Europe/Oslo','Europe/Copenhagen',
-  'Europe/Warsaw','Europe/Prague','Europe/Budapest','Europe/Athens','Europe/Helsinki','Europe/Bucharest','Europe/Moscow',
-  'Africa/Casablanca','Africa/Algiers','Africa/Cairo','Africa/Johannesburg','Europe/Istanbul',
-  // Middle East & Asia
-  'Asia/Jerusalem','Asia/Dubai','Asia/Tehran','Asia/Karachi','Asia/Kolkata','Asia/Dhaka','Asia/Bangkok','Asia/Jakarta',
-  'Asia/Kuala_Lumpur','Asia/Singapore','Asia/Hong_Kong','Asia/Manila','Asia/Taipei','Asia/Tokyo','Asia/Seoul',
-  'Asia/Shanghai','Asia/Ho_Chi_Minh',
-  // Oceania
-  'Australia/Perth','Australia/Darwin','Australia/Adelaide','Australia/Brisbane','Australia/Sydney','Pacific/Auckland',
-  'Pacific/Fiji','Pacific/Honolulu','Pacific/Midway'
-];
-
-const SUPPORTED_TZS = (typeof Intl !== 'undefined' && Intl.supportedValuesOf)
-  ? Intl.supportedValuesOf('timeZone')
-  : FALLBACK_TZS;
-
-// Nice label for "short" zone name (EST/EDT/CET/GMT-5, etc.)
-function tzShort(date, tz) {
-  try {
-    const fmt = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' });
-    const parts = fmt.formatToParts(date);
-    const name = parts.find(p => p.type === 'timeZoneName')?.value?.trim();
-    if (name) return name;
-  } catch {}
-  return tz;
-}
-
-function formatPartsInTZ(date, tz, twelveHour) {
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: twelveHour
-  });
-  const parts = fmt.formatToParts(date);
-  const get = t => parts.find(p => p.type === t)?.value ?? '';
-  const hour = get('hour');
-  const minute = get('minute');
-  const second = get('second');
-  const dayPeriod = get('dayPeriod') || '';
-  return { hh: hour, mm: minute, ss: second, ampm: dayPeriod.toUpperCase() };
-}
-
-/* ---------- Core: Split-flap flip clock ---------- */
-function App(){
-  const [now, setNow] = useState(new Date());
-  const [twelveHour, setTwelveHour] = useState(getStoredBool('flipclock:twelveHour', false));
-  const [fgColor, setFgColor] = useState(getStored('flipclock:fg', '#111111'));
-  const [bgColor, setBgColor] = useState(getStored('flipclock:bg', '#ffffff'));
-  const [tz, setTz] = useState(DEFAULT_TZ);
-  const [panelOpen, setPanelOpen] = useState(false);
-
-  useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
-  useEffect(() => store('flipclock:twelveHour', String(twelveHour)), [twelveHour]);
-  useEffect(() => store('flipclock:fg', fgColor), [fgColor]);
-  useEffect(() => store('flipclock:bg', bgColor), [bgColor]);
-  useEffect(() => store('flipclock:tz', tz), [tz]);
-  useEffect(() => {
-    document.documentElement.style.setProperty('--fg', fgColor);
-    document.documentElement.style.setProperty('--bg', bgColor);
-  }, [fgColor, bgColor]);
-
-  const { hh, mm, ss, ampm } = useMemo(() => formatPartsInTZ(now, tz, twelveHour), [now, tz, twelveHour]);
-  const zoneLabel = useMemo(() => tzShort(now, tz), [now, tz]);
-
-  // minute rollover -> slight delayed hour flip
-  const lastRef = useRef(null);
-  const minuteRolled = useMemo(() => {
-    const prev = lastRef.current;
-    return prev ? (prev.mm === '59' && mm === '00') : false;
-  }, [mm]);
-  useEffect(() => { lastRef.current = { hh, mm, ss }; }, [hh, mm, ss]);
-
-  // Swipe up (iOS) to open settings
-  const startY = useRef(null);
-  const onTouchStart = e => { startY.current = e.touches[0].clientY; };
-  const onTouchEnd   = e => {
-    const endY = e.changedTouches[0].clientY;
-    if (startY.current !== null && startY.current - endY > 40) setPanelOpen(true);
-    startY.current = null;
-  };
-
-  return (
-    <div className="page" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <div className="row">
-        <TimeGroup label="hours"   value={hh} digitClass="t-huge digital7" startDelayMs={minuteRolled ? 80 : 0} />
-        <RoundedColon blink className="t-huge" />
-        <TimeGroup label="minutes" value={mm} digitClass="t-huge digital7" />
-        <TimeGroup label="seconds" value={ss} digitClass="t-small digital7" groupStyle={{ marginLeft: '.5rem', opacity: .8 }} />
-        <span className="digital7 tz-chip">{twelveHour ? (ampm || '\u00A0') : '\u00A0'}</span>
-        <span className="digital7 tz-chip" title={tz}>{zoneLabel}</span>
-      </div>
-
-      <button className="handle" onClick={() => setPanelOpen(true)} aria-label="Open settings">Swipe up or click for settings</button>
-
-      <SettingsPanel
-        open={panelOpen} onClose={() => setPanelOpen(false)}
-        twelveHour={twelveHour} onTwelveHour={setTwelveHour}
-        fgColor={fgColor} bgColor={bgColor}
-        onFgColor={setFgColor} onBgColor={setBgColor}
-        tz={tz} onTz={setTz}
-      />
-    </div>
-  );
-}
-
-/* Group of digits (e.g., "12") */
-function TimeGroup({ label, value, digitClass="", groupStyle, startDelayMs=0 }) {
-  return (
-    <div className="row" aria-label={label} style={groupStyle}>
-      {[...value].map((ch, i) => (
-        <FlipDigit key={label + i} value={ch} sizeClass={digitClass || "t-huge digital7"} startDelayMs={startDelayMs} />
-      ))}
-    </div>
-  );
-}
-
-/* Split-flap leaf animation */
-function FlipDigit({ value, sizeClass, startDelayMs=0 }) {
-  const [current, setCurrent] = useState(value);
-  const [next, setNext] = useState(null);
-  const [anim, setAnim] = useState(false);
-
-  useEffect(() => {
-    if (value !== current) {
-      setNext(value);
-      const start = setTimeout(() => setAnim(true), Math.max(0, startDelayMs));
-      const done  = setTimeout(() => {
-        setCurrent(value);
-        setNext(null);
-        setAnim(false);
-      }, Math.max(0, startDelayMs) + 360);
-      return () => { clearTimeout(start); clearTimeout(done); };
+    /* Sizes (mobile-first) */
+    .t-huge { font-size:11vw; }
+    .t-small { font-size:6.2vw; }
+    .tz-chip { font-size:4vw; opacity:.75; line-height:1; margin-left:.5rem; }
+    @media (min-width:768px){
+      .t-huge  { font-size:9vw; }
+      .t-small { font-size:4.6vw; }
+      .tz-chip { font-size:3vw; }
     }
-  }, [value, current, startDelayMs]);
 
-  return (
-    <span className={`flip-digit ${sizeClass}`} aria-hidden>
-      {/* sizing glyph for stable box metrics */}
-      <span style={{ opacity:0, visibility:'hidden' }}>8</span>
+    /* Settings handle & panel */
+    .handle { position:fixed; left:50%; bottom:.75rem; transform:translateX(-50%); padding:.25rem .6rem; border:1px solid currentColor; border-radius:9999px; opacity:.65; background:transparent; color:inherit; transition:opacity .2s; }
+    .handle:hover { opacity:1; }
+    .panel { position:fixed; left:0; right:0; bottom:0; transform:translateY(100%); transition:transform .3s ease-out; z-index:50; }
+    .panel.open { transform:translateY(0); }
+    .card { margin:0 auto; max-width:720px; background:#fff; color:#111; border:1px solid #0000001a; border-top-left-radius:16px; border-top-right-radius:16px; box-shadow:0 8px 24px #00000026; }
+    .drag { display:flex; justify-content:center; padding:8px 0; }
+    .drag > div { height:6px; width:48px; border-radius:9999px; background:#e5e5e5; }
+    .card-body { padding:8px 20px 20px; display:grid; gap:16px; }
+    .between { display:flex; align-items:center; justify-content:space-between; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .grid1 { display:grid; grid-template-columns:1fr; gap:12px; }
+    .radio-row { display:flex; align-items:center; gap:8px; font-size:14px; }
+    .color { height:36px; width:64px; padding:0; border-radius:6px; border:1px solid #d4d4d4; background:transparent; }
+    .btn { font-size:14px; padding:.25rem .75rem; border:1px solid #d4d4d4; border-radius:6px; background:#fff; }
 
-      {/* Static faces: CURRENT top, NEXT bottom */}
-      <span className="flip-face clip-top abs-fill"    style={{ display:'flex', alignItems:'flex-start', justifyContent:'center' }}>{current}</span>
-      <span className="flip-face clip-bottom abs-fill" style={{ display:'flex', alignItems:'flex-end',   justifyContent:'center' }}>{next ?? current}</span>
+    .select { height:36px; border:1px solid #d4d4d4; border-radius:6px; padding:0 8px; background:#fff; font-size:14px; width:100%; box-sizing:border-box; }
+    .input  { height:36px; border:1px solid #d4d4d4; border-radius:6px; padding:0 8px; background:#fff; font-size:14px; width:100%; box-sizing:border-box; }
 
-      {/* OUTGOING TOP leaf */}
-      {next !== null && (
-        <span className={`flip-layer flip-upper clip-top leaf-shadow-top ${anim ? 'run-top-out' : ''}`}
-              style={{ display:'flex', alignItems:'flex-start', justifyContent:'center' }}>
-          {current}
-        </span>
-      )}
+    /* === Split-flap (true hinged) === */
+    .flip-digit { position:relative; display:inline-block; line-height:1; overflow:hidden; perspective:var(--hinge); }
+    .abs-fill  { position:absolute; inset:0; }
+    .flip-face { line-height:1; }
+    /* slight overlap to avoid hairline seam */
+    .clip-top    { clip-path: inset(0 0 50.1% 0); }
+    .clip-bottom { clip-path: inset(49.9% 0 0 0); }
 
-      {/* INCOMING BOTTOM leaf */}
-      {next !== null && (
-        <span className={`flip-layer flip-lower clip-bottom leaf-shadow-bottom ${anim ? 'run-bottom-in' : ''}`}
-              style={{ display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-          {next}
-        </span>
-      )}
-    </span>
-  );
-}
+    /* Animated halves (leaves) */
+    .flip-layer  { position:absolute; inset:0; transform-style:preserve-3d; backface-visibility:hidden; }
+    .flip-upper  { top:0;    transform-origin:center bottom; z-index:3; }
+    .flip-lower  { bottom:0; transform-origin:center top;    z-index:2; }
 
-/* Colon */
-function RoundedColon({ blink=true, className="" }) {
-  return (
-    <span aria-hidden className={`${className} ${blink ? 'blink' : ''}`}
-          style={{ display:'inline-flex', flexDirection:'column', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
-      <span className="colon-dot"></span>
-      <span className="colon-dot" style={{ marginTop: '.28em' }}></span>
-    </span>
-  );
-}
+    /* Subtle leaf shading */
+    .leaf-shadow-top::after { content:""; position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,.18), transparent 60%); pointer-events:none; }
+    .leaf-shadow-bottom::before { content:""; position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,.15), transparent 60%); pointer-events:none; }
 
-/* Settings with Time Zone */
-function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgColor, onFgColor, onBgColor, tz, onTz }) {
-  const startY = React.useRef(null);
-  const onTouchStart = e => { startY.current = e.touches[0].clientY; };
-  const onTouchEnd   = e => {
-    const endY = e.changedTouches[0].clientY;
-    if (startY.current !== null && endY - startY.current > 40) onClose();
-    startY.current = null;
-  };
+    /* Motion curves */
+    @keyframes flipTopOut   { from { transform: rotateX(  0deg); } to { transform: rotateX(-90deg); } }
+    @keyframes flipBottomIn { from { transform: rotateX( 90deg); } to { transform: rotateX(  0deg); } }
+    .run-top-out   { animation: flipTopOut   .22s cubic-bezier(.33,.01,.67,.99) forwards; }
+    .run-bottom-in { animation: flipBottomIn .22s cubic-bezier(.25,.6,.2,1)  .12s forwards; }
+  </style>
+</head>
 
-  const [customTz, setCustomTz] = React.useState('');
+<body>
+  <div id="root" class="page"></div>
 
-  const applyCustomTz = () => {
-    const val = customTz.trim();
-    if (!val) return;
-    try {
-      new Intl.DateTimeFormat('en-US', { timeZone: val }).format(new Date());
-      onTz(val);
-      setCustomTz('');
-    } catch {
-      alert('That time zone is not recognized. Try an IANA name like "Europe/Paris".');
+  <script type="text/babel" data-presets="react">
+    const { useEffect, useMemo, useRef, useState } = React;
+
+    /* ---------- Helpers (localStorage) ---------- */
+    function getStored(k, f) { try { const v = localStorage.getItem(k); return v ?? f; } catch { return f; } }
+    function getStoredBool(k, f) { try { const v = localStorage.getItem(k); return v ? v === 'true' : f; } catch { return f; } }
+    function store(k, v) { try { localStorage.setItem(k, v); } catch {} }
+
+    /* ---------- Time zone helpers ---------- */
+    const DEFAULT_TZ = getStored('flipclock:tz', 'America/New_York');
+
+    const FALLBACK_TZS = [
+      // Americas
+      'America/Adak','America/Anchorage','America/Los_Angeles','America/Denver','America/Phoenix','America/Chicago',
+      'America/New_York','America/Toronto','America/Halifax','America/St_Johns','America/Sao_Paulo','America/Argentina/Buenos_Aires',
+      'America/Bogota','America/Lima','America/Mexico_City','America/Guatemala','America/Montevideo','America/Santiago',
+      // Europe & Africa
+      'UTC','Europe/London','Europe/Dublin','Europe/Lisbon','Atlantic/Canary','Europe/Paris','Europe/Berlin','Europe/Madrid',
+      'Europe/Rome','Europe/Amsterdam','Europe/Brussels','Europe/Vienna','Europe/Stockholm','Europe/Oslo','Europe/Copenhagen',
+      'Europe/Warsaw','Europe/Prague','Europe/Budapest','Europe/Athens','Europe/Helsinki','Europe/Bucharest','Europe/Moscow',
+      'Africa/Casablanca','Africa/Algiers','Africa/Cairo','Africa/Johannesburg','Europe/Istanbul',
+      // Middle East & Asia
+      'Asia/Jerusalem','Asia/Dubai','Asia/Tehran','Asia/Karachi','Asia/Kolkata','Asia/Dhaka','Asia/Bangkok','Asia/Jakarta',
+      'Asia/Kuala_Lumpur','Asia/Singapore','Asia/Hong_Kong','Asia/Manila','Asia/Taipei','Asia/Tokyo','Asia/Seoul',
+      'Asia/Shanghai','Asia/Ho_Chi_Minh',
+      // Oceania
+      'Australia/Perth','Australia/Darwin','Australia/Adelaide','Australia/Brisbane','Australia/Sydney','Pacific/Auckland',
+      'Pacific/Fiji','Pacific/Honolulu','Pacific/Midway'
+    ];
+
+    const SUPPORTED_TZS = (typeof Intl !== 'undefined' && Intl.supportedValuesOf)
+      ? Intl.supportedValuesOf('timeZone')
+      : FALLBACK_TZS;
+
+    function tzShort(date, tz) {
+      try {
+        const fmt = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' });
+        const parts = fmt.formatToParts(date);
+        const name = parts.find(p => p.type === 'timeZoneName')?.value?.trim();
+        if (name) return name;
+      } catch {}
+      return tz;
     }
-  };
 
-  // Build a bigger list but keep it manageable (sorted)
-  const bigList = React.useMemo(() => {
-    try {
-      const arr = Array.from(new Set(SUPPORTED_TZS.concat(FALLBACK_TZS))).sort();
-      return arr;
-    } catch { return FALLBACK_TZS.slice().sort(); }
-  }, []);
+    function formatPartsInTZ(date, tz, twelveHour) {
+      const fmt = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: twelveHour
+      });
+      const parts = fmt.formatToParts(date);
+      const get = t => parts.find(p => p.type === t)?.value ?? '';
+      const hour = get('hour');
+      const minute = get('minute');
+      const second = get('second');
+      const dayPeriod = get('dayPeriod') || '';
+      return { hh: hour, mm: minute, ss: second, ampm: dayPeriod.toUpperCase() };
+    }
 
-  return (
-    <div className={`panel ${open ? 'open' : ''}`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} role="dialog" aria-modal="true">
-      <div className="card">
-        <div className="drag"><div></div></div>
-        <div className="card-body">
-          <div className="between">
-            <h2 style={{ fontSize:16, fontWeight:600, margin:0 }}>Settings</h2>
-            <button className="btn" onClick={onClose}>Close</button>
+    /* ---------- Core: Split-flap flip clock ---------- */
+    function App(){
+      const [now, setNow] = useState(new Date());
+      const [twelveHour, setTwelveHour] = useState(getStoredBool('flipclock:twelveHour', false));
+      const [fgColor, setFgColor] = useState(getStored('flipclock:fg', '#111111'));
+      const [bgColor, setBgColor] = useState(getStored('flipclock:bg', '#ffffff'));
+      const [tz, setTz] = useState(DEFAULT_TZ);
+      const [panelOpen, setPanelOpen] = useState(false);
+
+      useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
+      useEffect(() => store('flipclock:twelveHour', String(twelveHour)), [twelveHour]);
+      useEffect(() => store('flipclock:fg', fgColor), [fgColor]);
+      useEffect(() => store('flipclock:bg', bgColor), [bgColor]);
+      useEffect(() => store('flipclock:tz', tz), [tz]);
+      useEffect(() => {
+        document.documentElement.style.setProperty('--fg', fgColor);
+        document.documentElement.style.setProperty('--bg', bgColor);
+      }, [fgColor, bgColor]);
+
+      const { hh, mm, ss, ampm } = useMemo(() => formatPartsInTZ(now, tz, twelveHour), [now, tz, twelveHour]);
+      const zoneLabel = useMemo(() => tzShort(now, tz), [now, tz]);
+
+      // minute rollover -> slight delayed hour flip
+      const lastRef = useRef(null);
+      const minuteRolled = useMemo(() => {
+        const prev = lastRef.current;
+        return prev ? (prev.mm === '59' && mm === '00') : false;
+      }, [mm]);
+      useEffect(() => { lastRef.current = { hh, mm, ss }; }, [hh, mm, ss]);
+
+      // Swipe up (iOS) to open settings
+      const startY = useRef(null);
+      const onTouchStart = e => { startY.current = e.touches[0].clientY; };
+      const onTouchEnd   = e => {
+        const endY = e.changedTouches[0].clientY;
+        if (startY.current !== null && startY.current - endY > 40) setPanelOpen(true);
+        startY.current = null;
+      };
+
+      return (
+        <div className="page" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+          <div className="row">
+            <TimeGroup label="hours"   value={hh} digitClass="t-huge digital7" startDelayMs={minuteRolled ? 80 : 0} />
+            <RoundedColon blink className="t-huge" />
+            <TimeGroup label="minutes" value={mm} digitClass="t-huge digital7" />
+            <TimeGroup label="seconds" value={ss} digitClass="t-small digital7" groupStyle={{ marginLeft: '.5rem', opacity: .8 }} />
+            <span className="digital7 tz-chip">{twelveHour ? (ampm || '\u00A0') : '\u00A0'}</span>
+            <span className="digital7 tz-chip" title={tz}>{zoneLabel}</span>
           </div>
 
-          <fieldset className="grid1">
-            <legend style={{ fontSize:14, fontWeight:500 }}>Time zone</legend>
-            <div className="between" style={{ gap:8 }}>
-              <select className="select" value={tz} onChange={(e) => onTz(e.target.value)} style={{ flex:1 }}>
-                {bigList.map(z => <option key={z} value={z}>{z}</option>)}
-              </select>
-              <button className="btn" onClick={() => onTz('America/New_York')}>NY (Default)</button>
-            </div>
-            <div className="between" style={{ gap:8 }}>
-              <input className="input" placeholder="Or type an IANA zone, e.g. Europe/Paris" value={customTz} onChange={e=>setCustomTz(e.target.value)} />
-              <button className="btn" onClick={applyCustomTz}>Apply</button>
-            </div>
-            <div style={{ fontSize:12, opacity:.8 }}>
-              Tip: Use standard IANA names like <code>America/New_York</code>, <code>Europe/London</code>, <code>Asia/Tokyo</code>.
-            </div>
-          </fieldset>
+          <button className="handle" onClick={() => setPanelOpen(true)} aria-label="Open settings">
+            Swipe up or click for settings
+          </button>
 
-          <fieldset style={{ display:'grid', gap:8 }}>
-            <legend style={{ fontSize:14, fontWeight:500 }}>Time format</legend>
-            <label className="radio-row">
-              <input type="radio" name="format" checked={!twelveHour} onChange={() => onTwelveHour(false)} />
-              24-hour
-            </label>
-            <label className="radio-row">
-              <input type="radio" name="format" checked={twelveHour} onChange={() => onTwelveHour(true)} />
-              12-hour (show AM/PM)
-            </label>
-          </fieldset>
+          <SettingsPanel
+            open={panelOpen} onClose={() => setPanelOpen(false)}
+            twelveHour={twelveHour} onTwelveHour={setTwelveHour}
+            fgColor={fgColor} bgColor={bgColor}
+            onFgColor={setFgColor} onBgColor={setBgColor}
+            tz={tz} onTz={setTz}
+          />
+        </div>
+      );
+    }
 
-          <div className="grid2">
-            <label className="between">
-              <span style={{ fontSize:14 }}>Font color</span>
-              <input className="color" type="color" value={fgColor} onChange={e => onFgColor(e.target.value)} />
-            </label>
-            <label className="between">
-              <span style={{ fontSize:14 }}>Background</span>
-              <input className="color" type="color" value={bgColor} onChange={e => onBgColor(e.target.value)} />
-            </label>
+    function TimeGroup({ label, value, digitClass="", groupStyle, startDelayMs=0 }) {
+      return (
+        <div className="row" aria-label={label} style={groupStyle}>
+          {[...value].map((ch, i) => (
+            <FlipDigit key={label + i} value={ch} sizeClass={digitClass || "t-huge digital7"} startDelayMs={startDelayMs} />
+          ))}
+        </div>
+      );
+    }
+
+    function FlipDigit({ value, sizeClass, startDelayMs=0 }) {
+      const [current, setCurrent] = useState(value);
+      const [next, setNext] = useState(null);
+      const [anim, setAnim] = useState(false);
+
+      useEffect(() => {
+        if (value !== current) {
+          setNext(value);
+          const start = setTimeout(() => setAnim(true), Math.max(0, startDelayMs));
+          const done  = setTimeout(() => {
+            setCurrent(value);
+            setNext(null);
+            setAnim(false);
+          }, Math.max(0, startDelayMs) + 360);
+          return () => { clearTimeout(start); clearTimeout(done); };
+        }
+      }, [value, current, startDelayMs]);
+
+      return (
+        <span className={`flip-digit ${sizeClass}`} aria-hidden>
+          {/* sizing glyph for stable box metrics */}
+          <span style={{ opacity:0, visibility:'hidden' }}>8</span>
+
+          {/* Static faces: CURRENT top, NEXT bottom */}
+          <span className="flip-face clip-top abs-fill"    style={{ display:'flex', alignItems:'flex-start', justifyContent:'center' }}>{current}</span>
+          <span className="flip-face clip-bottom abs-fill" style={{ display:'flex', alignItems:'flex-end',   justifyContent:'center' }}>{next ?? current}</span>
+
+          {/* OUTGOING TOP leaf */}
+          {next !== null && (
+            <span className={`flip-layer flip-upper clip-top leaf-shadow-top ${anim ? 'run-top-out' : ''}`}
+                  style={{ display:'flex', alignItems:'flex-start', justifyContent:'center' }}>
+              {current}
+            </span>
+          )}
+
+          {/* INCOMING BOTTOM leaf */}
+          {next !== null && (
+            <span className={`flip-layer flip-lower clip-bottom leaf-shadow-bottom ${anim ? 'run-bottom-in' : ''}`}
+                  style={{ display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+              {next}
+            </span>
+          )}
+        </span>
+      );
+    }
+
+    function RoundedColon({ blink=true, className="" }) {
+      return (
+        <span aria-hidden className={`${className} ${blink ? 'blink' : ''}`}
+              style={{ display:'inline-flex', flexDirection:'column', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
+          <span className="colon-dot"></span>
+          <span className="colon-dot" style={{ marginTop: '.28em' }}></span>
+        </span>
+      );
+    }
+
+    function SettingsPanel({ open, onClose, twelveHour, onTwelveHour, fgColor, bgColor, onFgColor, onBgColor, tz, onTz }) {
+      const startY = useRef(null);
+      const onTouchStart = e => { startY.current = e.touches[0].clientY; };
+      const onTouchEnd   = e => {
+        const endY = e.changedTouches[0].clientY;
+        if (startY.current !== null && endY - startY.current > 40) onClose();
+        startY.current = null;
+      };
+
+      const [customTz, setCustomTz] = useState('');
+
+      const applyCustomTz = () => {
+        const val = customTz.trim();
+        if (!val) return;
+        try {
+          new Intl.DateTimeFormat('en-US', { timeZone: val }).format(new Date());
+          onTz(val);
+          setCustomTz('');
+        } catch {
+          alert('That time zone is not recognized. Try an IANA name like "Europe/Paris".');
+        }
+      };
+
+      const bigList = useMemo(() => {
+        try {
+          const arr = Array.from(new Set(SUPPORTED_TZS.concat(FALLBACK_TZS))).sort();
+          return arr;
+        } catch { return FALLBACK_TZS.slice().sort(); }
+      }, []);
+
+      return (
+        <div className={`panel ${open ? 'open' : ''}`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} role="dialog" aria-modal="true">
+          <div className="card">
+            <div className="drag"><div></div></div>
+            <div className="card-body">
+              <div className="between">
+                <h2 style={{ fontSize:16, fontWeight:600, margin:0 }}>Settings</h2>
+                <button className="btn" onClick={onClose}>Close</button>
+              </div>
+
+              <fieldset className="grid1">
+                <legend style={{ fontSize:14, fontWeight:500 }}>Time zone</legend>
+                <div className="between" style={{ gap:8 }}>
+                  <select className="select" value={tz} onChange={(e) => onTz(e.target.value)} style={{ flex:1 }}>
+                    {bigList.map(z => <option key={z} value={z}>{z}</option>)}
+                  </select>
+                  <button className="btn" onClick={() => onTz('America/New_York')}>NY (Default)</button>
+                </div>
+                <div className="between" style={{ gap:8 }}>
+                  <input className="input" placeholder="Or type an IANA zone, e.g. Europe/Paris" value={customTz} onChange={e=>setCustomTz(e.target.value)} />
+                  <button className="btn" onClick={applyCustomTz}>Apply</button>
+                </div>
+                <div style={{ fontSize:12, opacity:.8 }}>
+                  Tip: Use standard IANA names like <code>America/New_York</code>, <code>Europe/London</code>, <code>Asia/Tokyo</code>.
+                </div>
+              </fieldset>
+
+              <fieldset style={{ display:'grid', gap:8 }}>
+                <legend style={{ fontSize:14, fontWeight:500 }}>Time format</legend>
+                <label className="radio-row">
+                  <input type="radio" name="format" checked={!twelveHour} onChange={() => onTwelveHour(false)} />
+                  24-hour
+                </label>
+                <label className="radio-row">
+                  <input type="radio" name="format" checked={twelveHour} onChange={() => onTwelveHour(true)} />
+                  12-hour (show AM/PM)
+                </label>
+              </fieldset>
+
+              <div className="grid2">
+                <label className="between">
+                  <span style={{ fontSize:14 }}>Font color</span>
+                  <input className="color" type="color" value={fgColor} onChange={e => onFgColor(e.target.value)} />
+                </label>
+                <label className="between">
+                  <span style={{ fontSize:14 }}>Background</span>
+                  <input className="color" type="color" value={bgColor} onChange={e => onBgColor(e.target.value)} />
+                </label>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      );
+    }
 
-/* Helpers */
-function getStored(k,f){ try{ const v = localStorage.getItem(k); return v ?? f; } catch { return f; } }
-function getStoredBool(k,f){ try{ const v = localStorage.getItem(k); return v ? v === 'true' : f; } catch { return f; } }
-
-/* Mount */
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
-</script>
+    /* Mount */
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
 </html>

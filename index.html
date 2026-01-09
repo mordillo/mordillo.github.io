@@ -1,57 +1,161 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Tyler's Game Selector</title>
+  <meta charset="UTF-8" />
+  <title>Tyler’s Game Selector</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
+    :root {
+      --ink: #1f2937;
+      --card: rgba(255,255,255,0.85);
+      --accent: #60a5fa;
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
       text-align: center;
-      margin-top: 50px;
-      background: #f2f2f2;
+
+      /* Soft Bluey-ish pastel background */
+      background:
+        radial-gradient(circle at top left, #cfe9ff, transparent 60%),
+        radial-gradient(circle at bottom right, #ffe6f2, transparent 60%),
+        radial-gradient(circle at center, #fff6d6, transparent 70%),
+        #f8fafc;
+      min-height: 100vh;
     }
+
     h1 {
-      margin-bottom: 50px;
+      margin-top: 40px;
+      font-size: 2.5rem;
     }
-    .choice {
+
+    h2 {
+      margin-top: 8px;
+      font-weight: normal;
+      color: #475569;
+    }
+
+    section {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .category {
+      margin-bottom: 40px;
+    }
+
+    .category h3 {
+      text-align: left;
+      font-size: 1.4rem;
+      margin-bottom: 15px;
+      padding-left: 6px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .game {
       display: block;
-      margin: 20px auto;
-      font-size: 2em;
-      text-decoration: none;
       padding: 20px;
-      border: 2px solid #000;
-      border-radius: 10px;
-      width: 300px;
-      color: #333;
-      background: #eee;
+      border-radius: 16px;
+      background: var(--card);
+      text-decoration: none;
+      color: inherit;
+      font-size: 1.2rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    .game:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 26px rgba(0,0,0,0.12);
+    }
+
+    footer {
+      margin: 40px 0 20px;
+      font-size: .9rem;
+      color: #64748b;
     }
   </style>
 </head>
+
 <body>
-  <h1><b>Tyler's Game Selector</b></h1>
-  <h2>Select Game</h2>
-  <a class="choice" href="treadmill1.html">Treadmill ver 1</a>
-  <a class="choice" href="treadmill2.html">Treadmill ver 2</a>
-  <a class="choice" href="treadmill3.html">Treadmill ver 3</a>
-  <a class="choice" href="treadmill4.html">Treadmill ver 4</a>
-  <a class="choice" href="treadmill5.html">Treadmill ver 5</a>
-  <a class="choice" href="mydailycalendar.html">My Daily Calendar</a>
-  <a class="choice" href="clickcounter.html">Click Counter</a>
-  <a class="choice" href="clickcounterultrafast.html">Click Counter Ultrafast</a>
-  <a class="choice" href="counterthumbs.html">Counter with Thumbs Up</a>
-  <a class="choice" href="counter.html">Counter</a>
-  <a class="choice" href="greencounter.html">Green Counter</a>
-  <a class="choice" href="anotherclickcounter.html">Another Click Counter</a>
-  <a class="choice" href="gaspump.html">Gas Pump</a>
-  <a class="choice" href="carspeedometer.html">Car Speedometer</a>
-  <a class="choice" href="simplespeedometer.html">Simple Speedometer</a>
-  <a class="choice" href="speedometer.html">Speedometer</a>
-  <a class="choice" href="speedometer2.html">Speedometer with max Speed</a>
-  <a class="choice" href="clocks.html">Clocks</a>
-  <a class="choice" href="flipclock.html">Flip Clock</a>
-  <a class="choice" href="volumeslider.html">Volume Slider</a>
-  <a class="choice" href="thermometer.html">Mercury Thermometer Game</a>
-  <a class="choice" href="clickcounterlock.html">Click Counter with Lock</a>
-  <!-- a class="choice" href="retroflipclock.html">Retro Flip Clock</a -->
+  <h1>Tyler’s Game Selector</h1>
+  <h2>Pick a game to play 🎮</h2>
+
+  <section id="games"></section>
+
+  <footer>
+    More games coming soon 🙂
+  </footer>
+
+  <script>
+    /* 👇 Add new games here only */
+    const games = {
+      "Treadmills": [
+        ["Treadmill ver 1", "treadmill1.html"],
+        ["Treadmill ver 2", "treadmill2.html"],
+        ["Treadmill ver 3", "treadmill3.html"],
+        ["Treadmill ver 4", "treadmill4.html"],
+        ["Treadmill ver 5", "treadmill5.html"]
+      ],
+      "Counters": [
+        ["Click Counter", "clickcounter.html"],
+        ["Ultrafast Counter", "clickcounterultrafast.html"],
+        ["Counter with Thumbs Up", "counterthumbs.html"],
+        ["Green Counter", "greencounter.html"],
+        ["Another Click Counter", "anotherclickcounter.html"],
+        ["Counter with Lock", "clickcounterlock.html"]
+      ],
+      "Speed & Motion": [
+        ["Gas Pump", "gaspump.html"],
+        ["Car Speedometer", "carspeedometer.html"],
+        ["Simple Speedometer", "simplespeedometer.html"],
+        ["Speedometer", "speedometer.html"],
+        ["Speedometer (Max Speed)", "speedometer2.html"]
+      ],
+      "Clocks & Time": [
+        ["Clocks", "clocks.html"],
+        ["Flip Clock", "flipclock.html"]
+      ],
+      "Other": [
+        ["My Daily Calendar", "mydailycalendar.html"],
+        ["Volume Slider", "volumeslider.html"],
+        ["Thermometer Game", "thermometer.html"]
+      ]
+    };
+
+    const container = document.getElementById("games");
+
+    for (const category in games) {
+      const section = document.createElement("div");
+      section.className = "category";
+
+      const title = document.createElement("h3");
+      title.textContent = category;
+      section.appendChild(title);
+
+      const grid = document.createElement("div");
+      grid.className = "grid";
+
+      games[category].forEach(([name, link]) => {
+        const a = document.createElement("a");
+        a.className = "game";
+        a.href = link;
+        a.textContent = name;
+        grid.appendChild(a);
+      });
+
+      section.appendChild(grid);
+      container.appendChild(section);
+    }
+  </script>
 </body>
 </html>

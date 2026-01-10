@@ -22,37 +22,69 @@
       color: #000;
     }
 
-    /* Controls above counter */
+    /* Control panel (centered, above counter) */
     .controls {
-      display: inline-block;
+      width: min(560px, 92vw);
+      margin: 0 auto 18px;
       background: #fff;
       padding: 16px 18px;
       border-radius: 10px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      margin-top: 10px;
+      text-align: left;
     }
 
     .row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 16px;
+      justify-content: space-between;
+      gap: 14px;
       flex-wrap: wrap;
       margin: 10px 0;
     }
 
     .label {
-      font-size: 1.1em;
+      font-size: 1.05em;
       color: #222;
       user-select: none;
     }
 
-    /* Make checkbox/radio-ish toggle bigger */
+    /* Max speed slider */
+    .maxWrap {
+      width: 100%;
+    }
+
+    .maxTop {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      margin-bottom: 8px;
+      font-size: 1.05em;
+    }
+
+    #maxSpeedValue {
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .rangeHint {
+      font-size: 0.95em;
+      color: #444;
+      margin-top: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Checkbox toggle */
     .toggle {
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      font-size: 1.2em;
+      font-size: 1.1em;
       user-select: none;
       cursor: pointer;
     }
@@ -62,44 +94,17 @@
       cursor: pointer;
     }
 
-    /* Max speed slider */
-    .maxWrap {
-      width: min(520px, 92vw);
-      margin: 0 auto;
-      text-align: left;
-    }
-    .maxTop {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 6px;
-      font-size: 1.1em;
-    }
-    #maxSpeedValue {
-      font-weight: 700;
-    }
-    input[type="range"] {
-      width: 100%;
-    }
-    .rangeHint {
-      font-size: 0.95em;
-      color: #444;
-      margin-top: 4px;
-      display: flex;
-      justify-content: space-between;
-    }
-
     /* Counter display */
     #counter {
       font-size: 6em;
-      margin: 18px 30px 30px;
+      margin: 0 auto 30px;
       padding: 30px;
       background: #000;
       color: #0f0;
-      display: inline-block;
+      display: block;          /* important: block so it can center */
       border-radius: 8px;
       min-width: 225px;
+      width: fit-content;      /* keeps black box snug */
     }
 
     /* Buttons */
@@ -152,10 +157,9 @@
   </style>
 </head>
 <body>
-  <!-- Back link -->
   <a class="back-link" href="index.html">&larr; Back</a>
 
-  <!-- Controls (Max speed + decimal toggle) -->
+  <!-- Control panel ABOVE the counter -->
   <div class="controls">
     <div class="row maxWrap">
       <div class="maxTop">
@@ -163,16 +167,15 @@
         <div id="maxSpeedValue">100000</div>
       </div>
 
-      <!-- Slider uses a log-like mapping so you can actually reach 100000 without it being unusable -->
+      <!-- Slider (log-like mapping) -->
       <input id="maxSpeedSlider" type="range" min="0" max="1000" step="1" value="1000" />
       <div class="rangeHint">
-        <span>10</span>
+        <span>1</span>
         <span>100000</span>
       </div>
     </div>
 
     <div class="row">
-      <!-- You asked for a radio button; functionally a checkbox makes more sense for on/off. Styled as a toggle. -->
       <label class="toggle" title="Show decimal point">
         <input id="decimalsToggle" type="checkbox" checked />
         <span>Decimal point</span>
@@ -180,25 +183,19 @@
     </div>
   </div>
 
-  <!-- Counter display -->
+  <!-- Speed display centered -->
   <div id="counter">0.0</div>
-  <br>
 
-  <!-- Buttons -->
   <button id="decrease">–</button>
   <button id="stop">Stop</button>
   <button id="increase">+</button>
 
-  <!-- Treadmill base container -->
   <div id="beltContainer">
     <div id="belt"></div>
   </div>
 
   <script>
-    // Counter can be decimal (0.1 steps) or integer (1 steps), depending on toggle.
     let counter = 0.0;
-
-    // Max speed defaults to 100000
     let maxSpeed = 100000;
 
     const counterElement = document.getElementById("counter");
@@ -213,9 +210,9 @@
 
     let holdInterval;
 
-    // Map slider 0..1000 to maxSpeed 10..100000 using exponential curve for usability
+    // Map slider 0..1000 to maxSpeed 1..100000 using exponential curve
     function sliderToMax(sliderVal) {
-      const min = 10;
+      const min = 1;
       const max = 100000;
       const t = sliderVal / 1000; // 0..1
       const value = min * Math.pow(max / min, t);
@@ -235,21 +232,19 @@
     }
 
     function syncCounterToMode() {
-      // If decimals are OFF, force the stored counter to be an integer
       if (!decimalsToggle.checked) {
         counter = Math.floor(counter);
       } else {
-        // keep as-is; it can already be integer or decimal
-        // (optional) normalize to one decimal place to avoid float drift
+        // normalize to one decimal to reduce float drift
         counter = Math.round(counter * 10) / 10;
       }
     }
 
     function updateCounter() {
-      // Enforce bounds
+      // enforce bounds
       counter = clamp(counter, 0, maxSpeed);
 
-      // Keep mode-consistent
+      // keep mode-consistent
       syncCounterToMode();
 
       counterElement.innerText = formatCounter(counter);
@@ -257,23 +252,23 @@
       if (counter <= 0) {
         counter = 0;
         belt.style.animationPlayState = "paused";
-      } else {
-        belt.style.animationPlayState = "running";
-
-        // Use the "display speed" value for animation math.
-        // If decimals off, treat it as integer speed.
-        const speedForAnim = decimalsToggle.checked ? counter : Math.max(1, Math.floor(counter));
-
-        // Animation duration inversely proportional to speed; minimum 0.01s.
-        let duration = 2 / speedForAnim;
-        duration = Math.max(duration, 0.01);
-        belt.style.animationDuration = duration + "s";
+        return;
       }
+
+      belt.style.animationPlayState = "running";
+
+      // animation uses displayed speed (integer if decimals off)
+      const speedForAnim = decimalsToggle.checked
+        ? counter
+        : Math.max(1, Math.floor(counter));
+
+      let duration = 2 / speedForAnim;
+      duration = Math.max(duration, 0.01);
+      belt.style.animationDuration = duration + "s";
     }
 
     function startAutoChange(direction, delay = 50) {
-      const step = getStep();
-      const amount = direction * step;
+      const amount = direction * getStep();
 
       if (amount < 0 && counter <= 0) return;
 
@@ -288,10 +283,7 @@
         counter = clamp(counter, 0, maxSpeed);
         updateCounter();
 
-        // Stop automatically if we hit max
-        if (counter >= maxSpeed && amount > 0) {
-          clearInterval(holdInterval);
-        }
+        if (counter >= maxSpeed && amount > 0) clearInterval(holdInterval);
       }, delay);
     }
 
@@ -299,25 +291,22 @@
       clearInterval(holdInterval);
     }
 
-    // Max speed slider
     function updateMaxFromSlider() {
       maxSpeed = sliderToMax(Number(maxSpeedSlider.value));
       maxSpeedValue.innerText = String(maxSpeed);
 
-      // If current speed is above new max, clamp it.
       if (counter > maxSpeed) counter = maxSpeed;
       updateCounter();
     }
 
     maxSpeedSlider.addEventListener("input", updateMaxFromSlider);
 
-    // Decimal toggle
     decimalsToggle.addEventListener("change", () => {
       syncCounterToMode();
       updateCounter();
     });
 
-    // Mouse event listeners (hold to change)
+    // Mouse hold
     increaseBtn.addEventListener("mousedown", () => startAutoChange(+1));
     increaseBtn.addEventListener("mouseup", stopAutoChange);
     increaseBtn.addEventListener("mouseleave", stopAutoChange);
@@ -326,7 +315,7 @@
     decreaseBtn.addEventListener("mouseup", stopAutoChange);
     decreaseBtn.addEventListener("mouseleave", stopAutoChange);
 
-    // Touch event listeners (mobile)
+    // Touch hold
     increaseBtn.addEventListener("touchstart", (e) => { e.preventDefault(); startAutoChange(+1); }, { passive: false });
     increaseBtn.addEventListener("touchend", (e) => { e.preventDefault(); stopAutoChange(); }, { passive: false });
     increaseBtn.addEventListener("touchcancel", (e) => { e.preventDefault(); stopAutoChange(); }, { passive: false });
@@ -335,21 +324,14 @@
     decreaseBtn.addEventListener("touchend", (e) => { e.preventDefault(); stopAutoChange(); }, { passive: false });
     decreaseBtn.addEventListener("touchcancel", (e) => { e.preventDefault(); stopAutoChange(); }, { passive: false });
 
-    // Optional single-click functionality (still respects toggle + max)
-    increaseBtn.addEventListener("click", () => {
-      counter += getStep();
-      updateCounter();
-    });
-
-    decreaseBtn.addEventListener("click", () => {
-      counter -= getStep();
-      updateCounter();
-    });
+    // Single click
+    increaseBtn.addEventListener("click", () => { counter += getStep(); updateCounter(); });
+    decreaseBtn.addEventListener("click", () => { counter -= getStep(); updateCounter(); });
 
     stopBtn.addEventListener("click", () => {
       counter = 0.0;
-      updateCounter();
       stopAutoChange();
+      updateCounter();
     });
 
     // Init

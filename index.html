@@ -1,422 +1,342 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Tyler’s Game Shelf</title>
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-
-  <!-- iPhone "Add to Home Screen" / PWA-ish -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Tyler Games" />
-  <meta name="theme-color" content="#cfe9ff" />
-
+  <title>Drag Odometer</title>
   <style>
-    :root {
-      --ink: #1f2937;
-      --muted: #475569;
-      --card: rgba(255,255,255,0.86);
-      --card2: rgba(255,255,255,0.66);
-      --shadow: 0 10px 24px rgba(0,0,0,0.10);
+    :root{
+      --ring: #7ecbff;     /* light blue default */
+      --face: #ffffff;     /* white default */
+      --text: #111;
+      --panel-bg: rgba(255,255,255,0.85);
+      --shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
 
     html, body {
       height: 100%;
       margin: 0;
-    }
-
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      color: var(--ink);
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-
-      /* Full-screen iPhone feel */
-      min-height: 100svh;
+      background: #f3f5f7;
+      color: var(--text);
+      font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       overscroll-behavior: none;
-      background:
-        radial-gradient(circle at top left, #cfe9ff, transparent 60%),
-        radial-gradient(circle at bottom right, #ffe6f2, transparent 60%),
-        radial-gradient(circle at center, #fff6d6, transparent 70%),
-        #f8fafc;
+      touch-action: manipulation;
     }
 
-    /* Respect iPhone safe areas */
     .app {
-      min-height: 100svh;
+      min-height: 100vh;
       padding:
-        calc(env(safe-area-inset-top) + 16px)
-        calc(env(safe-area-inset-right) + 16px)
-        calc(env(safe-area-inset-bottom) + 16px)
-        calc(env(safe-area-inset-left) + 16px);
+        calc(14px + env(safe-area-inset-top))
+        calc(14px + env(safe-area-inset-right))
+        calc(14px + env(safe-area-inset-bottom))
+        calc(14px + env(safe-area-inset-left));
       box-sizing: border-box;
+
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 14px;
     }
 
-    header {
-      text-align: center;
-      padding: 10px 10px 0;
+    .dial-wrap{
+      flex: 1;
+      width: 100%;
+      display: grid;
+      place-items: center;
     }
 
-    h1 {
-      margin: 0;
-      font-size: clamp(1.8rem, 4.8vw, 2.6rem);
-      letter-spacing: .2px;
+    .dial {
+      width: min(86vw, 360px);
+      aspect-ratio: 1 / 1;
+      position: relative;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none; /* we handle drag */
+    }
+
+    .center {
+      position: absolute;
+      inset: 18%;
+      background: var(--face);
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      display: grid;
+      place-items: center;
+    }
+
+    .value {
+      font-size: clamp(36px, 9vw, 54px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
     }
 
     .sub {
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 1.02rem;
+      margin-top: 6px;
+      font-size: 14px;
+      opacity: 0.65;
+      text-align: center;
     }
 
-    .topbar {
+    .panel {
+      width: min(92vw, 420px);
+      background: var(--panel-bg);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      padding: 12px 12px;
+      box-sizing: border-box;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .panel-row{
       display: flex;
-      gap: 10px;
       align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      padding: 4px 0 2px;
-    }
-
-    .btn {
-      appearance: none;
-      border: 0;
-      border-radius: 999px;
-      padding: 10px 14px;
-      background: var(--card);
-      box-shadow: var(--shadow);
-      color: var(--ink);
-      font-weight: 600;
-      font-size: 0.95rem;
-      cursor: pointer;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .btn:active { transform: scale(0.98); }
-
-    main {
-      flex: 1;
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
-      border-radius: 18px;
-      padding: 10px;
-      background: rgba(255,255,255,0.25);
-      backdrop-filter: blur(8px);
-    }
-
-    .category {
-      margin: 12px 6px 22px;
-      text-align: left;
-    }
-
-    .category h3 {
-      margin: 10px 6px 12px;
-      font-size: 1.15rem;
-      color: #334155;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      justify-content: space-between;
       gap: 12px;
+      padding: 10px 6px;
     }
 
-    /* Larger tiles on big phones / landscape */
-    @media (min-width: 520px) {
-      .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .panel-row + .panel-row {
+      border-top: 1px solid rgba(0,0,0,0.08);
     }
 
-    .game {
-      display: block;
-      padding: 16px 14px;
-      border-radius: 18px;
-      background: var(--card);
-      text-decoration: none;
-      color: inherit;
-      box-shadow: var(--shadow);
-      position: relative;
-      overflow: hidden;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      user-select: none;
-      transition: transform .12s ease, box-shadow .12s ease;
-      min-height: 82px;
+    label {
+      font-size: 14px;
+      font-weight: 600;
     }
 
-    .game::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 30% 10%, rgba(59,130,246,0.18), transparent 55%),
-                  radial-gradient(circle at 80% 90%, rgba(236,72,153,0.14), transparent 60%);
-      pointer-events: none;
-    }
-
-    .game:hover { transform: translateY(-2px); }
-
-    .game:active {
-      transform: scale(0.98);
-      box-shadow: 0 8px 18px rgba(0,0,0,0.10);
-    }
-
-    .title {
-      position: relative;
-      z-index: 1;
-      font-weight: 800;
-      font-size: 1.05rem;
-      line-height: 1.15;
+    input[type="color"]{
+      width: 52px;
+      height: 34px;
+      border: none;
+      background: transparent;
+      padding: 0;
     }
 
     .hint {
-      position: relative;
-      z-index: 1;
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: 0.9rem;
-      opacity: 0.9;
-    }
-
-    .status {
-      text-align: center;
-      font-size: 0.92rem;
-      color: var(--muted);
-      padding-bottom: 4px;
-    }
-
-    /* Optional: reduce motion */
-    @media (prefers-reduced-motion: reduce) {
-      .game { transition: none; }
-      .btn:active { transform: none; }
+      font-size: 12px;
+      opacity: 0.6;
+      margin: 6px 6px 0;
     }
   </style>
 </head>
-
 <body>
   <div class="app">
-    <header>
-      <h1>Tyler’s Game Shelf</h1>
-      <p class="sub">Tap a game 🎮</p>
+    <div class="dial-wrap">
+      <div class="dial" id="dial" aria-label="Drag dial to set percentage">
+        <canvas id="c" style="width:100%;height:100%;"></canvas>
 
-      <div class="topbar">
-        <button class="btn" id="audioBtn">🔊 Start Audio</button>
-        <button class="btn" id="fullscreenBtn">⛶ Full Screen</button>
+        <div class="center">
+          <div style="display:flex; flex-direction:column; align-items:center;">
+            <div class="value"><span id="pct">0</span>%</div>
+            <div class="sub">Drag clockwise to increase</div>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <div class="status" id="status">Audio is off until you tap “Start Audio”.</div>
-    </header>
-
-    <main id="games"></main>
+    <div class="panel">
+      <div class="panel-row">
+        <label for="ringColor">Outer ring color</label>
+        <input type="color" id="ringColor" value="#7ecbff" />
+      </div>
+      <div class="panel-row">
+        <label for="faceColor">Center circle color</label>
+        <input type="color" id="faceColor" value="#ffffff" />
+      </div>
+      <div class="hint">No wrap-around: 0 ↔ 100 only by reversing direction.</div>
+    </div>
   </div>
 
   <script>
-    /* ========= 1) Your games list (easy to grow) ========= */
-    const games = {
-      "Treadmills": [
-        ["Treadmill ver 1", "treadmill1.html"],
-        ["Treadmill ver 2", "treadmill2.html"],
-        ["Treadmill ver 3", "treadmill3.html"],
-        ["Treadmill ver 4", "treadmill4.html"],
-        ["Treadmill ver 5", "treadmill5.html"]
-      ],
-      "Counters": [
-        ["Click Counter", "clickcounter.html"],
-        ["Ultrafast Counter", "clickcounterultrafast.html"],
-        ["Counter with Thumbs Up", "counterthumbs.html"],
-        ["Counter", "counter.html"],
-        ["Green Counter", "greencounter.html"],
-        ["Another Click Counter", "anotherclickcounter.html"],
-        ["Counter with Lock", "clickcounterlock.html"]
-      ],
-      "Speed & Motion": [
-        ["Gas Pump", "gaspump.html"],
-        ["Car Speedometer", "carspeedometer.html"],
-        ["Simple Speedometer", "simplespeedometer.html"],
-        ["Speedometer", "speedometer.html"],
-        ["Speedometer (Max Speed)", "speedometer2.html"]
-      ],
-      "Clocks & Time": [
-        ["Clocks", "clocks.html"],
-        ["Flip Clock", "flipclock.html"]
-      ],
-      "Other": [
-        ["My Daily Calendar", "mydailycalendar.html"],
-        ["Volume Slider", "volumeslider.html"],
-        ["Thermometer Game", "thermometer.html"],
-        ["Odometer Game", "odometer.html"]
-      ]
-    };
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const dialEl = document.getElementById('dial');
+    const pctEl = document.getElementById('pct');
 
-    /* ========= 2) Render UI ========= */
-    const container = document.getElementById("games");
+    const ringColorInput = document.getElementById('ringColor');
+    const faceColorInput = document.getElementById('faceColor');
 
-    for (const category of Object.keys(games)) {
-      const block = document.createElement("section");
-      block.className = "category";
+    const TWO_PI = Math.PI * 2;
 
-      const h = document.createElement("h3");
-      h.textContent = category;
-      block.appendChild(h);
+    let value = 0;              // 0..100
+    let sweepCW = 0;            // 0..2π (clockwise sweep from top)
+    let isDragging = false;
+    let lastTheta = null;       // last raw atan2 angle (standard coords)
 
-      const grid = document.createElement("div");
-      grid.className = "grid";
+    function cssVar(name, fallback) {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    }
+    function setCssVar(name, val){
+      document.documentElement.style.setProperty(name, val);
+    }
 
-      for (const [name, link] of games[category]) {
-        const a = document.createElement("a");
-        a.className = "game";
-        a.href = link;
-        a.innerHTML = `
-          <div class="title">${escapeHtml(name)}</div>
-          <div class="hint">Tap to play</div>
-        `;
-        grid.appendChild(a);
+    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+    function normalizeSignedPi(a) {
+      // normalize to (-π, π]
+      while (a <= -Math.PI) a += TWO_PI;
+      while (a > Math.PI) a -= TWO_PI;
+      return a;
+    }
+
+    function resizeCanvasForDPR() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+      draw();
+    }
+
+    function draw() {
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const ring = cssVar('--ring', '#7ecbff');
+      const face = cssVar('--face', '#ffffff');
+
+      const outerR = Math.min(w, h) * 0.46;
+      const ringWidth = Math.min(w, h) * 0.10;
+      const innerR = outerR - ringWidth;
+
+      // Track
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR, 0, TWO_PI);
+      ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+      ctx.lineWidth = ringWidth;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Active ring: start at top, go clockwise by sweepCW
+      const start = -Math.PI / 2;
+
+      if (value >= 100) {
+        // draw a true full circle to avoid a seam/cut
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, 0, TWO_PI);
+        ctx.strokeStyle = ring;
+        ctx.lineWidth = ringWidth;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      } else if (value > 0) {
+        const end = start + sweepCW; // sweepCW is clockwise amount
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, start, end, false);
+        ctx.strokeStyle = ring;
+        ctx.lineWidth = ringWidth;
+        ctx.lineCap = 'round';
+        ctx.stroke();
       }
 
-      block.appendChild(grid);
-      container.appendChild(block);
-    }
+      // Knob at end of sweep (optional: hide at 0)
+      if (value > 0) {
+        const end = start + sweepCW;
+        const kx = cx + outerR * Math.cos(end);
+        const ky = cy + outerR * Math.sin(end);
 
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, m => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[m]));
-    }
+        ctx.beginPath();
+        ctx.arc(kx + 2, ky + 3, ringWidth * 0.38, 0, TWO_PI);
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        ctx.fill();
 
-    /* ========= 3) Sound effects (WebAudio) =========
-       iOS requires a user gesture to enable audio.
-       We generate simple "bleep/pop" tones (no external audio files needed).
-    */
-    const statusEl = document.getElementById("status");
-    const audioBtn = document.getElementById("audioBtn");
-
-    let audioCtx = null;
-    let audioEnabled = false;
-
-    function ensureAudio() {
-      if (audioEnabled && audioCtx) return true;
-      try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        audioEnabled = true;
-        statusEl.textContent = "Audio is on ✅";
-        audioBtn.textContent = "🔊 Audio On";
-        return true;
-      } catch (e) {
-        statusEl.textContent = "Audio not available in this browser.";
-        return false;
-      }
-    }
-
-    audioBtn.addEventListener("click", async () => {
-      const ok = ensureAudio();
-      if (!ok) return;
-      // Some iOS cases need resume()
-      if (audioCtx.state === "suspended") {
-        await audioCtx.resume();
-      }
-      playPop();
-    });
-
-    function tone({ freq = 440, dur = 0.06, type = "sine", gain = 0.12, endGain = 0.001 }) {
-      if (!audioEnabled || !audioCtx) return;
-
-      const t0 = audioCtx.currentTime;
-
-      const osc = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, t0);
-
-      g.gain.setValueAtTime(gain, t0);
-      g.gain.exponentialRampToValueAtTime(endGain, t0 + dur);
-
-      osc.connect(g);
-      g.connect(audioCtx.destination);
-
-      osc.start(t0);
-      osc.stop(t0 + dur + 0.02);
-    }
-
-    // Hover/tap "pop"
-    function playPop() {
-      // Two quick tones feels like a playful UI pop
-      tone({ freq: 740, dur: 0.045, type: "triangle", gain: 0.10 });
-      setTimeout(() => tone({ freq: 980, dur: 0.035, type: "triangle", gain: 0.08 }), 30);
-    }
-
-    // Click "launch" sound
-    function playLaunch() {
-      tone({ freq: 520, dur: 0.05, type: "sine", gain: 0.12 });
-      setTimeout(() => tone({ freq: 660, dur: 0.07, type: "sine", gain: 0.11 }), 35);
-    }
-
-    /* Hook sounds into interactions:
-       - pointerenter works for mouse/trackpad hover
-       - pointerdown works for taps on iPhone
-       - click plays launch sound and navigates after a short delay
-    */
-    container.addEventListener("pointerenter", (e) => {
-      const card = e.target.closest(".game");
-      if (!card) return;
-      // Only meaningful on devices that actually hover
-      if (matchMedia("(hover: hover)").matches) playPop();
-    }, true);
-
-    container.addEventListener("pointerdown", (e) => {
-      const card = e.target.closest(".game");
-      if (!card) return;
-      // Taps on iPhone should pop (if audio enabled)
-      playPop();
-    }, true);
-
-    container.addEventListener("click", async (e) => {
-      const card = e.target.closest(".game");
-      if (!card) return;
-
-      // iOS: if they never tapped "Start Audio", still allow navigation,
-      // but we can try enabling audio on first click gesture.
-      if (!audioEnabled) {
-        ensureAudio();
-        if (audioCtx && audioCtx.state === "suspended") {
-          try { await audioCtx.resume(); } catch {}
-        }
+        ctx.beginPath();
+        ctx.arc(kx, ky, ringWidth * 0.38, 0, TWO_PI);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(0,0,0,0.10)';
+        ctx.stroke();
       }
 
+      // Center face (the real center is the div, but keep canvas consistent)
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR * 0.95, 0, TWO_PI);
+      ctx.fillStyle = face;
+      ctx.fill();
+    }
+
+    function setValueFromSweep() {
+      sweepCW = clamp(sweepCW, 0, TWO_PI);
+      value = Math.round((sweepCW / TWO_PI) * 100);
+      pctEl.textContent = String(value);
+      draw();
+    }
+
+    function pointerToTheta(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const dx = x - cx;
+      const dy = y - cy;
+      return Math.atan2(dy, dx); // standard: CCW positive, 0 at right
+    }
+
+    function onPointerDown(e) {
+      isDragging = true;
+      lastTheta = pointerToTheta(e.clientX, e.clientY);
+      dialEl.setPointerCapture?.(e.pointerId);
       e.preventDefault();
-      playLaunch();
+    }
 
-      // Small delay so the sound plays before navigating
-      const href = card.getAttribute("href");
-      setTimeout(() => { window.location.href = href; }, 120);
-    }, true);
+    function onPointerMove(e) {
+      if (!isDragging || lastTheta === null) return;
 
-    /* ========= 4) Fullscreen button (best effort) =========
-       Note: iOS Safari doesn't support true fullscreen for normal web pages.
-       "Add to Home Screen" is the real full-screen experience on iPhone.
-    */
-    const fsBtn = document.getElementById("fullscreenBtn");
-    fsBtn.addEventListener("click", async () => {
-      playPop();
-      const el = document.documentElement;
+      const theta = pointerToTheta(e.clientX, e.clientY);
 
-      if (!document.fullscreenElement && el.requestFullscreen) {
-        try {
-          await el.requestFullscreen();
-        } catch {
-          // ignore
-        }
-      } else if (document.exitFullscreen) {
-        try { await document.exitFullscreen(); } catch {}
-      }
+      // Smallest signed delta between angles (CCW positive)
+      const d = normalizeSignedPi(theta - lastTheta);
 
-      // If on iPhone Safari, guide them implicitly with status text
-      if (!el.requestFullscreen) {
-        statusEl.textContent = "Tip: For real full-screen on iPhone, use Share → Add to Home Screen.";
-      }
+      // We want clockwise to increase, so invert (CW positive)
+      const cwDelta = -d;
+
+      // Accumulate without wrap; clamp prevents 100->0 reset and 0->100 jump
+      sweepCW = clamp(sweepCW + cwDelta, 0, TWO_PI);
+
+      lastTheta = theta;
+      setValueFromSweep();
+      e.preventDefault();
+    }
+
+    function onPointerUp(e) {
+      isDragging = false;
+      lastTheta = null;
+      e.preventDefault();
+    }
+
+    dialEl.addEventListener('pointerdown', onPointerDown, { passive: false });
+    dialEl.addEventListener('pointermove', onPointerMove, { passive: false });
+    dialEl.addEventListener('pointerup', onPointerUp, { passive: false });
+    dialEl.addEventListener('pointercancel', onPointerUp, { passive: false });
+
+    ringColorInput.addEventListener('input', (e) => {
+      setCssVar('--ring', e.target.value);
+      draw();
     });
+
+    faceColorInput.addEventListener('input', (e) => {
+      setCssVar('--face', e.target.value);
+      draw();
+    });
+
+    window.addEventListener('resize', resizeCanvasForDPR);
+
+    // Init
+    setCssVar('--ring', ringColorInput.value);
+    setCssVar('--face', faceColorInput.value);
+    sweepCW = 0;
+    setValueFromSweep();
+    resizeCanvasForDPR();
   </script>
 </body>
 </html>

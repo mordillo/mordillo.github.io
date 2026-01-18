@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Drag Odometer</title>
+  <title>Drag Ring</title>
   <style>
     :root{
       --ring: #7ecbff;     /* light blue default */
@@ -23,7 +23,6 @@
       touch-action: manipulation;
     }
 
-    /* iPhone safe-area padding */
     .app {
       min-height: 100vh;
       padding:
@@ -46,14 +45,13 @@
       place-items: center;
     }
 
-    /* Keep it nicely sized on iPhone */
     .dial {
       width: min(86vw, 360px);
       aspect-ratio: 1 / 1;
       position: relative;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: none; /* we handle drag */
+      touch-action: none;
     }
 
     .center {
@@ -80,7 +78,6 @@
       text-align: center;
     }
 
-    /* Control panel */
     .panel {
       width: min(92vw, 420px);
       background: var(--panel-bg);
@@ -129,12 +126,12 @@
   <div class="app">
     <div class="dial-wrap">
       <div class="dial" id="dial" aria-label="Drag dial to set percentage">
-        <canvas id="c" width="600" height="600" style="width:100%;height:100%;"></canvas>
+        <canvas id="c" style="width:100%;height:100%;"></canvas>
 
         <div class="center">
           <div style="display:flex; flex-direction:column; align-items:center;">
             <div class="value"><span id="pct">0</span>%</div>
-            <div class="sub">Drag the outer ring</div>
+            <div class="sub">Drag ring (clockwise up, counterclockwise down)</div>
           </div>
         </div>
       </div>
@@ -149,12 +146,11 @@
         <label for="faceColor">Center circle color</label>
         <input type="color" id="faceColor" value="#ffffff" />
       </div>
-      <div class="hint">Tip: you can drag anywhere on the outer ring.</div>
+      <div class="hint">The ring never wraps: 0 ↔ 100 only by reversing direction.</div>
     </div>
   </div>
 
   <script>
-    // ----- Canvas dial drawing -----
     const canvas = document.getElementById('c');
     const ctx = canvas.getContext('2d');
     const dialEl = document.getElementById('dial');
@@ -163,16 +159,28 @@
     const ringColorInput = document.getElementById('ringColor');
     const faceColorInput = document.getElementById('faceColor');
 
-    let value = 0; // 0..100
+    const TWO_PI = Math.PI * 2;
+    const START = -Math.PI / 2; // top
+
+    let value = 0;        // 0..100
+    let sweep = 0;        // 0..2π (clockwise from top)
     let isDragging = false;
+    let lastTheta = null;
 
     function cssVar(name, fallback) {
       const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
       return v || fallback;
     }
-
     function setCssVar(name, val){
       document.documentElement.style.setProperty(name, val);
+    }
+    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+    function normalizeSignedPi(a) {
+      // normalize to (-π, π]
+      while (a <= -Math.PI) a += TWO_PI;
+      while (a > Math.PI) a -= TWO_PI;
+      return a;
     }
 
     function resizeCanvasForDPR() {
@@ -180,7 +188,7 @@
       const dpr = window.devicePixelRatio || 1;
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       draw();
     }
 
@@ -196,101 +204,110 @@
       const ring = cssVar('--ring', '#7ecbff');
       const face = cssVar('--face', '#ffffff');
 
-      // dial geometry
       const outerR = Math.min(w, h) * 0.46;
       const ringWidth = Math.min(w, h) * 0.10;
       const innerR = outerR - ringWidth;
 
-      // subtle background circle (track)
+      // Always draw the ring as a full circle (base)
       ctx.beginPath();
-      ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-      ctx.lineWidth = ringWidth;
-      ctx.lineCap = 'round';
-      ctx.stroke();
-
-      // active arc from top (12 o'clock) clockwise
-      const start = -Math.PI / 2;
-      const end = start + (Math.PI * 2) * (value / 100);
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, outerR, start, end);
+      ctx.arc(cx, cy, outerR, 0, TWO_PI);
       ctx.strokeStyle = ring;
+      ctx.globalAlpha = 0.25;     // base ring lighter
       ctx.lineWidth = ringWidth;
       ctx.lineCap = 'round';
       ctx.stroke();
+      ctx.globalAlpha = 1;
 
-      // knob position at end of arc
-      const kx = cx + outerR * Math.cos(end);
-      const ky = cy + outerR * Math.sin(end);
+      // Filled portion (clockwise from top)
+      if (value > 0) {
+        if (value >= 100) {
+          // full circle fill (no seam)
+          ctx.beginPath();
+          ctx.arc(cx, cy, outerR, 0, TWO_PI);
+        } else {
+          ctx.beginPath();
+          ctx.arc(cx, cy, outerR, START, START + sweep, false);
+        }
+        ctx.strokeStyle = ring;
+        ctx.lineWidth = ringWidth;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
 
-      // knob shadow
+      // Knob at end of filled portion (optional at 0)
+      if (value > 0 && value < 100) {
+        const end = START + sweep;
+        const kx = cx + outerR * Math.cos(end);
+        const ky = cy + outerR * Math.sin(end);
+
+        ctx.beginPath();
+        ctx.arc(kx + 2, ky + 3, ringWidth * 0.38, 0, TWO_PI);
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(kx, ky, ringWidth * 0.38, 0, TWO_PI);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(0,0,0,0.10)';
+        ctx.stroke();
+      }
+
+      // Center face (canvas layer, matches the div)
       ctx.beginPath();
-      ctx.arc(kx + 2, ky + 3, ringWidth * 0.38, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0,0,0,0.18)';
-      ctx.fill();
-
-      // knob
-      ctx.beginPath();
-      ctx.arc(kx, ky, ringWidth * 0.38, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff';
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = 'rgba(0,0,0,0.10)';
-      ctx.stroke();
-
-      // center face (for canvas visual consistency, but actual center is a div)
-      ctx.beginPath();
-      ctx.arc(cx, cy, innerR * 0.95, 0, Math.PI * 2);
+      ctx.arc(cx, cy, innerR * 0.95, 0, TWO_PI);
       ctx.fillStyle = face;
       ctx.fill();
     }
 
-    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
-
-    function angleToPercent(angle) {
-      // angle from -PI..PI where 0 is right; we want 0% at top (-PI/2) and clockwise increase
-      // Convert so that top = 0
-      let a = angle + Math.PI / 2; // now top is 0, right is PI/2
-      if (a < 0) a += Math.PI * 2;
-      const p = (a / (Math.PI * 2)) * 100;
-      return p;
-    }
-
-    function setFromPointer(clientX, clientY) {
-      const rect = canvas.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
-
-      const cx = rect.width / 2;
-      const cy = rect.height / 2;
-
-      const dx = x - cx;
-      const dy = y - cy;
-      const angle = Math.atan2(dy, dx);
-
-      let p = angleToPercent(angle);
-      p = clamp(p, 0, 100);
-
-      value = Math.round(p);
+    function setFromSweep() {
+      sweep = clamp(sweep, 0, TWO_PI);
+      value = Math.round((sweep / TWO_PI) * 100);
       pctEl.textContent = String(value);
       draw();
     }
 
-    // Pointer events for dragging
+    function pointerToTheta(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      return Math.atan2(y - cy, x - cx); // CCW positive, 0 at right
+    }
+
     function onPointerDown(e) {
       isDragging = true;
+      lastTheta = pointerToTheta(e.clientX, e.clientY);
       dialEl.setPointerCapture?.(e.pointerId);
-      setFromPointer(e.clientX, e.clientY);
       e.preventDefault();
     }
+
     function onPointerMove(e) {
-      if (!isDragging) return;
-      setFromPointer(e.clientX, e.clientY);
+      if (!isDragging || lastTheta === null) return;
+
+      const theta = pointerToTheta(e.clientX, e.clientY);
+
+      // signed smallest delta (CCW positive)
+      const d = normalizeSignedPi(theta - lastTheta);
+
+      // We want: clockwise drag => fill increases clockwise.
+      // Clockwise motion makes theta decrease => d negative.
+      // So invert: cwDelta positive when dragging clockwise.
+      const cwDelta = -d;
+
+      // accumulate and clamp (no wrap)
+      sweep = clamp(sweep + cwDelta, 0, TWO_PI);
+
+      lastTheta = theta;
+      setFromSweep();
       e.preventDefault();
     }
+
     function onPointerUp(e) {
       isDragging = false;
+      lastTheta = null;
       e.preventDefault();
     }
 
@@ -299,24 +316,22 @@
     dialEl.addEventListener('pointerup', onPointerUp, { passive: false });
     dialEl.addEventListener('pointercancel', onPointerUp, { passive: false });
 
-    // Color controls
     ringColorInput.addEventListener('input', (e) => {
       setCssVar('--ring', e.target.value);
       draw();
     });
-
     faceColorInput.addEventListener('input', (e) => {
       setCssVar('--face', e.target.value);
       draw();
     });
 
-    // Fit + redraw on rotate/resizes
     window.addEventListener('resize', resizeCanvasForDPR);
 
     // Init
     setCssVar('--ring', ringColorInput.value);
     setCssVar('--face', faceColorInput.value);
-    pctEl.textContent = String(value);
+    sweep = 0;
+    setFromSweep();
     resizeCanvasForDPR();
   </script>
 </body>

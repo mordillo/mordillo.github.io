@@ -6,8 +6,8 @@
   <title>Finger-Follow Ring</title>
   <style>
     :root{
-      --ring: #7ecbff;     /* default */
-      --face: #ffffff;     /* default */
+      --ring: #7ecbff;
+      --face: #ffffff;
       --text: #111;
       --panel-bg: rgba(255,255,255,0.85);
       --shadow: 0 10px 30px rgba(0,0,0,0.15);
@@ -51,7 +51,7 @@
       position: relative;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: none; /* we handle drag */
+      touch-action: none;
     }
 
     .center {
@@ -146,7 +146,7 @@
         <label for="faceColor">Center circle color</label>
         <input type="color" id="faceColor" value="#ffffff" />
       </div>
-      <div class="hint">Clamped: it won’t jump 100 → 0 or 0 → 100.</div>
+      <div class="hint">No wrap: it won’t jump 100 → 0 or 0 → 100.</div>
     </div>
   </div>
 
@@ -162,7 +162,7 @@
     const TWO_PI = Math.PI * 2;
     const START = -Math.PI / 2; // top
 
-    let sweep = 0;     // 0..2π clockwise from top
+    let sweep = 0;       // 0..2π
     let isDragging = false;
 
     function setCssVar(name, val){ document.documentElement.style.setProperty(name, val); }
@@ -177,7 +177,7 @@
       const dpr = window.devicePixelRatio || 1;
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       draw();
     }
 
@@ -185,28 +185,34 @@
       return Math.round((sweep / TWO_PI) * 100);
     }
 
-    function pointerToSweepCW(clientX, clientY) {
+    // ✅ REVERSED mapping: this is the "opposite" direction vs the last version
+    // Returns a sweep in [0, 2π) based on finger angle, following finger position.
+    function pointerToSweep(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
       const x = clientX - rect.left;
       const y = clientY - rect.top;
       const cx = rect.width / 2;
       const cy = rect.height / 2;
 
-      // atan2 angle in radians: CCW+, 0 at right
+      // atan2 angle: CCW+, 0 at right
       const theta = Math.atan2(y - cy, x - cx);
 
-      // Convert to clockwise sweep from top in [0, 2π)
-      // thetaFromTopCCW = theta - START; but we want clockwise, so negate
-      // Equivalent: cw = (START - theta) mod 2π
-      let cw = (START - theta) % TWO_PI;
-      if (cw < 0) cw += TWO_PI;
-      return cw; // 0..2π
+      // Opposite direction mapping from last version:
+      // ccw-from-top = (theta - START) mod 2π
+      let s = (theta - START) % TWO_PI;
+      if (s < 0) s += TWO_PI;
+      return s; // 0..2π
     }
 
     function closestUnwrapped(target, current) {
-      // Choose target + k*2π that is closest to current
+      // Choose target + k*2π that is closest to current (prevents jumps at the 0/2π boundary)
       const k = Math.round((current - target) / TWO_PI);
       return target + k * TWO_PI;
+    }
+
+    function setSweepClamped(newSweep) {
+      sweep = clamp(newSweep, 0, TWO_PI);
+      draw();
     }
 
     function draw() {
@@ -221,17 +227,22 @@
       const ring = cssVar('--ring', '#7ecbff');
       const face = cssVar('--face', '#ffffff');
 
-      const outerR = Math.min(w, h) * 0.46;
-      const ringWidth = Math.min(w, h) * 0.10;
+      // Ring width and radius computed to avoid ANY clipping (the “straight edge” issue)
+      const size = Math.min(w, h);
+      const ringWidth = size * 0.10;
+      const padding = 3; // extra safety pixels
+      const outerR = (size / 2) - (ringWidth / 2) - padding;
       const innerR = outerR - ringWidth;
 
-      // FULL base ring (true circle, no seam)
+      ctx.lineJoin = 'round';
+
+      // Base ring: full circle, never clipped
       ctx.beginPath();
       ctx.arc(cx, cy, outerR, 0, TWO_PI);
       ctx.strokeStyle = ring;
       ctx.globalAlpha = 0.25;
       ctx.lineWidth = ringWidth;
-      ctx.lineCap = 'butt';   // important: full circle looks perfectly round
+      ctx.lineCap = 'butt';   // perfect full circle, no cap seam
       ctx.stroke();
       ctx.globalAlpha = 1;
 
@@ -239,22 +250,19 @@
       const pct = percentFromSweep();
       if (pct > 0) {
         ctx.beginPath();
-
         if (pct >= 100) {
-          // full filled circle (also no seam)
           ctx.arc(cx, cy, outerR, 0, TWO_PI);
           ctx.lineCap = 'butt';
         } else {
           ctx.arc(cx, cy, outerR, START, START + sweep, false);
           ctx.lineCap = 'round';
         }
-
         ctx.strokeStyle = ring;
         ctx.lineWidth = ringWidth;
         ctx.stroke();
       }
 
-      // Knob: always at the end of current sweep (except exactly 0 or 100)
+      // Knob
       if (pct > 0 && pct < 100) {
         const end = START + sweep;
         const kx = cx + outerR * Math.cos(end);
@@ -280,21 +288,14 @@
       ctx.fillStyle = face;
       ctx.fill();
 
-      // Update text
       pctEl.textContent = String(pct);
-    }
-
-    function setSweepClamped(newSweep) {
-      sweep = clamp(newSweep, 0, TWO_PI);
-      draw();
     }
 
     function onPointerDown(e) {
       isDragging = true;
       dialEl.setPointerCapture?.(e.pointerId);
 
-      // Jump immediately to finger position (clamped, no wrap)
-      const target = pointerToSweepCW(e.clientX, e.clientY);
+      const target = pointerToSweep(e.clientX, e.clientY);
       const unwrapped = closestUnwrapped(target, sweep);
       setSweepClamped(unwrapped);
 
@@ -304,8 +305,7 @@
     function onPointerMove(e) {
       if (!isDragging) return;
 
-      // Follow finger continuously with unwrap-to-nearest behavior
-      const target = pointerToSweepCW(e.clientX, e.clientY);
+      const target = pointerToSweep(e.clientX, e.clientY);
       const unwrapped = closestUnwrapped(target, sweep);
       setSweepClamped(unwrapped);
 

@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Drag Ring</title>
+  <title>Finger-Follow Ring</title>
   <style>
     :root{
-      --ring: #7ecbff;     /* light blue default */
-      --face: #ffffff;     /* white default */
+      --ring: #7ecbff;     /* default */
+      --face: #ffffff;     /* default */
       --text: #111;
       --panel-bg: rgba(255,255,255,0.85);
       --shadow: 0 10px 30px rgba(0,0,0,0.15);
@@ -51,7 +51,7 @@
       position: relative;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: none;
+      touch-action: none; /* we handle drag */
     }
 
     .center {
@@ -84,7 +84,7 @@
       border: 1px solid rgba(0,0,0,0.08);
       border-radius: 14px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-      padding: 12px 12px;
+      padding: 12px;
       box-sizing: border-box;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
@@ -131,7 +131,7 @@
         <div class="center">
           <div style="display:flex; flex-direction:column; align-items:center;">
             <div class="value"><span id="pct">0</span>%</div>
-            <div class="sub">Drag ring (clockwise up, counterclockwise down)</div>
+            <div class="sub">Drag on the ring</div>
           </div>
         </div>
       </div>
@@ -146,7 +146,7 @@
         <label for="faceColor">Center circle color</label>
         <input type="color" id="faceColor" value="#ffffff" />
       </div>
-      <div class="hint">The ring never wraps: 0 ↔ 100 only by reversing direction.</div>
+      <div class="hint">Clamped: it won’t jump 100 → 0 or 0 → 100.</div>
     </div>
   </div>
 
@@ -162,34 +162,51 @@
     const TWO_PI = Math.PI * 2;
     const START = -Math.PI / 2; // top
 
-    let value = 0;        // 0..100
-    let sweep = 0;        // 0..2π (clockwise from top)
+    let sweep = 0;     // 0..2π clockwise from top
     let isDragging = false;
-    let lastTheta = null;
 
+    function setCssVar(name, val){ document.documentElement.style.setProperty(name, val); }
     function cssVar(name, fallback) {
       const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
       return v || fallback;
     }
-    function setCssVar(name, val){
-      document.documentElement.style.setProperty(name, val);
-    }
     function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
-
-    function normalizeSignedPi(a) {
-      // normalize to (-π, π]
-      while (a <= -Math.PI) a += TWO_PI;
-      while (a > Math.PI) a -= TWO_PI;
-      return a;
-    }
 
     function resizeCanvasForDPR() {
       const rect = canvas.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
       draw();
+    }
+
+    function percentFromSweep() {
+      return Math.round((sweep / TWO_PI) * 100);
+    }
+
+    function pointerToSweepCW(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+
+      // atan2 angle in radians: CCW+, 0 at right
+      const theta = Math.atan2(y - cy, x - cx);
+
+      // Convert to clockwise sweep from top in [0, 2π)
+      // thetaFromTopCCW = theta - START; but we want clockwise, so negate
+      // Equivalent: cw = (START - theta) mod 2π
+      let cw = (START - theta) % TWO_PI;
+      if (cw < 0) cw += TWO_PI;
+      return cw; // 0..2π
+    }
+
+    function closestUnwrapped(target, current) {
+      // Choose target + k*2π that is closest to current
+      const k = Math.round((current - target) / TWO_PI);
+      return target + k * TWO_PI;
     }
 
     function draw() {
@@ -208,34 +225,37 @@
       const ringWidth = Math.min(w, h) * 0.10;
       const innerR = outerR - ringWidth;
 
-      // Always draw the ring as a full circle (base)
+      // FULL base ring (true circle, no seam)
       ctx.beginPath();
       ctx.arc(cx, cy, outerR, 0, TWO_PI);
       ctx.strokeStyle = ring;
-      ctx.globalAlpha = 0.25;     // base ring lighter
+      ctx.globalAlpha = 0.25;
       ctx.lineWidth = ringWidth;
-      ctx.lineCap = 'round';
+      ctx.lineCap = 'butt';   // important: full circle looks perfectly round
       ctx.stroke();
       ctx.globalAlpha = 1;
 
-      // Filled portion (clockwise from top)
-      if (value > 0) {
-        if (value >= 100) {
-          // full circle fill (no seam)
-          ctx.beginPath();
+      // Filled portion
+      const pct = percentFromSweep();
+      if (pct > 0) {
+        ctx.beginPath();
+
+        if (pct >= 100) {
+          // full filled circle (also no seam)
           ctx.arc(cx, cy, outerR, 0, TWO_PI);
+          ctx.lineCap = 'butt';
         } else {
-          ctx.beginPath();
           ctx.arc(cx, cy, outerR, START, START + sweep, false);
+          ctx.lineCap = 'round';
         }
+
         ctx.strokeStyle = ring;
         ctx.lineWidth = ringWidth;
-        ctx.lineCap = 'round';
         ctx.stroke();
       }
 
-      // Knob at end of filled portion (optional at 0)
-      if (value > 0 && value < 100) {
+      // Knob: always at the end of current sweep (except exactly 0 or 100)
+      if (pct > 0 && pct < 100) {
         const end = START + sweep;
         const kx = cx + outerR * Math.cos(end);
         const ky = cy + outerR * Math.sin(end);
@@ -259,55 +279,41 @@
       ctx.arc(cx, cy, innerR * 0.95, 0, TWO_PI);
       ctx.fillStyle = face;
       ctx.fill();
+
+      // Update text
+      pctEl.textContent = String(pct);
     }
 
-    function setFromSweep() {
-      sweep = clamp(sweep, 0, TWO_PI);
-      value = Math.round((sweep / TWO_PI) * 100);
-      pctEl.textContent = String(value);
+    function setSweepClamped(newSweep) {
+      sweep = clamp(newSweep, 0, TWO_PI);
       draw();
-    }
-
-    function pointerToTheta(clientX, clientY) {
-      const rect = canvas.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
-      const cx = rect.width / 2;
-      const cy = rect.height / 2;
-      return Math.atan2(y - cy, x - cx); // CCW positive, 0 at right
     }
 
     function onPointerDown(e) {
       isDragging = true;
-      lastTheta = pointerToTheta(e.clientX, e.clientY);
       dialEl.setPointerCapture?.(e.pointerId);
+
+      // Jump immediately to finger position (clamped, no wrap)
+      const target = pointerToSweepCW(e.clientX, e.clientY);
+      const unwrapped = closestUnwrapped(target, sweep);
+      setSweepClamped(unwrapped);
+
       e.preventDefault();
     }
 
     function onPointerMove(e) {
-      if (!isDragging || lastTheta === null) return;
+      if (!isDragging) return;
 
-      const theta = pointerToTheta(e.clientX, e.clientY);
+      // Follow finger continuously with unwrap-to-nearest behavior
+      const target = pointerToSweepCW(e.clientX, e.clientY);
+      const unwrapped = closestUnwrapped(target, sweep);
+      setSweepClamped(unwrapped);
 
-      // signed smallest delta (CCW positive)
-      const d = normalizeSignedPi(theta - lastTheta);
-
-      // We want: clockwise drag => fill increases clockwise.
-      // Clockwise motion makes theta decrease => d negative.
-      // So invert: cwDelta positive when dragging clockwise.
-      const cwDelta = -d;
-
-      // accumulate and clamp (no wrap)
-      sweep = clamp(sweep + cwDelta, 0, TWO_PI);
-
-      lastTheta = theta;
-      setFromSweep();
       e.preventDefault();
     }
 
     function onPointerUp(e) {
       isDragging = false;
-      lastTheta = null;
       e.preventDefault();
     }
 
@@ -320,6 +326,7 @@
       setCssVar('--ring', e.target.value);
       draw();
     });
+
     faceColorInput.addEventListener('input', (e) => {
       setCssVar('--face', e.target.value);
       draw();
@@ -330,9 +337,8 @@
     // Init
     setCssVar('--ring', ringColorInput.value);
     setCssVar('--face', faceColorInput.value);
-    sweep = 0;
-    setFromSweep();
     resizeCanvasForDPR();
+    draw();
   </script>
 </body>
 </html>

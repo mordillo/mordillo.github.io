@@ -8,7 +8,7 @@
     :root{
       --ring: #7ecbff;
       --face: #ffffff;
-      --text: #111;
+      --text: #111111;
       --panel-bg: rgba(255,255,255,0.85);
       --shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
@@ -64,18 +64,75 @@
       place-items: center;
     }
 
+    .center-inner{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .value-row{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
     .value {
       font-size: clamp(36px, 9vw, 54px);
       font-weight: 800;
       letter-spacing: -0.02em;
       line-height: 1;
+      color: var(--text);
+      min-width: 130px;
+      text-align: center;
+    }
+
+    .stepper{
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tri-btn{
+      width: 44px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .tri-btn:active{
+      transform: scale(0.98);
+    }
+
+    .tri{
+      width: 0;
+      height: 0;
+      border-left: 9px solid transparent;
+      border-right: 9px solid transparent;
+    }
+    .tri.up{
+      border-bottom: 14px solid var(--text);
+      margin-top: 2px;
+    }
+    .tri.down{
+      border-top: 14px solid var(--text);
+      margin-bottom: 2px;
     }
 
     .sub {
-      margin-top: 6px;
       font-size: 14px;
       opacity: 0.65;
       text-align: center;
+      color: var(--text);
     }
 
     .panel {
@@ -129,9 +186,20 @@
         <canvas id="c" style="width:100%;height:100%;"></canvas>
 
         <div class="center">
-          <div style="display:flex; flex-direction:column; align-items:center;">
-            <div class="value"><span id="pct">0</span>%</div>
-            <div class="sub">Drag on the ring</div>
+          <div class="center-inner">
+            <div class="value-row">
+              <div class="value"><span id="pct">0</span>%</div>
+
+              <div class="stepper" aria-label="Adjust percentage">
+                <button class="tri-btn" id="btnUp" aria-label="Increase">
+                  <span class="tri up" aria-hidden="true"></span>
+                </button>
+                <button class="tri-btn" id="btnDown" aria-label="Decrease">
+                  <span class="tri down" aria-hidden="true"></span>
+                </button>
+              </div>
+            </div>
+            <div class="sub">Drag on the ring or use buttons</div>
           </div>
         </div>
       </div>
@@ -146,6 +214,10 @@
         <label for="faceColor">Center circle color</label>
         <input type="color" id="faceColor" value="#ffffff" />
       </div>
+      <div class="panel-row">
+        <label for="textColor">Text color</label>
+        <input type="color" id="textColor" value="#111111" />
+      </div>
       <div class="hint">No wrap: it won’t jump 100 → 0 or 0 → 100.</div>
     </div>
   </div>
@@ -158,6 +230,10 @@
 
     const ringColorInput = document.getElementById('ringColor');
     const faceColorInput = document.getElementById('faceColor');
+    const textColorInput = document.getElementById('textColor');
+
+    const btnUp = document.getElementById('btnUp');
+    const btnDown = document.getElementById('btnDown');
 
     const TWO_PI = Math.PI * 2;
     const START = -Math.PI / 2; // top
@@ -185,8 +261,11 @@
       return Math.round((sweep / TWO_PI) * 100);
     }
 
-    // ✅ REVERSED mapping: this is the "opposite" direction vs the last version
-    // Returns a sweep in [0, 2π) based on finger angle, following finger position.
+    function sweepFromPercent(pct) {
+      return (clamp(pct, 0, 100) / 100) * TWO_PI;
+    }
+
+    // Follow finger position around the ring (reversed mapping already applied)
     function pointerToSweep(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
       const x = clientX - rect.left;
@@ -197,21 +276,24 @@
       // atan2 angle: CCW+, 0 at right
       const theta = Math.atan2(y - cy, x - cx);
 
-      // Opposite direction mapping from last version:
-      // ccw-from-top = (theta - START) mod 2π
+      // ccw-from-top = (theta - START) mod 2π  => sweep
       let s = (theta - START) % TWO_PI;
       if (s < 0) s += TWO_PI;
       return s; // 0..2π
     }
 
     function closestUnwrapped(target, current) {
-      // Choose target + k*2π that is closest to current (prevents jumps at the 0/2π boundary)
       const k = Math.round((current - target) / TWO_PI);
       return target + k * TWO_PI;
     }
 
     function setSweepClamped(newSweep) {
       sweep = clamp(newSweep, 0, TWO_PI);
+      draw();
+    }
+
+    function setPercent(p) {
+      sweep = sweepFromPercent(p);
       draw();
     }
 
@@ -227,22 +309,20 @@
       const ring = cssVar('--ring', '#7ecbff');
       const face = cssVar('--face', '#ffffff');
 
-      // Ring width and radius computed to avoid ANY clipping (the “straight edge” issue)
+      // Prevent clipping: radius is inside the canvas by half the stroke width + padding
       const size = Math.min(w, h);
       const ringWidth = size * 0.10;
-      const padding = 3; // extra safety pixels
+      const padding = 4;
       const outerR = (size / 2) - (ringWidth / 2) - padding;
       const innerR = outerR - ringWidth;
 
-      ctx.lineJoin = 'round';
-
-      // Base ring: full circle, never clipped
+      // Base ring: perfect circle
       ctx.beginPath();
       ctx.arc(cx, cy, outerR, 0, TWO_PI);
       ctx.strokeStyle = ring;
       ctx.globalAlpha = 0.25;
       ctx.lineWidth = ringWidth;
-      ctx.lineCap = 'butt';   // perfect full circle, no cap seam
+      ctx.lineCap = 'butt';
       ctx.stroke();
       ctx.globalAlpha = 1;
 
@@ -282,7 +362,7 @@
         ctx.stroke();
       }
 
-      // Center face (canvas layer, matches the div)
+      // Center face (canvas layer)
       ctx.beginPath();
       ctx.arc(cx, cy, innerR * 0.95, 0, TWO_PI);
       ctx.fillStyle = face;
@@ -322,6 +402,42 @@
     dialEl.addEventListener('pointerup', onPointerUp, { passive: false });
     dialEl.addEventListener('pointercancel', onPointerUp, { passive: false });
 
+    // Buttons: +/- 1
+    function step(delta) {
+      const p = percentFromSweep();
+      setPercent(p + delta);
+    }
+
+    btnUp.addEventListener('click', (e) => { e.preventDefault(); step(+1); });
+    btnDown.addEventListener('click', (e) => { e.preventDefault(); step(-1); });
+
+    // Hold-to-repeat on long press (nice on iPhone)
+    function addHoldRepeat(btn, delta) {
+      let t = null;
+      let i = null;
+
+      const start = (e) => {
+        e.preventDefault();
+        step(delta);
+        t = setTimeout(() => {
+          i = setInterval(() => step(delta), 80);
+        }, 300);
+      };
+      const stop = () => {
+        clearTimeout(t); t = null;
+        clearInterval(i); i = null;
+      };
+
+      btn.addEventListener('pointerdown', start, { passive: false });
+      btn.addEventListener('pointerup', stop);
+      btn.addEventListener('pointercancel', stop);
+      btn.addEventListener('pointerleave', stop);
+    }
+
+    addHoldRepeat(btnUp, +1);
+    addHoldRepeat(btnDown, -1);
+
+    // Color controls
     ringColorInput.addEventListener('input', (e) => {
       setCssVar('--ring', e.target.value);
       draw();
@@ -332,11 +448,18 @@
       draw();
     });
 
+    textColorInput.addEventListener('input', (e) => {
+      setCssVar('--text', e.target.value);
+      // Also update triangle color (it uses --text)
+      draw();
+    });
+
     window.addEventListener('resize', resizeCanvasForDPR);
 
     // Init
     setCssVar('--ring', ringColorInput.value);
     setCssVar('--face', faceColorInput.value);
+    setCssVar('--text', textColorInput.value);
     resizeCanvasForDPR();
     draw();
   </script>

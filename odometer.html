@@ -8,7 +8,13 @@
     :root{
       --ring: #7ecbff;
       --face: #ffffff;
-      --text: #111111;
+
+      /* Always-black UI (panel labels, buttons, back button) */
+      --uiText: #000000;
+
+      /* ONLY the text inside the circle */
+      --centerText: #111111;
+
       --panel-bg: rgba(255,255,255,0.85);
       --shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
@@ -17,7 +23,6 @@
       height: 100%;
       margin: 0;
       background: #f3f5f7;
-      color: var(--text);
       font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       overscroll-behavior: none;
       touch-action: manipulation;
@@ -38,7 +43,7 @@
       gap: 14px;
     }
 
-    /* Back button */
+    /* Back button (always black) */
     .topbar{
       width: min(92vw, 420px);
       display: flex;
@@ -54,7 +59,7 @@
       border: 1px solid rgba(0,0,0,0.10);
       background: rgba(255,255,255,0.9);
       box-shadow: 0 4px 14px rgba(0,0,0,0.10);
-      color: var(--text);
+      color: var(--uiText);
       text-decoration: none;
       font-size: 14px;
       font-weight: 600;
@@ -67,7 +72,7 @@
       width: 0; height: 0;
       border-top: 7px solid transparent;
       border-bottom: 7px solid transparent;
-      border-right: 10px solid var(--text);
+      border-right: 10px solid var(--uiText);
     }
 
     .dial-wrap{
@@ -96,21 +101,21 @@
       place-items: center;
     }
 
+    /* ONLY center text changes color */
     .value {
       font-size: clamp(36px, 9vw, 54px);
       font-weight: 800;
       letter-spacing: -0.02em;
       line-height: 1;
-      color: var(--text);
+      color: var(--centerText);
       text-align: center;
     }
-
     .sub {
       margin-top: 8px;
       font-size: 14px;
       opacity: 0.65;
       text-align: center;
-      color: var(--text);
+      color: var(--centerText);
     }
 
     /* Stepper row above the panel */
@@ -136,6 +141,7 @@
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
+      color: var(--uiText);
     }
     .tri-btn:active{ transform: scale(0.98); }
 
@@ -146,14 +152,15 @@
       border-right: 10px solid transparent;
     }
     .tri.up{
-      border-bottom: 16px solid var(--text);
+      border-bottom: 16px solid var(--uiText);
       margin-top: 2px;
     }
     .tri.down{
-      border-top: 16px solid var(--text);
+      border-top: 16px solid var(--uiText);
       margin-bottom: 2px;
     }
 
+    /* Control panel (always black text) */
     .panel {
       width: min(92vw, 420px);
       background: var(--panel-bg);
@@ -164,6 +171,7 @@
       box-sizing: border-box;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
+      color: var(--uiText);
     }
 
     .panel-row{
@@ -172,6 +180,7 @@
       justify-content: space-between;
       gap: 12px;
       padding: 10px 6px;
+      color: var(--uiText);
     }
 
     .panel-row + .panel-row {
@@ -181,6 +190,7 @@
     label {
       font-size: 14px;
       font-weight: 600;
+      color: var(--uiText);
     }
 
     input[type="color"]{
@@ -195,6 +205,7 @@
       font-size: 12px;
       opacity: 0.6;
       margin: 6px 6px 0;
+      color: var(--uiText);
     }
   </style>
 </head>
@@ -220,7 +231,6 @@
       </div>
     </div>
 
-    <!-- Up/Down buttons ABOVE the control panel -->
     <div class="controls-row" aria-label="Adjust percentage">
       <button class="tri-btn" id="btnUp" aria-label="Increase">
         <span class="tri up" aria-hidden="true"></span>
@@ -241,7 +251,7 @@
         <input type="color" id="faceColor" value="#ffffff" />
       </div>
       <div class="panel-row">
-        <label for="textColor">Text color</label>
+        <label for="textColor">Center text color</label>
         <input type="color" id="textColor" value="#111111" />
       </div>
       <div class="hint">No wrap: it won’t jump 100 → 0 or 0 → 100.</div>
@@ -300,8 +310,7 @@
       const cy = rect.height / 2;
 
       const theta = Math.atan2(y - cy, x - cx); // CCW+, 0 at right
-
-      let s = (theta - START) % TWO_PI; // 0..2π from top
+      let s = (theta - START) % TWO_PI;         // 0..2π from top
       if (s < 0) s += TWO_PI;
       return s;
     }
@@ -336,11 +345,11 @@
       // Prevent clipping: radius inside by half stroke + padding
       const size = Math.min(w, h);
       const ringWidth = size * 0.10;
-      const padding = 5; // a bit more safety
+      const padding = 5;
       const outerR = (size / 2) - (ringWidth / 2) - padding;
       const innerR = outerR - ringWidth;
 
-      // Base ring: perfect circle (no straight edges from clipping)
+      // Base ring: perfect circle
       ctx.beginPath();
       ctx.arc(cx, cy, outerR, 0, TWO_PI);
       ctx.strokeStyle = ring;
@@ -472,8 +481,9 @@
       draw();
     });
 
+    // ONLY center text color changes
     textColorInput.addEventListener('input', (e) => {
-      setCssVar('--text', e.target.value);
+      setCssVar('--centerText', e.target.value);
       draw();
     });
 
@@ -482,7 +492,7 @@
     // Init
     setCssVar('--ring', ringColorInput.value);
     setCssVar('--face', faceColorInput.value);
-    setCssVar('--text', textColorInput.value);
+    setCssVar('--centerText', textColorInput.value);
     resizeCanvasForDPR();
     draw();
   </script>

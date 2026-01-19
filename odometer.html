@@ -38,6 +38,38 @@
       gap: 14px;
     }
 
+    /* Back button */
+    .topbar{
+      width: min(92vw, 420px);
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .back-btn{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .back-btn:active{ transform: scale(0.98); }
+    .back-arrow{
+      width: 0; height: 0;
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+      border-right: 10px solid var(--text);
+    }
+
     .dial-wrap{
       flex: 1;
       width: 100%;
@@ -64,40 +96,36 @@
       place-items: center;
     }
 
-    .center-inner{
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .value-row{
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-
     .value {
       font-size: clamp(36px, 9vw, 54px);
       font-weight: 800;
       letter-spacing: -0.02em;
       line-height: 1;
       color: var(--text);
-      min-width: 130px;
       text-align: center;
     }
 
-    .stepper{
+    .sub {
+      margin-top: 8px;
+      font-size: 14px;
+      opacity: 0.65;
+      text-align: center;
+      color: var(--text);
+    }
+
+    /* Stepper row above the panel */
+    .controls-row{
+      width: min(92vw, 420px);
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 2px;
     }
 
     .tri-btn{
-      width: 44px;
-      height: 36px;
-      border-radius: 12px;
+      width: 54px;
+      height: 44px;
+      border-radius: 14px;
       border: 1px solid rgba(0,0,0,0.10);
       background: rgba(255,255,255,0.9);
       box-shadow: 0 4px 14px rgba(0,0,0,0.10);
@@ -109,30 +137,21 @@
       -webkit-user-select: none;
       touch-action: manipulation;
     }
-    .tri-btn:active{
-      transform: scale(0.98);
-    }
+    .tri-btn:active{ transform: scale(0.98); }
 
     .tri{
       width: 0;
       height: 0;
-      border-left: 9px solid transparent;
-      border-right: 9px solid transparent;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
     }
     .tri.up{
-      border-bottom: 14px solid var(--text);
+      border-bottom: 16px solid var(--text);
       margin-top: 2px;
     }
     .tri.down{
-      border-top: 14px solid var(--text);
+      border-top: 16px solid var(--text);
       margin-bottom: 2px;
-    }
-
-    .sub {
-      font-size: 14px;
-      opacity: 0.65;
-      text-align: center;
-      color: var(--text);
     }
 
     .panel {
@@ -181,28 +200,35 @@
 </head>
 <body>
   <div class="app">
+    <div class="topbar">
+      <a class="back-btn" href="index.html" aria-label="Back to index">
+        <span class="back-arrow" aria-hidden="true"></span>
+        Back
+      </a>
+    </div>
+
     <div class="dial-wrap">
       <div class="dial" id="dial" aria-label="Drag dial to set percentage">
         <canvas id="c" style="width:100%;height:100%;"></canvas>
 
         <div class="center">
-          <div class="center-inner">
-            <div class="value-row">
-              <div class="value"><span id="pct">0</span>%</div>
-
-              <div class="stepper" aria-label="Adjust percentage">
-                <button class="tri-btn" id="btnUp" aria-label="Increase">
-                  <span class="tri up" aria-hidden="true"></span>
-                </button>
-                <button class="tri-btn" id="btnDown" aria-label="Decrease">
-                  <span class="tri down" aria-hidden="true"></span>
-                </button>
-              </div>
-            </div>
-            <div class="sub">Drag on the ring or use buttons</div>
+          <div style="display:flex; flex-direction:column; align-items:center;">
+            <div class="value"><span id="pct">0</span>%</div>
+            <div class="sub">Drag on the ring</div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Up/Down buttons ABOVE the control panel -->
+    <div class="controls-row" aria-label="Adjust percentage">
+      <button class="tri-btn" id="btnUp" aria-label="Increase">
+        <span class="tri up" aria-hidden="true"></span>
+      </button>
+
+      <button class="tri-btn" id="btnDown" aria-label="Decrease">
+        <span class="tri down" aria-hidden="true"></span>
+      </button>
     </div>
 
     <div class="panel">
@@ -265,7 +291,7 @@
       return (clamp(pct, 0, 100) / 100) * TWO_PI;
     }
 
-    // Follow finger position around the ring (reversed mapping already applied)
+    // Follow finger position around the ring
     function pointerToSweep(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
       const x = clientX - rect.left;
@@ -273,13 +299,11 @@
       const cx = rect.width / 2;
       const cy = rect.height / 2;
 
-      // atan2 angle: CCW+, 0 at right
-      const theta = Math.atan2(y - cy, x - cx);
+      const theta = Math.atan2(y - cy, x - cx); // CCW+, 0 at right
 
-      // ccw-from-top = (theta - START) mod 2π  => sweep
-      let s = (theta - START) % TWO_PI;
+      let s = (theta - START) % TWO_PI; // 0..2π from top
       if (s < 0) s += TWO_PI;
-      return s; // 0..2π
+      return s;
     }
 
     function closestUnwrapped(target, current) {
@@ -309,14 +333,14 @@
       const ring = cssVar('--ring', '#7ecbff');
       const face = cssVar('--face', '#ffffff');
 
-      // Prevent clipping: radius is inside the canvas by half the stroke width + padding
+      // Prevent clipping: radius inside by half stroke + padding
       const size = Math.min(w, h);
       const ringWidth = size * 0.10;
-      const padding = 4;
+      const padding = 5; // a bit more safety
       const outerR = (size / 2) - (ringWidth / 2) - padding;
       const innerR = outerR - ringWidth;
 
-      // Base ring: perfect circle
+      // Base ring: perfect circle (no straight edges from clipping)
       ctx.beginPath();
       ctx.arc(cx, cy, outerR, 0, TWO_PI);
       ctx.strokeStyle = ring;
@@ -411,7 +435,7 @@
     btnUp.addEventListener('click', (e) => { e.preventDefault(); step(+1); });
     btnDown.addEventListener('click', (e) => { e.preventDefault(); step(-1); });
 
-    // Hold-to-repeat on long press (nice on iPhone)
+    // Hold-to-repeat on long press
     function addHoldRepeat(btn, delta) {
       let t = null;
       let i = null;
@@ -450,7 +474,6 @@
 
     textColorInput.addEventListener('input', (e) => {
       setCssVar('--text', e.target.value);
-      // Also update triangle color (it uses --text)
       draw();
     });
 

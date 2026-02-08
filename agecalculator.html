@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Age Calculator</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; line-height: 1.35; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+    label { display: grid; gap: 6px; font-weight: 600; }
+    input[type="date"] { padding: 10px; font-size: 16px; }
+    button { padding: 10px 14px; font-size: 16px; cursor: pointer; }
+    .card { margin-top: 18px; padding: 14px; border: 1px solid #ddd; border-radius: 10px; }
+    .error { color: #b00020; font-weight: 600; }
+    ul { margin: 10px 0 0 18px; }
+    li { margin: 6px 0; }
+    .muted { color: #666; font-size: 14px; margin-top: 10px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <h1 style="margin:0 0 14px;">Age Calculator</h1>
+
+  <div class="row">
+    <label>
+      Start date
+      <input id="startDate" type="date" />
+    </label>
+
+    <label>
+      End date
+      <input id="endDate" type="date" />
+    </label>
+
+    <button id="todayBtn" type="button">Today</button>
+    <button id="calcBtn" type="button">Calculate</button>
+  </div>
+
+  <div class="card" id="output">
+    <div class="muted">Pick dates and click Calculate.</div>
+  </div>
+
+  <script>
+    const startEl = document.getElementById("startDate");
+    const endEl = document.getElementById("endDate");
+    const outEl = document.getElementById("output");
+
+    // --- Helpers ---
+    function toLocalMidnightDate(dateStr) {
+      // Treat date input as local date at midnight
+      const [y, m, d] = dateStr.split("-").map(Number);
+      return new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+
+    function formatDateInputValue(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function daysInMonth(year, monthIndex0) {
+      // monthIndex0: 0..11
+      return new Date(year, monthIndex0 + 1, 0).getDate();
+    }
+
+    function addMonths(date, monthsToAdd) {
+      // Adds months while keeping day as close as possible (clamped to month length)
+      const y = date.getFullYear();
+      const m = date.getMonth();
+      const d = date.getDate();
+
+      const total = m + monthsToAdd;
+      const newY = y + Math.floor(total / 12);
+      const newM = ((total % 12) + 12) % 12;
+
+      const dim = daysInMonth(newY, newM);
+      const newD = Math.min(d, dim);
+
+      return new Date(newY, newM, newD, 0, 0, 0, 0);
+    }
+
+    function diffYMD(start, end) {
+      // Returns { years, months, days } using calendar math
+      // Assumes start <= end and both are at local midnight
+      let years = end.getFullYear() - start.getFullYear();
+      let candidate = new Date(start.getFullYear() + years, start.getMonth(), start.getDate(), 0, 0, 0, 0);
+
+      // If we've overshot, back up a year
+      if (candidate > end) {
+        years--;
+        candidate = new Date(start.getFullYear() + years, start.getMonth(), start.getDate(), 0, 0, 0, 0);
+      }
+
+      // Months
+      let months = (end.getFullYear() - candidate.getFullYear()) * 12 + (end.getMonth() - candidate.getMonth());
+      let candidate2 = addMonths(candidate, months);
+
+      if (candidate2 > end) {
+        months--;
+        candidate2 = addMonths(candidate, months);
+      }
+
+      // Days
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const days = Math.round((end - candidate2) / msPerDay);
+
+      return { years, months, days };
+    }
+
+    function plural(n, word) {
+      return `${n} ${word}${n === 1 ? "" : "s"}`;
+    }
+
+    function joinUnits(units) {
+      // units: array of strings, already filtered
+      return units.join(", ");
+    }
+
+    function renderLine(label, value) {
+      return `<li><strong>${label}:</strong> ${value}</li>`;
+    }
+
+    function safeNumber(n) {
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function calculate() {
+      const startStr = startEl.value;
+      const endStr = endEl.value;
+
+      if (!startStr || !endStr) {
+        outEl.innerHTML = `<div class="error">Please select both dates.</div>`;
+        return;
+      }
+
+      const start = toLocalMidnightDate(startStr);
+      const end = toLocalMidnightDate(endStr);
+
+      if (end < start) {
+        outEl.innerHTML = `<div class="error">End date must be the same as or after the start date.</div>`;
+        return;
+      }
+
+      const { years, months, days } = diffYMD(start, end);
+
+      const ms = end - start;
+      const totalSeconds = Math.floor(ms / 1000);
+      const totalMinutes = Math.floor(totalSeconds / 60);
+      const totalHours = Math.floor(totalMinutes / 60);
+      const totalDays = Math.floor(totalHours / 24);
+
+      // Decimal years (using average tropical year length)
+      const AVG_DAYS_PER_YEAR = 365.2425;
+      const yearsDecimal = totalDays / AVG_DAYS_PER_YEAR;
+
+      // Months + days (calendar months)
+      const totalCalendarMonths = years * 12 + months;
+      const monthsDaysDisplay = joinUnits([
+        totalCalendarMonths !== 0 ? plural(totalCalendarMonths, "month") : "",
+        plural(days, "day")
+      ].filter(Boolean));
+
+      // Weeks + days (simple 7-day weeks)
+      const weeks = Math.floor(totalDays / 7);
+      const remDaysFromWeeks = totalDays % 7;
+      const weeksDaysDisplay = joinUnits([
+        weeks !== 0 ? plural(weeks, "week") : "",
+        plural(remDaysFromWeeks, "day")
+      ].filter(Boolean));
+
+      // Years, months, days display (omit 0 years and 0 months)
+      const ymdDisplay = joinUnits([
+        years !== 0 ? plural(years, "year") : "",
+        months !== 0 ? plural(months, "month") : "",
+        plural(days, "day")
+      ].filter(Boolean));
+
+      const lines = [];
+      lines.push(renderLine("Age (Y/M/D)", ymdDisplay));
+      lines.push(renderLine("Age (years, decimal)", safeNumber(yearsDecimal).toFixed(6)));
+      lines.push(renderLine("Age (months/days)", monthsDaysDisplay));
+      lines.push(renderLine("Age (weeks/days)", weeksDaysDisplay));
+      lines.push(renderLine("Age (days)", plural(totalDays, "day")));
+      lines.push(renderLine("Age (hours)", plural(totalHours, "hour")));
+      lines.push(renderLine("Age (minutes)", plural(totalMinutes, "minute")));
+      lines.push(renderLine("Age (seconds)", plural(totalSeconds, "second")));
+
+      outEl.innerHTML = `
+        <ul>${lines.join("")}</ul>
+        <div class="muted">
+          Notes: Dates are treated as local-midnight to local-midnight (date-only).
+          Decimal years uses an average year length of <span class="mono">${AVG_DAYS_PER_YEAR}</span> days.
+        </div>
+      `;
+    }
+
+    // Today button
+    document.getElementById("todayBtn").addEventListener("click", () => {
+      const now = new Date();
+      endEl.value = formatDateInputValue(now);
+      calculate();
+    });
+
+    document.getElementById("calcBtn").addEventListener("click", calculate);
+
+    // Optional: live update on change
+    startEl.addEventListener("change", calculate);
+    endEl.addEventListener("change", calculate);
+
+    // Set end date default to today
+    endEl.value = formatDateInputValue(new Date());
+  </script>
+</body>
+</html>

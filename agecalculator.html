@@ -5,39 +5,262 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Age Calculator</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; line-height: 1.35; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
-    label { display: grid; gap: 6px; font-weight: 600; }
-    input[type="date"] { padding: 10px; font-size: 16px; }
-    button { padding: 10px 14px; font-size: 16px; cursor: pointer; }
-    .card { margin-top: 18px; padding: 14px; border: 1px solid #ddd; border-radius: 10px; }
-    .error { color: #b00020; font-weight: 600; }
-    ul { margin: 10px 0 0 18px; }
-    li { margin: 6px 0; }
-    .muted { color: #666; font-size: 14px; margin-top: 10px; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    :root{
+      --bg1:#0b1020;
+      --bg2:#121a33;
+      --card1: rgba(255,255,255,.10);
+      --card2: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.18);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --accent:#7c5cff;
+      --accent2:#35d6ff;
+      --good:#40e0a2;
+      --warn:#ff6b6b;
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+    }
+
+    *{ box-sizing: border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 800px at 15% 10%, rgba(124,92,255,.35), transparent 55%),
+        radial-gradient(1000px 700px at 85% 20%, rgba(53,214,255,.28), transparent 55%),
+        radial-gradient(900px 650px at 50% 110%, rgba(64,224,162,.18), transparent 60%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding: 28px 16px;
+    }
+
+    .wrap{
+      width:min(920px, 100%);
+    }
+
+    .hero{
+      padding: 18px 18px 0;
+      margin-bottom: 14px;
+    }
+
+    h1{
+      margin:0;
+      font-size: clamp(24px, 3.2vw, 34px);
+      letter-spacing: .2px;
+    }
+
+    .sub{
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .panel{
+      background: linear-gradient(160deg, var(--card1), var(--card2));
+      border: 1px solid var(--stroke);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      overflow:hidden;
+      position: relative;
+    }
+
+    /* subtle “3D” sheen */
+    .panel::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:
+        linear-gradient(120deg, rgba(255,255,255,.18), transparent 35%),
+        linear-gradient(240deg, rgba(124,92,255,.16), transparent 45%),
+        linear-gradient(20deg, rgba(53,214,255,.10), transparent 50%);
+      opacity:.45;
+      pointer-events:none;
+      transform: translateZ(0);
+    }
+
+    .panelInner{
+      position:relative;
+      padding: 16px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr auto auto;
+      gap: 12px;
+      align-items:end;
+    }
+
+    @media (max-width: 740px){
+      .grid{ grid-template-columns: 1fr 1fr; }
+      .grid .btnRow{ grid-column: 1 / -1; display:flex; gap:12px; }
+      .grid .btnRow button{ flex:1; }
+    }
+
+    label{
+      display:grid;
+      gap:6px;
+      font-weight: 700;
+      font-size: 13px;
+      color: rgba(255,255,255,.88);
+    }
+
+    input[type="date"]{
+      padding: 12px 12px;
+      font-size: 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(10,14,28,.55);
+      color: var(--text);
+      outline: none;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.10),
+        0 10px 25px rgba(0,0,0,.20);
+    }
+    input[type="date"]:focus{
+      border-color: rgba(53,214,255,.55);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.10),
+        0 0 0 4px rgba(53,214,255,.16),
+        0 10px 25px rgba(0,0,0,.22);
+    }
+
+    button{
+      padding: 12px 14px;
+      font-size: 15px;
+      font-weight: 800;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.18);
+      color: rgba(255,255,255,.92);
+      background: rgba(255,255,255,.08);
+      cursor: pointer;
+      box-shadow:
+        0 14px 30px rgba(0,0,0,.25),
+        inset 0 1px 0 rgba(255,255,255,.14);
+      transition: transform .08s ease, filter .08s ease;
+      position: relative;
+      overflow:hidden;
+    }
+    button:hover{ filter: brightness(1.08); }
+    button:active{ transform: translateY(1px); }
+
+    .primary{
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(53,214,255,.72));
+      border-color: rgba(255,255,255,.20);
+      color: #081022;
+      text-shadow: 0 1px 0 rgba(255,255,255,.25);
+    }
+
+    .today{
+      background: linear-gradient(135deg, rgba(64,224,162,.90), rgba(53,214,255,.55));
+      border-color: rgba(255,255,255,.18);
+      color: #07131a;
+      text-shadow: 0 1px 0 rgba(255,255,255,.22);
+    }
+
+    .divider{
+      height:1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
+      margin: 14px 0 10px;
+      position:relative;
+    }
+
+    .out{
+      background: rgba(10,14,28,.40);
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 16px;
+      padding: 14px 14px 10px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 14px 35px rgba(0,0,0,.20);
+    }
+
+    .error{
+      color: var(--warn);
+      font-weight: 800;
+      margin: 0;
+    }
+
+    ul{
+      margin: 0;
+      padding-left: 18px;
+    }
+    li{
+      margin: 8px 0;
+      color: rgba(255,255,255,.90);
+    }
+    strong{
+      color: rgba(255,255,255,.95);
+    }
+
+    .muted{
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .pill{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      font-size: 12px;
+      color: rgba(255,255,255,.78);
+      margin-top: 10px;
+    }
+    .dot{
+      width: 8px; height: 8px; border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.2) 35%, rgba(255,255,255,0) 65%),
+                  linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 0 3px rgba(124,92,255,.16);
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   </style>
 </head>
 <body>
-  <h1 style="margin:0 0 14px;">Age Calculator</h1>
+  <div class="wrap">
+    <div class="hero">
+      <h1>Age Calculator</h1>
+      <div class="sub">Pick a start date and an end date (or tap Today). Results update automatically.</div>
+    </div>
 
-  <div class="row">
-    <label>
-      Start date
-      <input id="startDate" type="date" />
-    </label>
+    <div class="panel">
+      <div class="panelInner">
+        <div class="grid">
+          <label>
+            Start date
+            <input id="startDate" type="date" />
+          </label>
 
-    <label>
-      End date
-      <input id="endDate" type="date" />
-    </label>
+          <label>
+            End date
+            <input id="endDate" type="date" />
+          </label>
 
-    <button id="todayBtn" type="button">Today</button>
-    <button id="calcBtn" type="button">Calculate</button>
-  </div>
+          <div class="btnRow">
+            <button id="todayBtn" class="today" type="button">Today</button>
+            <button id="calcBtn" class="primary" type="button">Calculate</button>
+          </div>
+        </div>
 
-  <div class="card" id="output">
-    <div class="muted">Pick dates and click Calculate.</div>
+        <div class="divider"></div>
+
+        <div class="out" id="output">
+          <div class="muted">Pick dates and click Calculate.</div>
+        </div>
+
+        <div class="pill" title="How the decimal years is computed">
+          <span class="dot" aria-hidden="true"></span>
+          <span>Decimal years uses <span class="mono">365.2425</span> days/year.</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -45,9 +268,7 @@
     const endEl = document.getElementById("endDate");
     const outEl = document.getElementById("output");
 
-    // --- Helpers ---
     function toLocalMidnightDate(dateStr) {
-      // Treat date input as local date at midnight
       const [y, m, d] = dateStr.split("-").map(Number);
       return new Date(y, m - 1, d, 0, 0, 0, 0);
     }
@@ -60,12 +281,10 @@
     }
 
     function daysInMonth(year, monthIndex0) {
-      // monthIndex0: 0..11
       return new Date(year, monthIndex0 + 1, 0).getDate();
     }
 
     function addMonths(date, monthsToAdd) {
-      // Adds months while keeping day as close as possible (clamped to month length)
       const y = date.getFullYear();
       const m = date.getMonth();
       const d = date.getDate();
@@ -81,18 +300,14 @@
     }
 
     function diffYMD(start, end) {
-      // Returns { years, months, days } using calendar math
-      // Assumes start <= end and both are at local midnight
       let years = end.getFullYear() - start.getFullYear();
       let candidate = new Date(start.getFullYear() + years, start.getMonth(), start.getDate(), 0, 0, 0, 0);
 
-      // If we've overshot, back up a year
       if (candidate > end) {
         years--;
         candidate = new Date(start.getFullYear() + years, start.getMonth(), start.getDate(), 0, 0, 0, 0);
       }
 
-      // Months
       let months = (end.getFullYear() - candidate.getFullYear()) * 12 + (end.getMonth() - candidate.getMonth());
       let candidate2 = addMonths(candidate, months);
 
@@ -101,7 +316,6 @@
         candidate2 = addMonths(candidate, months);
       }
 
-      // Days
       const msPerDay = 24 * 60 * 60 * 1000;
       const days = Math.round((end - candidate2) / msPerDay);
 
@@ -112,17 +326,22 @@
       return `${n} ${word}${n === 1 ? "" : "s"}`;
     }
 
-    function joinUnits(units) {
-      // units: array of strings, already filtered
-      return units.join(", ");
+    function joinUnits(parts) {
+      return parts.filter(Boolean).join(", ");
     }
 
     function renderLine(label, value) {
       return `<li><strong>${label}:</strong> ${value}</li>`;
     }
 
-    function safeNumber(n) {
-      return Number.isFinite(n) ? n : 0;
+    // Show up to 2 decimals, but drop the 2nd decimal digit if it's 0.
+    // Examples: 5 -> "5", 5.2 -> "5.2", 5.23 -> "5.23", 5.20 -> "5.2"
+    function formatDecimalYears(value) {
+      const rounded = Math.round(value * 100) / 100;   // 2-decimal rounding
+      let s = rounded.toFixed(2);                      // always "x.yy"
+      s = s.replace(/\.?0+$/, "");                     // drop trailing zeros (".00" or last "0")
+      // If it becomes integer, ensure no trailing dot
+      return s;
     }
 
     function calculate() {
@@ -130,7 +349,7 @@
       const endStr = endEl.value;
 
       if (!startStr || !endStr) {
-        outEl.innerHTML = `<div class="error">Please select both dates.</div>`;
+        outEl.innerHTML = `<p class="error">Please select both dates.</p>`;
         return;
       }
 
@@ -138,7 +357,7 @@
       const end = toLocalMidnightDate(endStr);
 
       if (end < start) {
-        outEl.innerHTML = `<div class="error">End date must be the same as or after the start date.</div>`;
+        outEl.innerHTML = `<p class="error">End date must be the same as or after the start date.</p>`;
         return;
       }
 
@@ -150,7 +369,7 @@
       const totalHours = Math.floor(totalMinutes / 60);
       const totalDays = Math.floor(totalHours / 24);
 
-      // Decimal years (using average tropical year length)
+      // Decimal years (average year length)
       const AVG_DAYS_PER_YEAR = 365.2425;
       const yearsDecimal = totalDays / AVG_DAYS_PER_YEAR;
 
@@ -159,7 +378,7 @@
       const monthsDaysDisplay = joinUnits([
         totalCalendarMonths !== 0 ? plural(totalCalendarMonths, "month") : "",
         plural(days, "day")
-      ].filter(Boolean));
+      ]);
 
       // Weeks + days (simple 7-day weeks)
       const weeks = Math.floor(totalDays / 7);
@@ -167,18 +386,18 @@
       const weeksDaysDisplay = joinUnits([
         weeks !== 0 ? plural(weeks, "week") : "",
         plural(remDaysFromWeeks, "day")
-      ].filter(Boolean));
+      ]);
 
       // Years, months, days display (omit 0 years and 0 months)
       const ymdDisplay = joinUnits([
         years !== 0 ? plural(years, "year") : "",
         months !== 0 ? plural(months, "month") : "",
         plural(days, "day")
-      ].filter(Boolean));
+      ]);
 
       const lines = [];
       lines.push(renderLine("Age (Y/M/D)", ymdDisplay));
-      lines.push(renderLine("Age (years, decimal)", safeNumber(yearsDecimal).toFixed(6)));
+      lines.push(renderLine("Age (years, decimal)", formatDecimalYears(yearsDecimal)));
       lines.push(renderLine("Age (months/days)", monthsDaysDisplay));
       lines.push(renderLine("Age (weeks/days)", weeksDaysDisplay));
       lines.push(renderLine("Age (days)", plural(totalDays, "day")));
@@ -186,29 +405,19 @@
       lines.push(renderLine("Age (minutes)", plural(totalMinutes, "minute")));
       lines.push(renderLine("Age (seconds)", plural(totalSeconds, "second")));
 
-      outEl.innerHTML = `
-        <ul>${lines.join("")}</ul>
-        <div class="muted">
-          Notes: Dates are treated as local-midnight to local-midnight (date-only).
-          Decimal years uses an average year length of <span class="mono">${AVG_DAYS_PER_YEAR}</span> days.
-        </div>
-      `;
+      outEl.innerHTML = `<ul>${lines.join("")}</ul>`;
     }
 
-    // Today button
     document.getElementById("todayBtn").addEventListener("click", () => {
-      const now = new Date();
-      endEl.value = formatDateInputValue(now);
+      endEl.value = formatDateInputValue(new Date());
       calculate();
     });
 
     document.getElementById("calcBtn").addEventListener("click", calculate);
-
-    // Optional: live update on change
     startEl.addEventListener("change", calculate);
     endEl.addEventListener("change", calculate);
 
-    // Set end date default to today
+    // Defaults
     endEl.value = formatDateInputValue(new Date());
   </script>
 </body>

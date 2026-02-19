@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>24-Hour Analog Clock (City Timezone + Accurate Sunrise/Sunset)</title>
+  <title>24-Hour Analog Clock (City TZ + Day/Night + Moon Phase)</title>
   <style>
     :root { color-scheme: dark; }
     html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:#0b1020; overflow:hidden; }
@@ -22,7 +22,7 @@
     }
     .pickerTopLeft .row{ display:flex; gap:8px; align-items:center; justify-content:space-between; margin:6px 0; }
     .pickerTopLeft label{ font-size:12px; opacity:0.9; min-width:74px; }
-    select, input[type="number"]{
+    select{
       width: 220px;
       padding: 7px 8px;
       border-radius: 10px;
@@ -131,22 +131,12 @@
         <label for="citySel">City</label>
         <select id="citySel"></select>
       </div>
-
-      <div class="row">
-        <label for="latInput">Latitude</label>
-        <input id="latInput" type="number" step="0.0001" />
-      </div>
-      <div class="row">
-        <label for="lonInput">Longitude</label>
-        <input id="lonInput" type="number" step="0.0001" />
-      </div>
-
-      <div class="tiny" id="locStatus">
+      <div class="tiny">
         Using timezone: <span class="pill" id="tzPill">Detecting…</span><br/>
         Location: <span class="pill" id="locPill">Detecting…</span>
       </div>
       <div class="tiny">
-        Needs HTTPS for geolocation in most browsers. If you block location access, pick a city (or enter lat/lon).
+        Needs HTTPS for geolocation in most browsers. If you block location access, pick a city.
       </div>
     </div>
 
@@ -192,7 +182,6 @@
     // Timezone helpers (Intl-only, no libraries)
     // =========================
     function getZonedParts(date, timeZone){
-      // Returns parts in the target timezone for the same instant.
       const dtf = new Intl.DateTimeFormat("en-US", {
         timeZone,
         year: "numeric",
@@ -217,11 +206,9 @@
     }
 
     function zonedPartsToUTC(parts, timeZone){
-      // Convert "local wall time" in timeZone into a UTC Date (handles DST via 1-2 iterations).
       const guessUTC = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second, parts.millisecond || 0);
 
       function tzOffsetMinutesForUTC(utcMs){
-        // Offset = (zoned time - UTC time) in minutes at that instant.
         const d = new Date(utcMs);
         const zp = getZonedParts(d, timeZone);
         const zonedAsUTC = Date.UTC(zp.year, zp.month - 1, zp.day, zp.hour, zp.minute, zp.second, zp.millisecond || 0);
@@ -238,7 +225,6 @@
     }
 
     function dayOfYearFromParts(parts){
-      // parts represent a local date in a timezone
       const start = Date.UTC(parts.year, 0, 1);
       const thisDay = Date.UTC(parts.year, parts.month - 1, parts.day);
       return Math.floor((thisDay - start) / 86400000) + 1;
@@ -246,11 +232,6 @@
 
     // =========================
     // Sunrise/Sunset (NOAA-ish), computed in the CITY timezone
-    // Inputs:
-    //  - instant: Date (UTC-based)
-    //  - lat/lon
-    //  - timeZone: IANA timezone (e.g., "America/New_York")
-    // Output sunrise/sunset decimal hours in that timezone.
     // =========================
     function solarParamsFromLocalParts(parts){
       const doy = dayOfYearFromParts(parts);
@@ -279,7 +260,6 @@
     }
 
     function tzOffsetHoursAtInstant(instant, timeZone){
-      // Offset = (zoned time - UTC time) in hours for this instant.
       const utcMs = instant.getTime();
       const zp = getZonedParts(instant, timeZone);
       const zonedAsUTC = Date.UTC(zp.year, zp.month - 1, zp.day, zp.hour, zp.minute, zp.second, zp.millisecond || 0);
@@ -289,7 +269,6 @@
     function sunriseSunsetHoursCityTZ(instant, latDeg, lonDeg, timeZone){
       const zenith = rad(90.833);
 
-      // Use local date/time parts in the target timezone for day-of-year
       const localParts = getZonedParts(instant, timeZone);
       const { eqTime, decl } = solarParamsFromLocalParts(localParts);
 
@@ -304,10 +283,8 @@
       const H = Math.acos(cosH);
       const Hdeg = deg(H);
 
-      // Get timezone offset for the target city at this instant (handles DST)
       const tzOffsetHours = tzOffsetHoursAtInstant(instant, timeZone);
 
-      // Solar noon (minutes) in the city's local clock time
       const solarNoonMin = 720 - (eqTime + 4 * lonDeg - 60 * tzOffsetHours);
       const sunriseMin = solarNoonMin - 4 * Hdeg;
       const sunsetMin  = solarNoonMin + 4 * Hdeg;
@@ -326,7 +303,7 @@
     }
 
     // =========================
-    // Moon phase approximation (depends on the instant, not the timezone)
+    // Moon phase approximation
     // =========================
     function moonPhaseFraction(date){
       const epoch = Date.UTC(2000, 0, 6, 18, 14, 0);
@@ -348,8 +325,7 @@
     }
 
     // =========================
-    // Minimal country/city dataset WITH timezone
-    // Expand whenever you want.
+    // City DB (lat/lon/tz are internal now)
     // =========================
     const CITY_DB = [
       { country:"United States", city:"New York, NY",        lat:40.7128, lon:-74.0060, tz:"America/New_York" },
@@ -367,15 +343,13 @@
     ];
 
     // =========================
-    // Canvas + UI elements
+    // Canvas + UI
     // =========================
     const canvas = document.getElementById("c");
     const ctx = canvas.getContext("2d", { alpha: false });
 
     const countrySel = document.getElementById("countrySel");
     const citySel = document.getElementById("citySel");
-    const latInput = document.getElementById("latInput");
-    const lonInput = document.getElementById("lonInput");
     const locPill = document.getElementById("locPill");
     const tzPill = document.getElementById("tzPill");
 
@@ -413,17 +387,18 @@
     let currentLat = 40.7128;
     let currentLon = -74.0060;
     let currentTZ  = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    let currentLabel = "Selected: New York, NY, United States";
 
-    function setLatLonTZ(lat, lon, tz, locLabel){
-      currentLat = lat;
-      currentLon = lon;
-      currentTZ = tz || currentTZ || "UTC";
-
-      latInput.value = Number(lat).toFixed(4);
-      lonInput.value = Number(lon).toFixed(4);
-
-      locPill.textContent = locLabel || "—";
+    function setCity(rec, labelOverride){
+      currentLat = rec.lat;
+      currentLon = rec.lon;
+      currentTZ  = rec.tz;
+      currentLabel = labelOverride || `Selected: ${rec.city}, ${rec.country}`;
+      locPill.textContent = currentLabel;
       tzPill.textContent = currentTZ;
+
+      // If manual mode: keep the same instant, but update the displayed wall-time inputs
+      if (mode === "manual") syncManualInputsFromInstant();
     }
 
     // =========================
@@ -446,27 +421,8 @@
       citySel.addEventListener("change", () => {
         const rec = CITY_DB.find(x => x.country === countrySel.value && x.city === citySel.value);
         if (!rec) return;
-        setLatLonTZ(rec.lat, rec.lon, rec.tz, `Selected: ${rec.city}, ${rec.country}`);
+        setCity(rec);
       });
-
-      function manualLatLonUpdate(){
-        const lat = Number(latInput.value);
-        const lon = Number(lonInput.value);
-        if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
-          currentLat = lat;
-          currentLon = lon;
-          locPill.textContent = "Custom lat/lon (timezone auto)";
-          // If user types coords, try timezone lookup; if it fails keep currentTZ.
-          lookupTimezoneByCoords(lat, lon).then(tz => {
-            if (tz) {
-              currentTZ = tz;
-              tzPill.textContent = tz;
-            }
-          });
-        }
-      }
-      latInput.addEventListener("input", manualLatLonUpdate);
-      lonInput.addEventListener("input", manualLatLonUpdate);
 
       // Default fallback (NYC)
       countrySel.value = "United States";
@@ -476,24 +432,7 @@
     }
     initPickers();
 
-    // =========================
-    // Timezone lookup by coordinates (external, with fallback)
-    // Uses timeapi.io (returns IANA tz). If it fails, we keep the browser tz.
-    // =========================
-    async function lookupTimezoneByCoords(lat, lon){
-      try {
-        const url = `https://timeapi.io/api/TimeZone/coordinate?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}`;
-        const res = await fetch(url, { headers: { "Accept":"application/json" } });
-        if (!res.ok) throw new Error("tz lookup failed");
-        const data = await res.json();
-        // timeapi.io returns { timeZone: "America/New_York", ... }
-        return data.timeZone || data.timezone || null;
-      } catch {
-        return null;
-      }
-    }
-
-    // Reverse geocode (optional name only)
+    // Reverse geocode (name only)
     async function reverseGeocodeName(lat, lon){
       try {
         const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
@@ -509,7 +448,16 @@
       }
     }
 
-    // Try to detect current coords, then set timezone for those coords, then (if possible) align pickers.
+    // Find closest city from DB (so we keep a valid tz)
+    function closestCity(lat, lon){
+      let best = CITY_DB[0], bestD = Infinity;
+      for (const c of CITY_DB) {
+        const d = Math.hypot(c.lat - lat, c.lon - lon);
+        if (d < bestD) { bestD = d; best = c; }
+      }
+      return best;
+    }
+
     async function detectLocation(){
       try {
         if (!navigator.geolocation) throw new Error("Geolocation not available");
@@ -527,41 +475,23 @@
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
 
-        const [tz, name] = await Promise.all([
-          lookupTimezoneByCoords(lat, lon),
-          reverseGeocodeName(lat, lon),
-        ]);
+        // Choose closest known city (keeps tz correct without a separate timezone API call)
+        const best = closestCity(lat, lon);
 
-        const tzFinal = tz || (Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
-        const label = (name.city || name.country) ? `Detected: ${name.city || "—"}, ${name.country || "—"}` : "Detected (coords)";
-        setLatLonTZ(lat, lon, tzFinal, label);
+        // Align pickers
+        countrySel.value = best.country;
+        countrySel.dispatchEvent(new Event("change"));
+        citySel.value = best.city;
 
-        // If detected country exists in our DB, align pickers to closest match.
-        if (name.country) {
-          const hasCountry = [...countrySel.options].some(o => o.value === name.country);
-          if (hasCountry) {
-            countrySel.value = name.country;
-            countrySel.dispatchEvent(new Event("change"));
-            // Pick the city in DB whose coords are closest (better than name matching)
-            const candidates = CITY_DB.filter(x => x.country === name.country);
-            if (candidates.length) {
-              let best = candidates[0], bestD = Infinity;
-              for (const c of candidates) {
-                const d = Math.hypot(c.lat - lat, c.lon - lon);
-                if (d < bestD) { bestD = d; best = c; }
-              }
-              if (best) {
-                citySel.value = best.city;
-                citySel.dispatchEvent(new Event("change"));
-                // Keep the more precise detected tz/coords rather than DB coords if you want:
-                // We'll keep detected coords + detected tz (already set), but the picker stays aligned.
-                setLatLonTZ(lat, lon, tzFinal, label);
-              }
-            }
-          }
-        }
+        // Name (optional)
+        const name = await reverseGeocodeName(lat, lon);
+        const label = (name.city || name.country)
+          ? `Detected near: ${name.city || best.city}, ${name.country || best.country}`
+          : `Detected near: ${best.city}, ${best.country}`;
+
+        setCity(best, label);
       } catch {
-        // No permission or not available: stick with picker default.
+        // No permission: keep default selection
         tzPill.textContent = currentTZ;
         locPill.textContent = "Using selected city";
       }
@@ -570,11 +500,9 @@
 
     // =========================
     // Mode + manual time state
-    // - In real mode, the "instant" is now.
-    // - In manual mode, we store the instant as UTC Date too (so moon phase and DST behave).
     // =========================
     let mode = "real"; // "real" | "manual"
-    let manualInstant = new Date(); // UTC instant for manual display
+    let manualInstant = new Date(); // UTC instant
 
     function setMode(newMode){
       mode = newMode;
@@ -582,7 +510,6 @@
       btnManual.classList.toggle("active", mode === "manual");
       manualPanel.classList.toggle("visible", mode === "manual");
       modeLabel.textContent = (mode === "real") ? "Real time" : "Manual";
-
       if (mode === "manual") syncManualInputsFromInstant();
     }
 
@@ -621,18 +548,13 @@
     manualDateInput.addEventListener("input", () => { if (mode === "manual") syncManualInstantFromInputs(); });
     manualTimeInput.addEventListener("input", () => { if (mode === "manual") syncManualInstantFromInputs(); });
 
-    // If timezone changes while in manual mode, keep the same instant and update the shown inputs.
-    function onTimezoneChanged(){
-      tzPill.textContent = currentTZ;
-      if (mode === "manual") syncManualInputsFromInstant();
-    }
-
-    // Hook timezone changes from picker by watching citySel/countrySel inputs
-    citySel.addEventListener("change", onTimezoneChanged);
-    countrySel.addEventListener("change", onTimezoneChanged);
-
     // =========================
-    // Dragging hands (manual mode) in city timezone
+    // Dragging hands (manual mode) - ALL HANDS MOVE TOGETHER
+    // Rules:
+    //  - Dragging seconds updates seconds and cascades to minutes/hours (keeping total-of-day seconds).
+    //  - Dragging minutes updates minutes and cascades to hours + sets seconds preserved relative to prior time.
+    //  - Dragging hours updates hours and preserves minutes/seconds.
+    // We do this by working in "seconds since midnight" in the CITY timezone.
     // =========================
     function angleFromCenter(x, y, cx, cy){
       const a = Math.atan2(y - cy, x - cx);
@@ -681,22 +603,48 @@
       return candidates[0].hand;
     }
 
+    function secondsSinceMidnight(parts){
+      return parts.hour * 3600 + parts.minute * 60 + parts.second;
+    }
+    function partsFromSecondsSinceMidnight(baseParts, ssm){
+      // Normalize into 0..86399 while keeping the same date.
+      let s = Math.round(ssm);
+      s = ((s % 86400) + 86400) % 86400;
+
+      const hour = Math.floor(s / 3600);
+      s -= hour * 3600;
+      const minute = Math.floor(s / 60);
+      const second = s - minute * 60;
+
+      return { ...baseParts, hour, minute, second, millisecond: 0 };
+    }
+
     function setManualByHandAngle(hand, angle){
-      // We update the WALL CLOCK time in currentTZ, then convert back to an instant.
       const frac = angle / TAU;
 
       const p = getZonedParts(manualInstant, currentTZ);
-      let next = { ...p, millisecond: 0 };
+      const baseSSM = secondsSinceMidnight(p);
 
       if (hand === "sec") {
-        next.second = Math.round(frac * 60) % 60;
+        // New seconds hand => set absolute second-of-minute, but preserve higher components by shifting total seconds.
+        const newSec = Math.round(frac * 60) % 60;
+        const delta = newSec - p.second;
+        const nextParts = partsFromSecondsSinceMidnight(p, baseSSM + delta);
+        manualInstant = zonedPartsToUTC(nextParts, currentTZ);
       } else if (hand === "min") {
-        next.minute = Math.round(frac * 60) % 60;
+        // New minute hand => set absolute minute-of-hour, preserve seconds by shifting total seconds.
+        const newMin = Math.round(frac * 60) % 60;
+        const delta = (newMin - p.minute) * 60;
+        const nextParts = partsFromSecondsSinceMidnight(p, baseSSM + delta);
+        manualInstant = zonedPartsToUTC(nextParts, currentTZ);
       } else if (hand === "hour") {
-        next.hour = Math.floor(frac * 24) % 24;
+        // New hour hand => set absolute hour-of-day, preserve minutes/seconds.
+        const newHour = Math.floor(frac * 24) % 24;
+        const delta = (newHour - p.hour) * 3600;
+        const nextParts = partsFromSecondsSinceMidnight(p, baseSSM + delta);
+        manualInstant = zonedPartsToUTC(nextParts, currentTZ);
       }
 
-      manualInstant = zonedPartsToUTC(next, currentTZ);
       syncManualInputsFromInstant();
     }
 
@@ -704,6 +652,7 @@
 
     canvas.addEventListener("pointerdown", (e) => {
       if (mode !== "manual") return;
+
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -740,118 +689,6 @@
     // =========================
     // Drawing
     // =========================
-    function drawBackground(instant, geo){
-      const { w, h } = geo;
-
-      const localParts = getZonedParts(instant, currentTZ);
-      const sun = sunriseSunsetHoursCityTZ(instant, currentLat, currentLon, currentTZ);
-      const t = hoursDecimalFromParts(localParts);
-
-      let dayFactor = 0;
-      const tw = 0.75; // hours transition
-
-      if (sun.alwaysDay) {
-        dayFactor = 1;
-      } else if (sun.alwaysNight) {
-        dayFactor = 0;
-      } else {
-        const sunrise = sun.sunrise;
-        const sunset  = sun.sunset;
-        if (sunrise == null || sunset == null) {
-          dayFactor = 0;
-        } else {
-          if (t < sunrise - tw) dayFactor = 0;
-          else if (t < sunrise + tw) dayFactor = clamp01((t - (sunrise - tw)) / (2*tw));
-          else if (t < sunset - tw) dayFactor = 1;
-          else if (t < sunset + tw) dayFactor = 1 - clamp01((t - (sunset - tw)) / (2*tw));
-          else dayFactor = 0;
-        }
-      }
-
-      // Night gradient
-      const night = ctx.createLinearGradient(0, 0, 0, h);
-      night.addColorStop(0, "#050814");
-      night.addColorStop(0.6, "#0a1230");
-      night.addColorStop(1, "#03050c");
-
-      // Day gradient
-      const day = ctx.createLinearGradient(0, 0, 0, h);
-      day.addColorStop(0, "#7ec9ff");
-      day.addColorStop(0.55, "#c8f0ff");
-      day.addColorStop(1, "#ffe9b5");
-
-      ctx.fillStyle = night;
-      ctx.fillRect(0, 0, w, h);
-      ctx.globalAlpha = dayFactor;
-      ctx.fillStyle = day;
-      ctx.fillRect(0, 0, w, h);
-      ctx.globalAlpha = 1;
-
-      // Stars
-      if (dayFactor < 0.6) {
-        const starAlpha = (1 - dayFactor) * 0.6;
-        ctx.globalAlpha = starAlpha;
-        const count = Math.floor(160 * (1 - dayFactor));
-        for (let i = 0; i < count; i++) {
-          const x = (Math.sin(i*999.1) * 0.5 + 0.5) * w;
-          const y = (Math.sin(i*427.7 + 1.3) * 0.5 + 0.5) * (h * 0.65);
-          const s = (Math.sin(i*91.3 + 2.1) * 0.5 + 0.5) * 1.6 + 0.3;
-          ctx.fillStyle = "rgba(255,255,255,0.9)";
-          ctx.fillRect(x, y, s, s);
-        }
-        ctx.globalAlpha = 1;
-      }
-
-      const centerY = h * 0.62;
-      const arcR = Math.min(w, h) * 0.42;
-
-      if (dayFactor >= 0.5 && !sun.alwaysNight) {
-        const sunrise = (sun.sunrise ?? 6);
-        const sunset  = (sun.sunset  ?? 18);
-        const span = Math.max(0.1, sunset - sunrise);
-        const u = clamp01((t - sunrise) / span);
-        const ang = lerp(Math.PI, 0, u);
-        const sx = w*0.5 + Math.cos(ang) * arcR;
-        const sy = centerY - Math.sin(ang) * arcR;
-
-        ctx.save();
-        ctx.globalAlpha = 0.85 * dayFactor;
-        const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, 90);
-        g.addColorStop(0, "rgba(255,230,140,0.95)");
-        g.addColorStop(0.35, "rgba(255,210,110,0.35)");
-        g.addColorStop(1, "rgba(255,210,110,0)");
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(sx, sy, 90, 0, TAU);
-        ctx.fill();
-
-        ctx.fillStyle = "rgba(255,235,170,0.95)";
-        ctx.beginPath();
-        ctx.arc(sx, sy, 18, 0, TAU);
-        ctx.fill();
-        ctx.restore();
-      } else {
-        if (sun.alwaysNight || sun.sunrise == null || sun.sunset == null) {
-          drawMoon(instant, w*0.75, h*0.22, 1);
-        } else {
-          const sunset = sun.sunset;
-          const sunrise = sun.sunrise;
-          let nightSpan = (sunrise + 24) - sunset;
-          if (nightSpan < 0.1) nightSpan = 12;
-
-          let u = (t >= sunset) ? (t - sunset) / nightSpan : (t + 24 - sunset) / nightSpan;
-          u = clamp01(u);
-
-          const ang = lerp(Math.PI, 0, u);
-          const mx = w*0.5 + Math.cos(ang) * arcR;
-          const my = centerY - Math.sin(ang) * arcR;
-          drawMoon(instant, mx, my, (1 - dayFactor));
-        }
-      }
-
-      return { dayFactor, sun, localParts };
-    }
-
     function drawMoon(instant, mx, my, alphaScale){
       const phase = moonPhaseFraction(instant);
       const illum = moonIllumination(phase);
@@ -885,33 +722,119 @@
       ctx.restore();
     }
 
+    function drawBackground(instant, geo){
+      const { w, h } = geo;
+
+      const localParts = getZonedParts(instant, currentTZ);
+      const sun = sunriseSunsetHoursCityTZ(instant, currentLat, currentLon, currentTZ);
+      const t = hoursDecimalFromParts(localParts);
+
+      let dayFactor = 0;
+      const tw = 0.75;
+
+      if (sun.alwaysDay) dayFactor = 1;
+      else if (sun.alwaysNight) dayFactor = 0;
+      else {
+        const sunrise = sun.sunrise, sunset = sun.sunset;
+        if (sunrise == null || sunset == null) dayFactor = 0;
+        else if (t < sunrise - tw) dayFactor = 0;
+        else if (t < sunrise + tw) dayFactor = clamp01((t - (sunrise - tw)) / (2*tw));
+        else if (t < sunset - tw) dayFactor = 1;
+        else if (t < sunset + tw) dayFactor = 1 - clamp01((t - (sunset - tw)) / (2*tw));
+        else dayFactor = 0;
+      }
+
+      const night = ctx.createLinearGradient(0, 0, 0, h);
+      night.addColorStop(0, "#050814");
+      night.addColorStop(0.6, "#0a1230");
+      night.addColorStop(1, "#03050c");
+
+      const day = ctx.createLinearGradient(0, 0, 0, h);
+      day.addColorStop(0, "#7ec9ff");
+      day.addColorStop(0.55, "#c8f0ff");
+      day.addColorStop(1, "#ffe9b5");
+
+      ctx.fillStyle = night; ctx.fillRect(0, 0, w, h);
+      ctx.globalAlpha = dayFactor; ctx.fillStyle = day; ctx.fillRect(0, 0, w, h);
+      ctx.globalAlpha = 1;
+
+      if (dayFactor < 0.6) {
+        const starAlpha = (1 - dayFactor) * 0.6;
+        ctx.globalAlpha = starAlpha;
+        const count = Math.floor(160 * (1 - dayFactor));
+        for (let i = 0; i < count; i++) {
+          const x = (Math.sin(i*999.1) * 0.5 + 0.5) * w;
+          const y = (Math.sin(i*427.7 + 1.3) * 0.5 + 0.5) * (h * 0.65);
+          const s = (Math.sin(i*91.3 + 2.1) * 0.5 + 0.5) * 1.6 + 0.3;
+          ctx.fillStyle = "rgba(255,255,255,0.9)";
+          ctx.fillRect(x, y, s, s);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      const centerY = h * 0.62;
+      const arcR = Math.min(w, h) * 0.42;
+
+      if (dayFactor >= 0.5 && !sun.alwaysNight) {
+        const sunrise = (sun.sunrise ?? 6);
+        const sunset  = (sun.sunset  ?? 18);
+        const span = Math.max(0.1, sunset - sunrise);
+        const u = clamp01((t - sunrise) / span);
+        const ang = lerp(Math.PI, 0, u);
+        const sx = w*0.5 + Math.cos(ang) * arcR;
+        const sy = centerY - Math.sin(ang) * arcR;
+
+        ctx.save();
+        ctx.globalAlpha = 0.85 * dayFactor;
+        const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, 90);
+        g.addColorStop(0, "rgba(255,230,140,0.95)");
+        g.addColorStop(0.35, "rgba(255,210,110,0.35)");
+        g.addColorStop(1, "rgba(255,210,110,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(sx, sy, 90, 0, TAU); ctx.fill();
+        ctx.fillStyle = "rgba(255,235,170,0.95)";
+        ctx.beginPath(); ctx.arc(sx, sy, 18, 0, TAU); ctx.fill();
+        ctx.restore();
+      } else {
+        if (sun.alwaysNight || sun.sunrise == null || sun.sunset == null) {
+          drawMoon(instant, w*0.75, h*0.22, 1);
+        } else {
+          const sunset = sun.sunset, sunrise = sun.sunrise;
+          let nightSpan = (sunrise + 24) - sunset;
+          if (nightSpan < 0.1) nightSpan = 12;
+
+          let u = (t >= sunset) ? (t - sunset) / nightSpan : (t + 24 - sunset) / nightSpan;
+          u = clamp01(u);
+
+          const ang = lerp(Math.PI, 0, u);
+          const mx = w*0.5 + Math.cos(ang) * arcR;
+          const my = centerY - Math.sin(ang) * arcR;
+          drawMoon(instant, mx, my, (1 - dayFactor));
+        }
+      }
+
+      return { dayFactor, sun };
+    }
+
     function drawClockFace(instant, geo){
       const { cx, cy, r } = geo;
-
-      // Use the city's local time parts for hands
       const p = getZonedParts(instant, currentTZ);
 
       ctx.save();
       ctx.translate(cx, cy);
 
-      ctx.beginPath();
-      ctx.arc(0, 0, r*1.02, 0, TAU);
-      ctx.fillStyle = "rgba(0,0,0,0.22)";
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, r*1.02, 0, TAU);
+      ctx.fillStyle = "rgba(0,0,0,0.22)"; ctx.fill();
 
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, TAU);
-      ctx.fillStyle = "rgba(10,12,18,0.42)";
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU);
+      ctx.fillStyle = "rgba(10,12,18,0.42)"; ctx.fill();
 
       const sheen = ctx.createRadialGradient(-r*0.3, -r*0.5, 5, 0, 0, r*1.2);
       sheen.addColorStop(0, "rgba(255,255,255,0.12)");
       sheen.addColorStop(0.4, "rgba(255,255,255,0.03)");
       sheen.addColorStop(1, "rgba(255,255,255,0)");
       ctx.fillStyle = sheen;
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, TAU);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();
 
       for (let i = 0; i < 240; i++){
         const a = (i / 240) * TAU;
@@ -945,7 +868,6 @@
       }
       ctx.globalAlpha = 1;
 
-      // Hand angles (24h hour hand)
       const hour = p.hour + p.minute/60 + p.second/3600;
       const minute = p.minute + p.second/60;
       const second = p.second + (p.millisecond || 0)/1000;

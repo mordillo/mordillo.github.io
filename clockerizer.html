@@ -135,9 +135,7 @@
         Using timezone: <span class="pill" id="tzPill">Detecting…</span><br/>
         Location: <span class="pill" id="locPill">Detecting…</span>
       </div>
-      <div class="tiny">
-        Needs HTTPS for geolocation in most browsers. If you block location access, pick a city.
-      </div>
+      <div class="tiny">Needs HTTPS for geolocation in most browsers. If you block location access, pick a city.</div>
     </div>
 
     <div class="dateTopRight">
@@ -155,8 +153,8 @@
         <input id="manualTime" type="time" step="1" />
       </div>
       <div class="hint">
-        In manual mode you can drag hands:
-        <span class="kbd">hour</span> (24h), <span class="kbd">minute</span>, <span class="kbd">second</span>.
+        Manual mode: drag <span class="kbd">hour</span>, <span class="kbd">minute</span>, or <span class="kbd">second</span>.
+        All hands move continuously together.
       </div>
     </div>
 
@@ -178,8 +176,15 @@
     function lerp(a,b,t){ return a + (b-a)*t; }
     function pad2(n){ return String(n).padStart(2, "0"); }
 
+    // Normalize angular delta into (-PI, PI]
+    function wrapDelta(a){
+      a = (a + Math.PI) % TAU;
+      if (a < 0) a += TAU;
+      return a - Math.PI;
+    }
+
     // =========================
-    // Timezone helpers (Intl-only, no libraries)
+    // Timezone helpers (Intl-only)
     // =========================
     function getZonedParts(date, timeZone){
       const dtf = new Intl.DateTimeFormat("en-US", {
@@ -268,7 +273,6 @@
 
     function sunriseSunsetHoursCityTZ(instant, latDeg, lonDeg, timeZone){
       const zenith = rad(90.833);
-
       const localParts = getZonedParts(instant, timeZone);
       const { eqTime, decl } = solarParamsFromLocalParts(localParts);
 
@@ -325,7 +329,7 @@
     }
 
     // =========================
-    // City DB (lat/lon/tz are internal now)
+    // City DB (lat/lon/tz internal)
     // =========================
     const CITY_DB = [
       { country:"United States", city:"New York, NY",        lat:40.7128, lon:-74.0060, tz:"America/New_York" },
@@ -387,23 +391,16 @@
     let currentLat = 40.7128;
     let currentLon = -74.0060;
     let currentTZ  = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    let currentLabel = "Selected: New York, NY, United States";
 
     function setCity(rec, labelOverride){
       currentLat = rec.lat;
       currentLon = rec.lon;
       currentTZ  = rec.tz;
-      currentLabel = labelOverride || `Selected: ${rec.city}, ${rec.country}`;
-      locPill.textContent = currentLabel;
+      locPill.textContent = labelOverride || `Selected: ${rec.city}, ${rec.country}`;
       tzPill.textContent = currentTZ;
-
-      // If manual mode: keep the same instant, but update the displayed wall-time inputs
       if (mode === "manual") syncManualInputsFromInstant();
     }
 
-    // =========================
-    // Pickers
-    // =========================
     function initPickers(){
       const countries = [...new Set(CITY_DB.map(x => x.country))].sort();
       countrySel.innerHTML = countries.map(c => `<option value="${c}">${c}</option>`).join("");
@@ -420,11 +417,9 @@
 
       citySel.addEventListener("change", () => {
         const rec = CITY_DB.find(x => x.country === countrySel.value && x.city === citySel.value);
-        if (!rec) return;
-        setCity(rec);
+        if (rec) setCity(rec);
       });
 
-      // Default fallback (NYC)
       countrySel.value = "United States";
       fillCities(countrySel.value);
       citySel.value = "New York, NY";
@@ -432,7 +427,6 @@
     }
     initPickers();
 
-    // Reverse geocode (name only)
     async function reverseGeocodeName(lat, lon){
       try {
         const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
@@ -448,7 +442,6 @@
       }
     }
 
-    // Find closest city from DB (so we keep a valid tz)
     function closestCity(lat, lon){
       let best = CITY_DB[0], bestD = Infinity;
       for (const c of CITY_DB) {
@@ -475,15 +468,12 @@
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
 
-        // Choose closest known city (keeps tz correct without a separate timezone API call)
         const best = closestCity(lat, lon);
 
-        // Align pickers
         countrySel.value = best.country;
         countrySel.dispatchEvent(new Event("change"));
         citySel.value = best.city;
 
-        // Name (optional)
         const name = await reverseGeocodeName(lat, lon);
         const label = (name.city || name.country)
           ? `Detected near: ${name.city || best.city}, ${name.country || best.country}`
@@ -491,7 +481,6 @@
 
         setCity(best, label);
       } catch {
-        // No permission: keep default selection
         tzPill.textContent = currentTZ;
         locPill.textContent = "Using selected city";
       }
@@ -549,34 +538,35 @@
     manualTimeInput.addEventListener("input", () => { if (mode === "manual") syncManualInstantFromInputs(); });
 
     // =========================
-    // Dragging hands (manual mode) - ALL HANDS MOVE TOGETHER
-    // Rules:
-    //  - Dragging seconds updates seconds and cascades to minutes/hours (keeping total-of-day seconds).
-    //  - Dragging minutes updates minutes and cascades to hours + sets seconds preserved relative to prior time.
-    //  - Dragging hours updates hours and preserves minutes/seconds.
-    // We do this by working in "seconds since midnight" in the CITY timezone.
+    // Manual dragging: continuous, no jumps at 12 o'clock
+    // - We treat dragging as "rotate this hand", and convert angular delta into elapsed seconds.
+    // - That automatically moves the other hands:
+    //   * minute hand: 1 full rotation => +3600s (minute wheel)
+    //   * second hand: 1 full rotation => +60s
+    //   * hour (24h): 1 full rotation => +86400s
     // =========================
     function angleFromCenter(x, y, cx, cy){
       const a = Math.atan2(y - cy, x - cx);
       return (a + Math.PI / 2 + TAU) % TAU; // 0 at top
     }
-    function smallestAngleDiff(a, b){
-      let d = (a - b) % TAU;
-      if (d < -Math.PI) d += TAU;
-      if (d > Math.PI) d -= TAU;
-      return Math.abs(d);
-    }
 
     function zonedAnglesFromInstant(instant){
       const p = getZonedParts(instant, currentTZ);
-      const h = p.hour + p.minute/60 + p.second/3600;
-      const m = p.minute + p.second/60;
-      const s = p.second + (p.millisecond || 0)/1000;
+      const h = p.hour + p.minute/60 + p.second/3600 + (p.millisecond||0)/3600000;
+      const m = p.minute + p.second/60 + (p.millisecond||0)/60000;
+      const s = p.second + (p.millisecond||0)/1000;
       return {
         hourAngle: (h / 24) * TAU,
         minAngle:  (m / 60) * TAU,
         secAngle:  (s / 60) * TAU
       };
+    }
+
+    function smallestAngleDiff(a, b){
+      let d = (a - b) % TAU;
+      if (d < -Math.PI) d += TAU;
+      if (d > Math.PI) d -= TAU;
+      return Math.abs(d);
     }
 
     function pickHand(x, y){
@@ -585,8 +575,7 @@
       if (dist < r*0.15 || dist > r*1.05) return null;
 
       const a = angleFromCenter(x, y, cx, cy);
-      const baseInstant = (mode === "real") ? new Date() : manualInstant;
-      const { hourAngle, minAngle, secAngle } = zonedAnglesFromInstant(baseInstant);
+      const { hourAngle, minAngle, secAngle } = zonedAnglesFromInstant(manualInstant);
 
       const dh = smallestAngleDiff(a, hourAngle);
       const dm = smallestAngleDiff(a, minAngle);
@@ -599,56 +588,21 @@
       ].filter(c => c.d < c.th);
 
       if (!candidates.length) return null;
-      candidates.sort((a,b) => a.d - b.d);
+      candidates.sort((aa,bb) => aa.d - bb.d);
       return candidates[0].hand;
     }
 
-    function secondsSinceMidnight(parts){
-      return parts.hour * 3600 + parts.minute * 60 + parts.second;
-    }
-    function partsFromSecondsSinceMidnight(baseParts, ssm){
-      // Normalize into 0..86399 while keeping the same date.
-      let s = Math.round(ssm);
-      s = ((s % 86400) + 86400) % 86400;
-
-      const hour = Math.floor(s / 3600);
-      s -= hour * 3600;
-      const minute = Math.floor(s / 60);
-      const second = s - minute * 60;
-
-      return { ...baseParts, hour, minute, second, millisecond: 0 };
-    }
-
-    function setManualByHandAngle(hand, angle){
-      const frac = angle / TAU;
-
-      const p = getZonedParts(manualInstant, currentTZ);
-      const baseSSM = secondsSinceMidnight(p);
-
-      if (hand === "sec") {
-        // New seconds hand => set absolute second-of-minute, but preserve higher components by shifting total seconds.
-        const newSec = Math.round(frac * 60) % 60;
-        const delta = newSec - p.second;
-        const nextParts = partsFromSecondsSinceMidnight(p, baseSSM + delta);
-        manualInstant = zonedPartsToUTC(nextParts, currentTZ);
-      } else if (hand === "min") {
-        // New minute hand => set absolute minute-of-hour, preserve seconds by shifting total seconds.
-        const newMin = Math.round(frac * 60) % 60;
-        const delta = (newMin - p.minute) * 60;
-        const nextParts = partsFromSecondsSinceMidnight(p, baseSSM + delta);
-        manualInstant = zonedPartsToUTC(nextParts, currentTZ);
-      } else if (hand === "hour") {
-        // New hour hand => set absolute hour-of-day, preserve minutes/seconds.
-        const newHour = Math.floor(frac * 24) % 24;
-        const delta = (newHour - p.hour) * 3600;
-        const nextParts = partsFromSecondsSinceMidnight(p, baseSSM + delta);
-        manualInstant = zonedPartsToUTC(nextParts, currentTZ);
-      }
-
-      syncManualInputsFromInstant();
+    // Convert a delta angle to delta seconds depending on which hand is being dragged.
+    function deltaSecondsForHand(hand, deltaAngle){
+      const turns = deltaAngle / TAU; // can be negative
+      if (hand === "sec") return turns * 60;       // 1 turn = 60s
+      if (hand === "min") return turns * 3600;     // 1 turn = 60 min = 3600s
+      return turns * 86400;                        // hour hand (24h): 1 turn = 24h = 86400s
     }
 
     let dragging = null;
+    let lastAngle = 0;
+    let lastInputSyncMs = 0;
 
     canvas.addEventListener("pointerdown", (e) => {
       if (mode !== "manual") return;
@@ -661,10 +615,11 @@
       if (!hand) return;
 
       canvas.setPointerCapture(e.pointerId);
-      dragging = { hand, pointerId: e.pointerId };
-
       const { cx, cy } = getClockGeometry();
-      setManualByHandAngle(hand, angleFromCenter(x, y, cx, cy));
+
+      dragging = { hand, pointerId: e.pointerId };
+      lastAngle = angleFromCenter(x, y, cx, cy);
+      lastInputSyncMs = performance.now();
     });
 
     canvas.addEventListener("pointermove", (e) => {
@@ -675,13 +630,27 @@
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const { cx, cy } = getClockGeometry();
-      setManualByHandAngle(dragging.hand, angleFromCenter(x, y, cx, cy));
+
+      const a = angleFromCenter(x, y, cx, cy);
+      const dAng = wrapDelta(a - lastAngle); // continuous: no jump at top
+      lastAngle = a;
+
+      const dSec = deltaSecondsForHand(dragging.hand, dAng);
+      if (dSec !== 0) manualInstant = new Date(manualInstant.getTime() + dSec * 1000);
+
+      // Keep inputs reasonably up-to-date, but don't hammer the DOM every frame
+      const now = performance.now();
+      if (now - lastInputSyncMs > 60) {
+        syncManualInputsFromInstant();
+        lastInputSyncMs = now;
+      }
     });
 
     function endDrag(e){
       if (!dragging) return;
       if (e.pointerId !== dragging.pointerId) return;
       dragging = null;
+      syncManualInputsFromInstant();
     }
     canvas.addEventListener("pointerup", endDrag);
     canvas.addEventListener("pointercancel", endDrag);
@@ -700,18 +669,14 @@
       glow.addColorStop(0, "rgba(210,225,255,0.35)");
       glow.addColorStop(1, "rgba(210,225,255,0)");
       ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(mx, my, 70, 0, TAU);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(mx, my, 70, 0, TAU); ctx.fill();
       ctx.restore();
 
       const R = 16;
       ctx.save();
       ctx.globalAlpha = 0.9 * alphaScale;
       ctx.fillStyle = "rgba(230,235,245,0.95)";
-      ctx.beginPath();
-      ctx.arc(mx, my, R, 0, TAU);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(mx, my, R, 0, TAU); ctx.fill();
 
       const offset = (1 - illum) * R * 2;
       ctx.fillStyle = "rgba(10,18,40,0.85)";
@@ -812,8 +777,6 @@
           drawMoon(instant, mx, my, (1 - dayFactor));
         }
       }
-
-      return { dayFactor, sun };
     }
 
     function drawClockFace(instant, geo){
@@ -868,9 +831,10 @@
       }
       ctx.globalAlpha = 1;
 
-      const hour = p.hour + p.minute/60 + p.second/3600;
-      const minute = p.minute + p.second/60;
-      const second = p.second + (p.millisecond || 0)/1000;
+      // smooth hands (includes milliseconds)
+      const hour = p.hour + p.minute/60 + p.second/3600 + (p.millisecond||0)/3600000;
+      const minute = p.minute + p.second/60 + (p.millisecond||0)/60000;
+      const second = p.second + (p.millisecond||0)/1000;
 
       const hourAngle = (hour / 24) * TAU;
       const minAngle  = (minute / 60) * TAU;

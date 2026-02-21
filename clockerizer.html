@@ -2,165 +2,259 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>24-Hour Analog Clock (City TZ + Day/Night + Moon Phase)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Analog Clock (12/24 + City TZ + Day/Night + Moon)</title>
   <style>
     :root { color-scheme: dark; }
-    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:#0b1020; overflow:hidden; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: #0b1020;
+      overflow: hidden;
+    }
     canvas { display:block; width:100vw; height:100vh; }
 
-    .ui { position: fixed; inset: 0; pointer-events: none; }
-
-    .pickerTopLeft{
-      position:absolute; top:14px; left:14px;
-      padding:10px 12px; border-radius:12px;
-      background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.12);
-      backdrop-filter: blur(6px);
-      pointer-events:auto;
-      min-width: 320px;
+    /* ---------- Mobile-friendly HUD layout ---------- */
+    .hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
-    .pickerTopLeft .row{ display:flex; gap:8px; align-items:center; justify-content:space-between; margin:6px 0; }
-    .pickerTopLeft label{ font-size:12px; opacity:0.9; min-width:74px; }
-    select{
-      width: 220px;
-      padding: 7px 8px;
-      border-radius: 10px;
+
+    .panel {
+      pointer-events: auto;
+      background: rgba(0,0,0,0.40);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    /* Top bar: avoids overlapping clock by staying shallow and full-width-ish */
+    .topBar {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .locationPanel {
+      padding: 10px 10px 9px;
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 8px 10px;
+      align-items: center;
+      min-height: 74px;
+    }
+
+    .displayPanel {
+      padding: 10px 10px 9px;
+      min-width: 140px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    label {
+      font-size: 12px;
+      opacity: 0.88;
+      line-height: 1.1;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 12px;
       border: 1px solid rgba(255,255,255,0.14);
       background: rgba(0,0,0,0.25);
       color: rgba(255,255,255,0.92);
-      font-size: 12px;
+      font-size: 13px;
       outline: none;
     }
-    .tiny { font-size: 12px; opacity: 0.85; line-height: 1.35; margin-top: 6px; }
+
+    .tiny {
+      font-size: 11px;
+      opacity: 0.82;
+      line-height: 1.25;
+      margin-top: 6px;
+      grid-column: 1 / -1;
+    }
+
     .pill {
       display:inline-block;
       padding: 2px 8px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.16);
       background: rgba(255,255,255,0.06);
-      font-size: 12px;
-      margin-left: 6px;
+      font-size: 11px;
       opacity: 0.95;
-      max-width: 290px;
+      max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       vertical-align: middle;
     }
 
-    .dateTopRight{
-      position:absolute; top:14px; right:14px;
-      padding:10px 12px; border-radius:12px;
-      background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.12);
-      backdrop-filter: blur(6px);
-      pointer-events:auto;
-      user-select:none;
-      text-align:right;
-      line-height:1.2;
-      min-width: 260px;
+    .toggleRow {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
     }
-    .dateTopRight .small{ font-size:12px; opacity:0.85; }
-    .dateTopRight .big{ font-size:14px; font-weight:600; margin-top:3px; letter-spacing:0.2px; }
 
-    .controlsBottomRight{
-      position:absolute; right:14px; bottom:14px;
-      display:flex; gap:10px; align-items:center;
-      pointer-events:auto;
-    }
-    button{
-      appearance:none;
-      border:1px solid rgba(255,255,255,0.15);
+    .btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.15);
       background: rgba(0,0,0,0.35);
       color: rgba(255,255,255,0.92);
-      padding:10px 12px;
-      border-radius:12px;
-      font-weight:600;
-      cursor:pointer;
-      backdrop-filter: blur(6px);
+      padding: 9px 10px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
     }
-    button:hover { border-color: rgba(255,255,255,0.28); }
-    button.active{
+    .btn:active { transform: translateY(1px); }
+    .btn.active {
       background: rgba(255,255,255,0.16);
       border-color: rgba(255,255,255,0.30);
     }
 
-    .manualPanel{
-      position:absolute; right:14px; bottom:62px;
-      width:260px; padding:12px;
-      border-radius:12px;
-      background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.12);
-      backdrop-filter: blur(6px);
-      pointer-events:auto;
-      display:none;
+    /* Bottom bar: stays at bottom, avoids covering center of clock */
+    .bottomBar {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
     }
-    .manualPanel.visible{ display:block; }
-    .manualPanel .row{ display:flex; gap:8px; align-items:center; justify-content:space-between; margin:8px 0; }
-    .manualPanel label{ font-size:12px; opacity:0.9; }
-    input[type="date"], input[type="time"]{
-      width:150px; padding:7px 8px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,0.14);
+
+    .datePanel {
+      padding: 10px 10px 9px;
+      min-height: 46px;
+      display: grid;
+      align-content: center;
+      gap: 2px;
+    }
+    .datePanel .small { font-size: 11px; opacity: 0.84; }
+    .datePanel .big   { font-size: 12px; font-weight: 650; line-height: 1.2; }
+
+    .controlsPanel {
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      min-width: 150px;
+      justify-items: stretch;
+    }
+
+    .manualPanel {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 70px; /* sits above bottom bar */
+      padding: 10px;
+      display: none;
+    }
+    .manualPanel.visible { display: block; }
+
+    .manualGrid {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 8px 10px;
+      align-items: center;
+    }
+    input[type="date"], input[type="time"] {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
       background: rgba(0,0,0,0.25);
       color: rgba(255,255,255,0.92);
-      font-size:12px;
-      outline:none;
+      font-size: 13px;
+      outline: none;
     }
-    .hint{ font-size:12px; opacity:0.85; margin-top:8px; line-height:1.3; }
+    .hint {
+      margin-top: 8px;
+      font-size: 11px;
+      opacity: 0.82;
+      line-height: 1.25;
+    }
     .kbd{
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      padding:1px 6px;
-      border-radius:7px;
+      padding: 1px 6px;
+      border-radius: 8px;
       border: 1px solid rgba(255,255,255,0.18);
       background: rgba(255,255,255,0.08);
+      font-size: 11px;
+    }
+
+    /* Make the clock a bit smaller on very short screens */
+    @media (max-height: 700px) {
+      .locationPanel { min-height: 68px; }
+      .datePanel .big { font-size: 12px; }
     }
   </style>
 </head>
 <body>
   <canvas id="c"></canvas>
 
-  <div class="ui">
-    <div class="pickerTopLeft">
-      <div class="row">
+  <div class="hud">
+    <div class="topBar">
+      <div class="panel locationPanel" id="locationPanel">
         <label for="countrySel">Country</label>
         <select id="countrySel"></select>
-      </div>
-      <div class="row">
+
         <label for="citySel">City</label>
         <select id="citySel"></select>
+
+        <div class="tiny">
+          TZ: <span class="pill" id="tzPill">Detecting…</span><br/>
+          <span class="pill" id="locPill">Detecting…</span>
+        </div>
       </div>
-      <div class="tiny">
-        Using timezone: <span class="pill" id="tzPill">Detecting…</span><br/>
-        Location: <span class="pill" id="locPill">Detecting…</span>
+
+      <div class="panel displayPanel">
+        <div class="toggleRow">
+          <button class="btn active" id="btn12">12-hour</button>
+          <button class="btn" id="btn24">24-hour</button>
+        </div>
+        <div class="tiny">
+          In 12-hour mode, the clock shows AM/PM.
+        </div>
       </div>
-      <div class="tiny">Needs HTTPS for geolocation in most browsers. If you block location access, pick a city.</div>
     </div>
 
-    <div class="dateTopRight">
-      <div class="small" id="modeLabel">Real time</div>
-      <div class="big" id="dateLabel">—</div>
-    </div>
-
-    <div class="manualPanel" id="manualPanel">
-      <div class="row">
+    <div class="panel manualPanel" id="manualPanel">
+      <div class="manualGrid">
         <label for="manualDate">Date</label>
         <input id="manualDate" type="date" />
-      </div>
-      <div class="row">
         <label for="manualTime">Time</label>
         <input id="manualTime" type="time" step="1" />
       </div>
       <div class="hint">
         Manual mode: drag <span class="kbd">hour</span>, <span class="kbd">minute</span>, or <span class="kbd">second</span>.
-        All hands move continuously together.
+        Dragging is continuous (no jumps at 12 o’clock). All hands move together.
       </div>
     </div>
 
-    <div class="controlsBottomRight">
-      <button id="btnReal" class="active">Real time</button>
-      <button id="btnManual">Manual</button>
+    <div class="bottomBar">
+      <div class="panel datePanel">
+        <div class="small" id="modeLabel">Real time</div>
+        <div class="big" id="dateLabel">—</div>
+      </div>
+
+      <div class="panel controlsPanel">
+        <button class="btn active" id="btnReal">Real time</button>
+        <button class="btn" id="btnManual">Manual</button>
+      </div>
     </div>
   </div>
 
@@ -176,7 +270,6 @@
     function lerp(a,b,t){ return a + (b-a)*t; }
     function pad2(n){ return String(n).padStart(2, "0"); }
 
-    // Normalize angular delta into (-PI, PI]
     function wrapDelta(a){
       a = (a + Math.PI) % TAU;
       if (a < 0) a += TAU;
@@ -286,7 +379,6 @@
 
       const H = Math.acos(cosH);
       const Hdeg = deg(H);
-
       const tzOffsetHours = tzOffsetHoursAtInstant(instant, timeZone);
 
       const solarNoonMin = 720 - (eqTime + 4 * lonDeg - 60 * tzOffsetHours);
@@ -329,7 +421,7 @@
     }
 
     // =========================
-    // City DB (lat/lon/tz internal)
+    // City DB (internal lat/lon/tz)
     // =========================
     const CITY_DB = [
       { country:"United States", city:"New York, NY",        lat:40.7128, lon:-74.0060, tz:"America/New_York" },
@@ -347,23 +439,10 @@
     ];
 
     // =========================
-    // Canvas + UI
+    // Canvas setup
     // =========================
     const canvas = document.getElementById("c");
     const ctx = canvas.getContext("2d", { alpha: false });
-
-    const countrySel = document.getElementById("countrySel");
-    const citySel = document.getElementById("citySel");
-    const locPill = document.getElementById("locPill");
-    const tzPill = document.getElementById("tzPill");
-
-    const btnReal = document.getElementById("btnReal");
-    const btnManual = document.getElementById("btnManual");
-    const manualPanel = document.getElementById("manualPanel");
-    const manualDateInput = document.getElementById("manualDate");
-    const manualTimeInput = document.getElementById("manualTime");
-    const modeLabel = document.getElementById("modeLabel");
-    const dateLabel = document.getElementById("dateLabel");
 
     function resize(){
       const dpr = window.devicePixelRatio || 1;
@@ -379,18 +458,79 @@
     function getClockGeometry(){
       const w = window.innerWidth;
       const h = window.innerHeight;
+
+      // Reserve a little vertical space for top + bottom HUD so clock doesn't get covered.
+      const topReserve = 110;
+      const bottomReserve = 90;
+
+      const usableH = Math.max(200, h - topReserve - bottomReserve);
       const cx = w * 0.5;
-      const cy = h * 0.52;
-      const r = Math.min(w, h) * 0.30;
-      return { w, h, cx, cy, r };
+      const cy = topReserve + usableH * 0.55;
+
+      const r = Math.min(w, usableH) * 0.34;
+      return { w, h, cx, cy, r, topReserve, bottomReserve };
     }
 
     // =========================
-    // Location + timezone state
+    // UI elements
+    // =========================
+    const countrySel = document.getElementById("countrySel");
+    const citySel = document.getElementById("citySel");
+    const locPill = document.getElementById("locPill");
+    const tzPill = document.getElementById("tzPill");
+
+    const btnReal = document.getElementById("btnReal");
+    const btnManual = document.getElementById("btnManual");
+    const manualPanel = document.getElementById("manualPanel");
+    const manualDateInput = document.getElementById("manualDate");
+    const manualTimeInput = document.getElementById("manualTime");
+    const modeLabel = document.getElementById("modeLabel");
+    const dateLabel = document.getElementById("dateLabel");
+
+    const btn12 = document.getElementById("btn12");
+    const btn24 = document.getElementById("btn24");
+
+    // =========================
+    // State
     // =========================
     let currentLat = 40.7128;
     let currentLon = -74.0060;
     let currentTZ  = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+    let mode = "real";         // "real" | "manual"
+    let manualInstant = new Date();
+    let clockMode = "12";      // "12" | "24" (default 12)
+
+    function setClockMode(m){
+      clockMode = m;
+      btn12.classList.toggle("active", clockMode === "12");
+      btn24.classList.toggle("active", clockMode === "24");
+    }
+    setClockMode("12");
+
+    btn12.addEventListener("click", () => setClockMode("12"));
+    btn24.addEventListener("click", () => setClockMode("24"));
+
+    function setMode(newMode){
+      mode = newMode;
+      btnReal.classList.toggle("active", mode === "real");
+      btnManual.classList.toggle("active", mode === "manual");
+      manualPanel.classList.toggle("visible", mode === "manual");
+      modeLabel.textContent = (mode === "real") ? "Real time" : "Manual";
+      if (mode === "manual") syncManualInputsFromInstant();
+    }
+
+    btnReal.addEventListener("click", () => {
+      manualInstant = new Date();
+      setMode("real");
+    });
+
+    btnManual.addEventListener("click", () => {
+      if (mode !== "manual") {
+        manualInstant = new Date();
+        setMode("manual");
+      }
+    });
 
     function setCity(rec, labelOverride){
       currentLat = rec.lat;
@@ -487,34 +627,6 @@
     }
     detectLocation();
 
-    // =========================
-    // Mode + manual time state
-    // =========================
-    let mode = "real"; // "real" | "manual"
-    let manualInstant = new Date(); // UTC instant
-
-    function setMode(newMode){
-      mode = newMode;
-      btnReal.classList.toggle("active", mode === "real");
-      btnManual.classList.toggle("active", mode === "manual");
-      manualPanel.classList.toggle("visible", mode === "manual");
-      modeLabel.textContent = (mode === "real") ? "Real time" : "Manual";
-      if (mode === "manual") syncManualInputsFromInstant();
-    }
-
-    btnReal.addEventListener("click", () => {
-      manualInstant = new Date();
-      setMode("real");
-    });
-
-    btnManual.addEventListener("click", () => {
-      if (mode !== "manual") {
-        manualInstant = new Date();
-        setMode("manual");
-        syncManualInputsFromInstant();
-      }
-    });
-
     function syncManualInputsFromInstant(){
       const p = getZonedParts(manualInstant, currentTZ);
       manualDateInput.value = `${p.year}-${pad2(p.month)}-${pad2(p.day)}`;
@@ -538,27 +650,31 @@
     manualTimeInput.addEventListener("input", () => { if (mode === "manual") syncManualInstantFromInputs(); });
 
     // =========================
-    // Manual dragging: continuous, no jumps at 12 o'clock
-    // - We treat dragging as "rotate this hand", and convert angular delta into elapsed seconds.
-    // - That automatically moves the other hands:
-    //   * minute hand: 1 full rotation => +3600s (minute wheel)
-    //   * second hand: 1 full rotation => +60s
-    //   * hour (24h): 1 full rotation => +86400s
+    // Manual dragging: continuous time deltas (gear-like)
     // =========================
     function angleFromCenter(x, y, cx, cy){
       const a = Math.atan2(y - cy, x - cx);
-      return (a + Math.PI / 2 + TAU) % TAU; // 0 at top
+      return (a + Math.PI / 2 + TAU) % TAU;
     }
 
     function zonedAnglesFromInstant(instant){
       const p = getZonedParts(instant, currentTZ);
-      const h = p.hour + p.minute/60 + p.second/3600 + (p.millisecond||0)/3600000;
-      const m = p.minute + p.second/60 + (p.millisecond||0)/60000;
-      const s = p.second + (p.millisecond||0)/1000;
+
+      // "Continuous" hands (include ms)
+      const hour24 = p.hour + p.minute/60 + p.second/3600 + (p.millisecond||0)/3600000;
+      const minute = p.minute + p.second/60 + (p.millisecond||0)/60000;
+      const second = p.second + (p.millisecond||0)/1000;
+
+      // Hour hand depends on mode:
+      // - 24-hour: 1 turn = 24 hours
+      // - 12-hour: 1 turn = 12 hours (still based on the same underlying time)
+      const hourCycle = (clockMode === "24") ? 24 : 12;
+      const hourDisplay = (clockMode === "24") ? hour24 : (hour24 % 12);
+
       return {
-        hourAngle: (h / 24) * TAU,
-        minAngle:  (m / 60) * TAU,
-        secAngle:  (s / 60) * TAU
+        hourAngle: (hourDisplay / hourCycle) * TAU,
+        minAngle:  (minute / 60) * TAU,
+        secAngle:  (second / 60) * TAU
       };
     }
 
@@ -592,12 +708,22 @@
       return candidates[0].hand;
     }
 
-    // Convert a delta angle to delta seconds depending on which hand is being dragged.
     function deltaSecondsForHand(hand, deltaAngle){
       const turns = deltaAngle / TAU; // can be negative
-      if (hand === "sec") return turns * 60;       // 1 turn = 60s
-      if (hand === "min") return turns * 3600;     // 1 turn = 60 min = 3600s
-      return turns * 86400;                        // hour hand (24h): 1 turn = 24h = 86400s
+
+      if (hand === "sec") return turns * 60;      // 1 turn = 60s
+
+      if (hand === "min") {
+        // minute hand: 1 full turn advances ONE HOUR
+        // => second hand will naturally do 60 turns over that hour.
+        return turns * 3600;
+      }
+
+      // hour hand depends on display mode:
+      // - 12-hour dial: 1 full turn = 12 hours
+      // - 24-hour dial: 1 full turn = 24 hours
+      const hoursPerTurn = (clockMode === "24") ? 24 : 12;
+      return turns * hoursPerTurn * 3600;
     }
 
     let dragging = null;
@@ -632,15 +758,14 @@
       const { cx, cy } = getClockGeometry();
 
       const a = angleFromCenter(x, y, cx, cy);
-      const dAng = wrapDelta(a - lastAngle); // continuous: no jump at top
+      const dAng = wrapDelta(a - lastAngle); // no jumps at top
       lastAngle = a;
 
       const dSec = deltaSecondsForHand(dragging.hand, dAng);
-      if (dSec !== 0) manualInstant = new Date(manualInstant.getTime() + dSec * 1000);
+      if (dSec) manualInstant = new Date(manualInstant.getTime() + dSec * 1000);
 
-      // Keep inputs reasonably up-to-date, but don't hammer the DOM every frame
       const now = performance.now();
-      if (now - lastInputSyncMs > 60) {
+      if (now - lastInputSyncMs > 70) {
         syncManualInputsFromInstant();
         lastInputSyncMs = now;
       }
@@ -726,10 +851,10 @@
       if (dayFactor < 0.6) {
         const starAlpha = (1 - dayFactor) * 0.6;
         ctx.globalAlpha = starAlpha;
-        const count = Math.floor(160 * (1 - dayFactor));
+        const count = Math.floor(150 * (1 - dayFactor));
         for (let i = 0; i < count; i++) {
           const x = (Math.sin(i*999.1) * 0.5 + 0.5) * w;
-          const y = (Math.sin(i*427.7 + 1.3) * 0.5 + 0.5) * (h * 0.65);
+          const y = (Math.sin(i*427.7 + 1.3) * 0.5 + 0.5) * (h * 0.62);
           const s = (Math.sin(i*91.3 + 2.1) * 0.5 + 0.5) * 1.6 + 0.3;
           ctx.fillStyle = "rgba(255,255,255,0.9)";
           ctx.fillRect(x, y, s, s);
@@ -738,7 +863,7 @@
       }
 
       const centerY = h * 0.62;
-      const arcR = Math.min(w, h) * 0.42;
+      const arcR = Math.min(w, h) * 0.40;
 
       if (dayFactor >= 0.5 && !sun.alwaysNight) {
         const sunrise = (sun.sunrise ?? 6);
@@ -786,7 +911,8 @@
       ctx.save();
       ctx.translate(cx, cy);
 
-      ctx.beginPath(); ctx.arc(0, 0, r*1.02, 0, TAU);
+      // Face
+      ctx.beginPath(); ctx.arc(0, 0, r*1.03, 0, TAU);
       ctx.fillStyle = "rgba(0,0,0,0.22)"; ctx.fill();
 
       ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU);
@@ -799,14 +925,22 @@
       ctx.fillStyle = sheen;
       ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();
 
-      for (let i = 0; i < 240; i++){
-        const a = (i / 240) * TAU;
-        const isHour = (i % 10 === 0);
-        const isQuarter = (i % 30 === 0);
-        const len = isHour ? r*0.10 : r*0.05;
-        const lw  = isHour ? (isQuarter ? 3.0 : 2.2) : 1.2;
+      // Ticks: 12-hour uses 60 ticks; 24-hour uses 240 (like earlier)
+      const tickCount = (clockMode === "24") ? 240 : 120; // 120 = 12*10
+      for (let i = 0; i < tickCount; i++){
+        const a = (i / tickCount) * TAU;
+        const isMajor = (clockMode === "24")
+          ? (i % 10 === 0)
+          : (i % 10 === 0); // every 1 hour marker in both cases
 
-        ctx.strokeStyle = isHour ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.18)";
+        const isQuarter = (clockMode === "24")
+          ? (i % 30 === 0)  // every 3 hours
+          : (i % 30 === 0); // every 3 hours on 12 dial too (3,6,9,12)
+
+        const len = isMajor ? r*0.10 : r*0.05;
+        const lw  = isMajor ? (isQuarter ? 3.0 : 2.2) : 1.2;
+
+        ctx.strokeStyle = isMajor ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.18)";
         ctx.lineWidth = lw;
         ctx.beginPath();
         const x1 = Math.sin(a) * (r - len - r*0.02);
@@ -816,43 +950,72 @@
         ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
       }
 
+      // Numbers
       ctx.fillStyle = "rgba(255,255,255,0.86)";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.font = `600 ${Math.max(12, r*0.095)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+      ctx.font = `700 ${Math.max(12, r*0.10)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
 
-      for (let h = 0; h < 24; h++){
-        const a = (h / 24) * TAU;
-        const rr = r * 0.80;
-        const x = Math.sin(a) * rr;
-        const y = -Math.cos(a) * rr;
-        ctx.globalAlpha = (h % 3 === 0) ? 0.95 : 0.70;
-        ctx.fillText(String(h), x, y);
+      if (clockMode === "24") {
+        for (let h = 0; h < 24; h++){
+          const a = (h / 24) * TAU;
+          const rr = r * 0.80;
+          const x = Math.sin(a) * rr;
+          const y = -Math.cos(a) * rr;
+          ctx.globalAlpha = (h % 3 === 0) ? 0.95 : 0.70;
+          ctx.fillText(String(h), x, y);
+        }
+      } else {
+        for (let h = 1; h <= 12; h++){
+          const a = ((h % 12) / 12) * TAU; // 12 at top
+          const rr = r * 0.80;
+          const x = Math.sin(a) * rr;
+          const y = -Math.cos(a) * rr;
+          ctx.globalAlpha = (h % 3 === 0) ? 0.95 : 0.75;
+          ctx.fillText(String(h), x, y);
+        }
       }
       ctx.globalAlpha = 1;
 
-      // smooth hands (includes milliseconds)
-      const hour = p.hour + p.minute/60 + p.second/3600 + (p.millisecond||0)/3600000;
+      // Hand angles (smooth)
+      const hour24 = p.hour + p.minute/60 + p.second/3600 + (p.millisecond||0)/3600000;
       const minute = p.minute + p.second/60 + (p.millisecond||0)/60000;
       const second = p.second + (p.millisecond||0)/1000;
 
-      const hourAngle = (hour / 24) * TAU;
-      const minAngle  = (minute / 60) * TAU;
-      const secAngle  = (second / 60) * TAU;
+      let hourAngle;
+      if (clockMode === "24") {
+        hourAngle = ((hour24) / 24) * TAU;
+      } else {
+        const h12 = hour24 % 12;
+        hourAngle = (h12 / 12) * TAU;
+      }
+
+      const minAngle = (minute / 60) * TAU;
+      const secAngle = (second / 60) * TAU;
 
       drawHand(hourAngle, r*0.55, 6.0, "rgba(255,255,255,0.88)", r*0.08);
       drawHand(minAngle,  r*0.74, 4.2, "rgba(255,255,255,0.78)", r*0.06);
       drawHand(secAngle,  r*0.80, 2.2, "rgba(255,90,90,0.90)",  r*0.05);
 
+      // Center cap
       ctx.fillStyle = "rgba(255,255,255,0.90)";
       ctx.beginPath(); ctx.arc(0, 0, r*0.03, 0, TAU); ctx.fill();
       ctx.fillStyle = "rgba(0,0,0,0.35)";
       ctx.beginPath(); ctx.arc(0, 0, r*0.015, 0, TAU); ctx.fill();
 
-      ctx.font = `500 ${Math.max(10, r*0.06)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
-      ctx.fillStyle = "rgba(255,255,255,0.35)";
-      ctx.textAlign = "center";
-      ctx.fillText("24-hour", 0, r*0.30);
+      // AM/PM badge in 12-hour mode
+      if (clockMode === "12") {
+        const isPM = p.hour >= 12;
+        ctx.font = `700 ${Math.max(10, r*0.08)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.textAlign = "center";
+        ctx.fillText(isPM ? "PM" : "AM", 0, r*0.33);
+      } else {
+        ctx.font = `600 ${Math.max(10, r*0.07)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.textAlign = "center";
+        ctx.fillText("24-hour", 0, r*0.30);
+      }
 
       ctx.restore();
 
@@ -874,20 +1037,154 @@
       }
     }
 
+    // =========================
+    // Manual dragging mapping (continuous, no wrap jumps)
+    // =========================
+    function deltaSecondsForHand(hand, deltaAngle){
+      const turns = deltaAngle / TAU;
+
+      if (hand === "sec") return turns * 60;
+
+      if (hand === "min") {
+        // 1 full minute-hand turn => +3600 seconds (1 hour)
+        return turns * 3600;
+      }
+
+      // hour hand: depends on dial
+      const hoursPerTurn = (clockMode === "24") ? 24 : 12;
+      return turns * hoursPerTurn * 3600;
+    }
+
+    function angleFromCenter(x, y, cx, cy){
+      const a = Math.atan2(y - cy, x - cx);
+      return (a + Math.PI / 2 + TAU) % TAU;
+    }
+
+    function zonedAnglesFromInstant(instant){
+      const p = getZonedParts(instant, currentTZ);
+      const hour24 = p.hour + p.minute/60 + p.second/3600 + (p.millisecond||0)/3600000;
+      const minute = p.minute + p.second/60 + (p.millisecond||0)/60000;
+      const second = p.second + (p.millisecond||0)/1000;
+
+      const hourCycle = (clockMode === "24") ? 24 : 12;
+      const hourDisplay = (clockMode === "24") ? hour24 : (hour24 % 12);
+
+      return {
+        hourAngle: (hourDisplay / hourCycle) * TAU,
+        minAngle:  (minute / 60) * TAU,
+        secAngle:  (second / 60) * TAU
+      };
+    }
+
+    function smallestAngleDiff(a, b){
+      let d = (a - b) % TAU;
+      if (d < -Math.PI) d += TAU;
+      if (d > Math.PI) d -= TAU;
+      return Math.abs(d);
+    }
+
+    function pickHand(x, y){
+      const { cx, cy, r } = getClockGeometry();
+      const dist = Math.hypot(x - cx, y - cy);
+      if (dist < r*0.15 || dist > r*1.05) return null;
+
+      const a = angleFromCenter(x, y, cx, cy);
+      const { hourAngle, minAngle, secAngle } = zonedAnglesFromInstant(manualInstant);
+
+      const dh = smallestAngleDiff(a, hourAngle);
+      const dm = smallestAngleDiff(a, minAngle);
+      const ds = smallestAngleDiff(a, secAngle);
+
+      const candidates = [
+        { hand:"hour", d:dh, th:0.28 },
+        { hand:"min",  d:dm, th:0.22 },
+        { hand:"sec",  d:ds, th:0.18 },
+      ].filter(c => c.d < c.th);
+
+      if (!candidates.length) return null;
+      candidates.sort((aa,bb) => aa.d - bb.d);
+      return candidates[0].hand;
+    }
+
+    let dragging = null;
+    let lastAngle = 0;
+    let lastInputSyncMs = 0;
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (mode !== "manual") return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const hand = pickHand(x, y);
+      if (!hand) return;
+
+      canvas.setPointerCapture(e.pointerId);
+      const { cx, cy } = getClockGeometry();
+
+      dragging = { hand, pointerId: e.pointerId };
+      lastAngle = angleFromCenter(x, y, cx, cy);
+      lastInputSyncMs = performance.now();
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (mode !== "manual") return;
+      if (!dragging || e.pointerId !== dragging.pointerId) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const { cx, cy } = getClockGeometry();
+
+      const a = angleFromCenter(x, y, cx, cy);
+      const dAng = wrapDelta(a - lastAngle);
+      lastAngle = a;
+
+      const dSec = deltaSecondsForHand(dragging.hand, dAng);
+      if (dSec) manualInstant = new Date(manualInstant.getTime() + dSec * 1000);
+
+      const now = performance.now();
+      if (now - lastInputSyncMs > 70) {
+        syncManualInputsFromInstant();
+        lastInputSyncMs = now;
+      }
+    });
+
+    function endDrag(e){
+      if (!dragging) return;
+      if (e.pointerId !== dragging.pointerId) return;
+      dragging = null;
+      syncManualInputsFromInstant();
+    }
+    canvas.addEventListener("pointerup", endDrag);
+    canvas.addEventListener("pointercancel", endDrag);
+
+    // =========================
+    // Labels
+    // =========================
     function updateLabels(instant){
       const p = getZonedParts(instant, currentTZ);
 
-      const weekday = new Intl.DateTimeFormat(undefined, { timeZone: currentTZ, weekday: "long" }).format(instant);
+      const weekday = new Intl.DateTimeFormat(undefined, { timeZone: currentTZ, weekday: "short" }).format(instant);
       const dStr = new Intl.DateTimeFormat(undefined, { timeZone: currentTZ, year:"numeric", month:"short", day:"numeric" }).format(instant);
-      const tStr = `${pad2(p.hour)}:${pad2(p.minute)}:${pad2(p.second)}`;
+
+      let tStr = "";
+      if (clockMode === "24") {
+        tStr = `${pad2(p.hour)}:${pad2(p.minute)}:${pad2(p.second)}`;
+      } else {
+        const h12 = (p.hour % 12) || 12;
+        const ampm = (p.hour >= 12) ? "PM" : "AM";
+        tStr = `${pad2(h12)}:${pad2(p.minute)}:${pad2(p.second)} ${ampm}`;
+      }
 
       const phase = moonPhaseFraction(instant);
       const phaseName = moonPhaseName(phase);
 
       const sun = sunriseSunsetHoursCityTZ(instant, currentLat, currentLon, currentTZ);
       let ssText = "";
-      if (sun.alwaysDay) ssText = "Sun: up all day";
-      else if (sun.alwaysNight) ssText = "Sun: down all day";
+      if (sun.alwaysDay) ssText = "Sun up all day";
+      else if (sun.alwaysNight) ssText = "Sun down all day";
       else if (sun.sunrise != null && sun.sunset != null) {
         const srH = Math.floor(sun.sunrise), srM = Math.round((sun.sunrise - srH)*60) % 60;
         const seH = Math.floor(sun.sunset),  seM = Math.round((sun.sunset - seH)*60) % 60;
@@ -895,6 +1192,251 @@
       }
 
       dateLabel.textContent = `${weekday} • ${dStr} • ${tStr} • ${phaseName} • ${ssText}`;
+    }
+
+    // =========================
+    // Background + clock drawing
+    // =========================
+    function drawMoon(instant, mx, my, alphaScale){
+      const phase = moonPhaseFraction(instant);
+      const illum = moonIllumination(phase);
+      const waxing = phase < 0.5;
+
+      ctx.save();
+      ctx.globalAlpha = 0.75 * alphaScale;
+      const glow = ctx.createRadialGradient(mx, my, 0, mx, my, 70);
+      glow.addColorStop(0, "rgba(210,225,255,0.35)");
+      glow.addColorStop(1, "rgba(210,225,255,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(mx, my, 70, 0, TAU); ctx.fill();
+      ctx.restore();
+
+      const R = 16;
+      ctx.save();
+      ctx.globalAlpha = 0.9 * alphaScale;
+      ctx.fillStyle = "rgba(230,235,245,0.95)";
+      ctx.beginPath(); ctx.arc(mx, my, R, 0, TAU); ctx.fill();
+
+      const offset = (1 - illum) * R * 2;
+      ctx.fillStyle = "rgba(10,18,40,0.85)";
+      ctx.beginPath();
+      const sx = mx + (waxing ? -offset/2 : offset/2);
+      ctx.arc(sx, my, R, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawBackground(instant, geo){
+      const { w, h } = geo;
+
+      const localParts = getZonedParts(instant, currentTZ);
+      const sun = sunriseSunsetHoursCityTZ(instant, currentLat, currentLon, currentTZ);
+      const t = hoursDecimalFromParts(localParts);
+
+      let dayFactor = 0;
+      const tw = 0.75;
+
+      if (sun.alwaysDay) dayFactor = 1;
+      else if (sun.alwaysNight) dayFactor = 0;
+      else {
+        const sunrise = sun.sunrise, sunset = sun.sunset;
+        if (sunrise == null || sunset == null) dayFactor = 0;
+        else if (t < sunrise - tw) dayFactor = 0;
+        else if (t < sunrise + tw) dayFactor = clamp01((t - (sunrise - tw)) / (2*tw));
+        else if (t < sunset - tw) dayFactor = 1;
+        else if (t < sunset + tw) dayFactor = 1 - clamp01((t - (sunset - tw)) / (2*tw));
+        else dayFactor = 0;
+      }
+
+      const night = ctx.createLinearGradient(0, 0, 0, h);
+      night.addColorStop(0, "#050814");
+      night.addColorStop(0.6, "#0a1230");
+      night.addColorStop(1, "#03050c");
+
+      const day = ctx.createLinearGradient(0, 0, 0, h);
+      day.addColorStop(0, "#7ec9ff");
+      day.addColorStop(0.55, "#c8f0ff");
+      day.addColorStop(1, "#ffe9b5");
+
+      ctx.fillStyle = night; ctx.fillRect(0, 0, w, h);
+      ctx.globalAlpha = dayFactor; ctx.fillStyle = day; ctx.fillRect(0, 0, w, h);
+      ctx.globalAlpha = 1;
+
+      if (dayFactor < 0.6) {
+        const starAlpha = (1 - dayFactor) * 0.6;
+        ctx.globalAlpha = starAlpha;
+        const count = Math.floor(150 * (1 - dayFactor));
+        for (let i = 0; i < count; i++) {
+          const x = (Math.sin(i*999.1) * 0.5 + 0.5) * w;
+          const y = (Math.sin(i*427.7 + 1.3) * 0.5 + 0.5) * (h * 0.62);
+          const s = (Math.sin(i*91.3 + 2.1) * 0.5 + 0.5) * 1.6 + 0.3;
+          ctx.fillStyle = "rgba(255,255,255,0.9)";
+          ctx.fillRect(x, y, s, s);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      const centerY = h * 0.60;
+      const arcR = Math.min(w, h) * 0.38;
+
+      if (dayFactor >= 0.5 && !sun.alwaysNight) {
+        const sunrise = (sun.sunrise ?? 6);
+        const sunset  = (sun.sunset  ?? 18);
+        const span = Math.max(0.1, sunset - sunrise);
+        const u = clamp01((t - sunrise) / span);
+        const ang = lerp(Math.PI, 0, u);
+        const sx = w*0.5 + Math.cos(ang) * arcR;
+        const sy = centerY - Math.sin(ang) * arcR;
+
+        ctx.save();
+        ctx.globalAlpha = 0.85 * dayFactor;
+        const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, 90);
+        g.addColorStop(0, "rgba(255,230,140,0.95)");
+        g.addColorStop(0.35, "rgba(255,210,110,0.35)");
+        g.addColorStop(1, "rgba(255,210,110,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(sx, sy, 90, 0, TAU); ctx.fill();
+        ctx.fillStyle = "rgba(255,235,170,0.95)";
+        ctx.beginPath(); ctx.arc(sx, sy, 18, 0, TAU); ctx.fill();
+        ctx.restore();
+      } else {
+        if (sun.alwaysNight || sun.sunrise == null || sun.sunset == null) {
+          drawMoon(instant, w*0.75, h*0.20, 1);
+        } else {
+          const sunset = sun.sunset, sunrise = sun.sunrise;
+          let nightSpan = (sunrise + 24) - sunset;
+          if (nightSpan < 0.1) nightSpan = 12;
+
+          let u = (t >= sunset) ? (t - sunset) / nightSpan : (t + 24 - sunset) / nightSpan;
+          u = clamp01(u);
+
+          const ang = lerp(Math.PI, 0, u);
+          const mx = w*0.5 + Math.cos(ang) * arcR;
+          const my = centerY - Math.sin(ang) * arcR;
+          drawMoon(instant, mx, my, (1 - dayFactor));
+        }
+      }
+    }
+
+    function drawHand(angle, length, width, color, backLen){
+      ctx.save();
+      ctx.rotate(angle);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(0, backLen || 0);
+      ctx.lineTo(0, -length);
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(0, backLen || 0, width*0.42, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawClockFace(instant, geo){
+      const { cx, cy, r } = geo;
+      const p = getZonedParts(instant, currentTZ);
+
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      ctx.beginPath(); ctx.arc(0, 0, r*1.03, 0, TAU);
+      ctx.fillStyle = "rgba(0,0,0,0.22)"; ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU);
+      ctx.fillStyle = "rgba(10,12,18,0.42)"; ctx.fill();
+
+      const sheen = ctx.createRadialGradient(-r*0.3, -r*0.5, 5, 0, 0, r*1.2);
+      sheen.addColorStop(0, "rgba(255,255,255,0.12)");
+      sheen.addColorStop(0.4, "rgba(255,255,255,0.03)");
+      sheen.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = sheen;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();
+
+      // Ticks
+      const tickCount = (clockMode === "24") ? 240 : 120;
+      for (let i = 0; i < tickCount; i++){
+        const a = (i / tickCount) * TAU;
+        const isMajor = (i % 10 === 0);
+        const isQuarter = (i % 30 === 0);
+        const len = isMajor ? r*0.10 : r*0.05;
+        const lw  = isMajor ? (isQuarter ? 3.0 : 2.2) : 1.2;
+
+        ctx.strokeStyle = isMajor ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.18)";
+        ctx.lineWidth = lw;
+        ctx.beginPath();
+        const x1 = Math.sin(a) * (r - len - r*0.02);
+        const y1 = -Math.cos(a) * (r - len - r*0.02);
+        const x2 = Math.sin(a) * (r - r*0.02);
+        const y2 = -Math.cos(a) * (r - r*0.02);
+        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      }
+
+      // Numbers
+      ctx.fillStyle = "rgba(255,255,255,0.86)";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = `700 ${Math.max(12, r*0.10)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+
+      if (clockMode === "24") {
+        for (let h = 0; h < 24; h++){
+          const a = (h / 24) * TAU;
+          const rr = r * 0.80;
+          const x = Math.sin(a) * rr;
+          const y = -Math.cos(a) * rr;
+          ctx.globalAlpha = (h % 3 === 0) ? 0.95 : 0.70;
+          ctx.fillText(String(h), x, y);
+        }
+      } else {
+        for (let h = 1; h <= 12; h++){
+          const a = ((h % 12) / 12) * TAU;
+          const rr = r * 0.80;
+          const x = Math.sin(a) * rr;
+          const y = -Math.cos(a) * rr;
+          ctx.globalAlpha = (h % 3 === 0) ? 0.95 : 0.75;
+          ctx.fillText(String(h), x, y);
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      // Hands (smooth)
+      const hour24 = p.hour + p.minute/60 + p.second/3600 + (p.millisecond||0)/3600000;
+      const minute = p.minute + p.second/60 + (p.millisecond||0)/60000;
+      const second = p.second + (p.millisecond||0)/1000;
+
+      const hourAngle = (clockMode === "24")
+        ? (hour24 / 24) * TAU
+        : ((hour24 % 12) / 12) * TAU;
+
+      const minAngle = (minute / 60) * TAU;
+      const secAngle = (second / 60) * TAU;
+
+      drawHand(hourAngle, r*0.55, 6.0, "rgba(255,255,255,0.88)", r*0.08);
+      drawHand(minAngle,  r*0.74, 4.2, "rgba(255,255,255,0.78)", r*0.06);
+      drawHand(secAngle,  r*0.80, 2.2, "rgba(255,90,90,0.90)",  r*0.05);
+
+      // Center cap
+      ctx.fillStyle = "rgba(255,255,255,0.90)";
+      ctx.beginPath(); ctx.arc(0, 0, r*0.03, 0, TAU); ctx.fill();
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.beginPath(); ctx.arc(0, 0, r*0.015, 0, TAU); ctx.fill();
+
+      // AM/PM badge in 12-hour mode
+      if (clockMode === "12") {
+        const isPM = p.hour >= 12;
+        ctx.font = `800 ${Math.max(10, r*0.085)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.textAlign = "center";
+        ctx.fillText(isPM ? "PM" : "AM", 0, r*0.33);
+      } else {
+        ctx.font = `600 ${Math.max(10, r*0.07)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.textAlign = "center";
+        ctx.fillText("24-hour", 0, r*0.30);
+      }
+
+      ctx.restore();
     }
 
     // =========================

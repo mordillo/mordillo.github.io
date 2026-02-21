@@ -28,6 +28,7 @@
       pointer-events: none;
       padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
+
     .panel {
       pointer-events: auto;
       background: rgba(0,0,0,0.40);
@@ -73,6 +74,7 @@
       opacity: 0.88;
       line-height: 1.1;
     }
+
     select {
       width: 100%;
       padding: 8px 10px;
@@ -91,6 +93,7 @@
       margin-top: 6px;
       grid-column: 1 / -1;
     }
+
     .pill {
       display:inline-block;
       padding: 2px 8px;
@@ -141,40 +144,31 @@
       grid-template-columns: 1fr auto;
       gap: 10px;
       align-items: end;
-      z-index: 6; /* stays above manual panel */
+      z-index: 6;
     }
 
+    /* This box expands upward in manual mode */
     .datePanel {
       padding: 10px 10px 9px;
-      min-height: 46px;
       display: grid;
-      align-content: center;
-      gap: 2px;
+      align-content: start;
+      gap: 4px;
+      min-height: 46px;
+      transition: max-height 180ms ease, padding 180ms ease;
     }
     .datePanel .small { font-size: 11px; opacity: 0.84; }
     .datePanel .big   { font-size: 12px; font-weight: 650; line-height: 1.2; }
 
-    .controlsPanel {
-      padding: 10px;
-      display: grid;
-      gap: 8px;
-      min-width: 150px;
-    }
-
-    /* ---------- Manual panel (now ABOVE bottom bar, and never overlaps it) ---------- */
-    .manualPanel {
-      position: absolute;
-      left: 10px;
-      right: 10px;
-      /* Place it above bottomBar: bottomBar height ~ (10 padding + buttons + gaps) */
-      bottom: 108px;
-      padding: 10px;
+    .manualFields {
       display: none;
-      z-index: 4; /* below bottomBar, so bottomBar doesn't cover it */
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      gap: 8px;
     }
-    .manualPanel.visible { display: block; }
+    .datePanel.manualOpen .manualFields { display: grid; }
 
-    .manualGrid {
+    .manualFieldsRow {
       display: grid;
       grid-template-columns: 78px 1fr;
       gap: 8px 10px;
@@ -191,12 +185,17 @@
       outline: none;
     }
 
-    /* Smaller manual panel on short screens */
+    .controlsPanel {
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      min-width: 150px;
+      align-content: start;
+    }
+
     @media (max-height: 740px) {
-      .manualPanel { bottom: 100px; padding: 9px; }
-      .manualGrid { gap: 7px 9px; }
-      input[type="date"], input[type="time"] { padding: 7px 9px; font-size: 12.5px; }
-      select { padding: 7px 9px; font-size: 12.5px; }
+      select, input[type="date"], input[type="time"] { padding: 7px 9px; font-size: 12.5px; }
+      .datePanel .big { font-size: 12px; }
     }
 
     .err {
@@ -246,20 +245,20 @@
 
     <div class="panel err" id="errBox"></div>
 
-    <!-- Manual panel: compact, no extra instructions, positioned above bottom bar -->
-    <div class="panel manualPanel" id="manualPanel">
-      <div class="manualGrid">
-        <label for="manualDate">Date</label>
-        <input id="manualDate" type="date" />
-        <label for="manualTime">Time</label>
-        <input id="manualTime" type="time" step="1" />
-      </div>
-    </div>
-
     <div class="bottomBar">
-      <div class="panel datePanel">
+      <div class="panel datePanel" id="datePanel">
         <div class="small" id="modeLabel">Real time</div>
         <div class="big" id="dateLabel">—</div>
+
+        <!-- These inputs live INSIDE the info box when Manual is on -->
+        <div class="manualFields" id="manualFields">
+          <div class="manualFieldsRow">
+            <label for="manualDate">Date</label>
+            <input id="manualDate" type="date" />
+            <label for="manualTime">Time</label>
+            <input id="manualTime" type="time" step="1" />
+          </div>
+        </div>
       </div>
 
       <div class="panel controlsPanel">
@@ -305,16 +304,27 @@
     window.addEventListener("resize", resize);
     resize();
 
+    // Used to compute how much space the bottom bar occupies (and keep clock above it)
+    const datePanel = document.getElementById("datePanel");
+
     function getClockGeometry(){
       const w = window.innerWidth;
       const h = window.innerHeight;
+
       const topReserve = 118;
-      const bottomReserve = 150; // slightly larger to account for manual panel space
+
+      // Measure the bottom bar height dynamically based on datePanel expansion
+      // (fallback numbers in case measurement isn't ready)
+      const bottomBarEl = document.querySelector(".bottomBar");
+      const bbRect = bottomBarEl?.getBoundingClientRect?.();
+      const bottomReserve = Math.max(110, (bbRect?.height || 120) + 20);
+
       const usableH = Math.max(220, h - topReserve - bottomReserve);
 
       const cx = w * 0.5;
       const cy = topReserve + usableH * 0.58;
-      const r = Math.min(w, usableH) * 0.36;
+      const r  = Math.min(w, usableH) * 0.36;
+
       return { w, h, cx, cy, r };
     }
 
@@ -456,7 +466,7 @@
       return "Waning Crescent";
     }
 
-    // ===== Cities (added Israel / Tel Aviv + Jerusalem) =====
+    // ===== Cities (includes Israel / Tel Aviv + Jerusalem) =====
     const CITY_DB = [
       { country:"United States", city:"New York, NY",        lat:40.7128, lon:-74.0060, tz:"America/New_York" },
       { country:"United States", city:"Jersey City, NJ",     lat:40.7178, lon:-74.0431, tz:"America/New_York" },
@@ -486,7 +496,6 @@
     const btnReal = document.getElementById("btnReal");
     const btnManual = document.getElementById("btnManual");
 
-    const manualPanel = document.getElementById("manualPanel");
     const manualDateInput = document.getElementById("manualDate");
     const manualTimeInput = document.getElementById("manualTime");
 
@@ -497,9 +506,10 @@
     let currentLat = 40.7128;
     let currentLon = -74.0060;
     let currentTZ = "America/New_York";
-    let mode = "real";
+
+    let mode = "real";      // real | manual
     let manualInstant = new Date();
-    let clockMode = "12";
+    let clockMode = "12";   // 12 | 24
 
     function setClockMode(m){
       clockMode = m;
@@ -507,30 +517,8 @@
       btn24.classList.toggle("active", clockMode === "24");
     }
     setClockMode("12");
-
     btn12.addEventListener("click", () => setClockMode("12"));
     btn24.addEventListener("click", () => setClockMode("24"));
-
-    function setMode(newMode){
-      mode = newMode;
-      btnReal.classList.toggle("active", mode === "real");
-      btnManual.classList.toggle("active", mode === "manual");
-      manualPanel.classList.toggle("visible", mode === "manual");
-      modeLabel.textContent = (mode === "real") ? "Real time" : "Manual";
-      if (mode === "manual") syncManualInputsFromInstant();
-    }
-
-    btnReal.addEventListener("click", () => {
-      manualInstant = new Date();
-      setMode("real");
-    });
-
-    btnManual.addEventListener("click", () => {
-      if (mode !== "manual") {
-        manualInstant = new Date();
-        setMode("manual");
-      }
-    });
 
     function setCity(rec, labelOverride){
       currentLat = rec.lat;
@@ -648,7 +636,36 @@
     manualDateInput.addEventListener("input", () => { if (mode === "manual") syncManualInstantFromInputs(); });
     manualTimeInput.addEventListener("input", () => { if (mode === "manual") syncManualInstantFromInputs(); });
 
-    // ===== Dragging in manual mode =====
+    function setMode(newMode){
+      mode = newMode;
+      btnReal.classList.toggle("active", mode === "real");
+      btnManual.classList.toggle("active", mode === "manual");
+
+      // Expand/collapse the info box upward to include inputs
+      datePanel.classList.toggle("manualOpen", mode === "manual");
+
+      modeLabel.textContent = (mode === "real") ? "Real time" : "Manual";
+      if (mode === "manual") syncManualInputsFromInstant();
+
+      // Recompute canvas sizing after layout changes (keeps clock above expanded bottom panel)
+      requestAnimationFrame(() => {
+        // nothing else needed; getClockGeometry() reads DOM size every frame
+      });
+    }
+
+    btnReal.addEventListener("click", () => {
+      manualInstant = new Date();
+      setMode("real");
+    });
+
+    btnManual.addEventListener("click", () => {
+      if (mode !== "manual") {
+        manualInstant = new Date();
+        setMode("manual");
+      }
+    });
+
+    // ===== Dragging in manual mode (continuous) =====
     function angleFromCenter(x, y, cx, cy){
       const a = Math.atan2(y - cy, x - cx);
       return (a + Math.PI / 2 + TAU) % TAU;
@@ -708,7 +725,7 @@
       return turns * hoursPerTurn * 3600;
     }
 
-    // Attach drag handlers to window (canvas can't capture touches)
+    // Dragging is attached to window so the UI remains clickable
     let dragging = null;
     let lastAngle = 0;
     let lastInputSyncMs = 0;
@@ -716,7 +733,7 @@
     window.addEventListener("pointerdown", (e) => {
       if (mode !== "manual") return;
 
-      // Ignore touches on UI controls
+      // Ignore touches on UI controls (including the expanded date panel inputs)
       const el = e.target;
       if (el && (el.tagName === "SELECT" || el.tagName === "BUTTON" || el.tagName === "INPUT" || el.closest(".panel"))) return;
 

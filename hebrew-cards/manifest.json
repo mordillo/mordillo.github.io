@@ -1,0 +1,9 @@
+{
+  "name": "Hebrew Flashcards",
+  "short_name": "Hebrew Cards",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f4ed",
+  "theme_color": "#f7f4ed",
+  "orientation": "portrait"
+}

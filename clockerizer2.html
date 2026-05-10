@@ -3,29 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Analog Clock (12/24 + City TZ + Weather)</title>
+  <title>Analog Clock (12/24 + City TZ + Past Weather)</title>
   <style>
     :root { color-scheme: dark; }
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      background: #0b1020;
-      overflow: hidden;
-    }
-
-    /* Canvas never steals taps */
+    html, body { height: 100%; margin: 0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:#0b1020; overflow:hidden; }
     canvas { display:block; width:100vw; height:100vh; pointer-events:none; }
 
-    .hud {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    }
-
-    .panel {
-      pointer-events: auto;
+    .hud{ position:fixed; inset:0; pointer-events:none; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+    .panel{
+      pointer-events:auto;
       background: rgba(0,0,0,0.40);
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 14px;
@@ -34,99 +20,65 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     }
 
-    /* ---------- Top bar ---------- */
-    .topBar {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      align-items: stretch;
-      z-index: 5;
+    .topBar{
+      position:absolute; top:10px; left:10px; right:10px;
+      display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:stretch; z-index:5;
+    }
+    .locationPanel{
+      padding:10px 10px 9px;
+      display:grid; grid-template-columns:78px 1fr;
+      gap:8px 10px; align-items:center; min-height:74px;
+    }
+    .displayPanel{
+      padding:10px 10px 9px; min-width:190px;
+      display:grid; gap:8px; align-content:start;
     }
 
-    .locationPanel {
-      padding: 10px 10px 9px;
-      display: grid;
-      grid-template-columns: 78px 1fr;
-      gap: 8px 10px;
-      align-items: center;
-      min-height: 74px;
-    }
-
-    .displayPanel {
-      padding: 10px 10px 9px;
-      min-width: 190px;
-      display: grid;
-      gap: 8px;
-      align-content: start;
-    }
-
-    label { font-size: 12px; opacity: 0.88; line-height: 1.1; }
-
-    select, input[type="date"], input[type="time"] {
-      width: 100%;
-      padding: 8px 10px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.14);
+    label{ font-size:12px; opacity:0.88; line-height:1.1; }
+    select, input[type="date"], input[type="time"]{
+      width:100%;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.14);
       background: rgba(0,0,0,0.25);
       color: rgba(255,255,255,0.92);
-      font-size: 13px;
-      outline: none;
+      font-size:13px;
+      outline:none;
     }
-
-    .tiny {
-      font-size: 11px;
-      opacity: 0.82;
-      line-height: 1.25;
-      margin-top: 6px;
-      grid-column: 1 / -1;
-    }
-
-    .pill {
+    .tiny{ font-size:11px; opacity:0.82; line-height:1.25; margin-top:6px; grid-column:1 / -1; }
+    .pill{
       display:inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.16);
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.16);
       background: rgba(255,255,255,0.06);
-      font-size: 11px;
-      opacity: 0.95;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      vertical-align: middle;
+      font-size:11px;
+      opacity:0.95;
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      vertical-align:middle;
     }
 
-    .toggleRow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-    .btn {
-      appearance: none;
-      border: 1px solid rgba(255,255,255,0.15);
+    .toggleRow{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .btn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.15);
       background: rgba(0,0,0,0.35);
       color: rgba(255,255,255,0.92);
-      padding: 9px 10px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 12px;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
+      padding:9px 10px;
+      border-radius:12px;
+      font-weight:700;
+      font-size:12px;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
     }
-    .btn:active { transform: translateY(1px); }
-    .btn.active {
-      background: rgba(255,255,255,0.16);
-      border-color: rgba(255,255,255,0.30);
-    }
+    .btn:active{ transform: translateY(1px); }
+    .btn.active{ background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.30); }
 
-    /* Weather override buttons */
-    .weatherControls {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-    }
+    .weatherControls{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
     .miniBtn{
       appearance:none;
       border:1px solid rgba(255,255,255,0.15);
@@ -137,83 +89,61 @@
       font-weight:700;
       font-size:11px;
       cursor:pointer;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
     }
-    .miniBtn.active{
-      background: rgba(255,255,255,0.14);
-      border-color: rgba(255,255,255,0.28);
+    .miniBtn.active{ background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.28); }
+
+    .bottomBar{
+      position:absolute; left:10px; right:10px; bottom:10px;
+      display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; z-index:6;
     }
-
-    /* ---------- Bottom bar ---------- */
-    .bottomBar {
-      position: absolute;
-      left: 10px;
-      right: 10px;
-      bottom: 10px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      align-items: end;
-      z-index: 6;
+    .datePanel{
+      padding:10px 10px 9px;
+      display:grid; align-content:start; gap:6px;
+      min-height:46px;
     }
+    .datePanel .small{ font-size:11px; opacity:0.84; }
+    .datePanel .big{ font-size:12px; font-weight:650; line-height:1.2; }
+    .weatherLine{ font-size:11px; opacity:0.86; line-height:1.25; }
 
-    /* Info box expands upward in manual mode (includes date/time inputs) */
-    .datePanel {
-      padding: 10px 10px 9px;
-      display: grid;
-      align-content: start;
-      gap: 6px;
-      min-height: 46px;
+    .manualFields{
+      display:none;
+      margin-top:6px;
+      padding-top:8px;
+      border-top:1px solid rgba(255,255,255,0.12);
     }
-    .datePanel .small { font-size: 11px; opacity: 0.84; }
-    .datePanel .big   { font-size: 12px; font-weight: 650; line-height: 1.2; }
+    .datePanel.manualOpen .manualFields{ display:block; }
 
-    .weatherLine { font-size: 11px; opacity: 0.86; line-height: 1.25; }
-
-    .manualFields {
-      display: none;
-      margin-top: 6px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(255,255,255,0.12);
-    }
-    .datePanel.manualOpen .manualFields { display: block; }
-
-    .manualFieldsRow {
-      display: grid;
-      grid-template-columns: 78px 1fr;
-      gap: 8px 10px;
-      align-items: center;
+    .manualFieldsRow{
+      display:grid;
+      grid-template-columns:78px 1fr;
+      gap:8px 10px;
+      align-items:center;
     }
 
-    .controlsPanel {
-      padding: 10px;
-      display: grid;
-      gap: 8px;
-      min-width: 150px;
-      align-content: start;
+    .controlsPanel{
+      padding:10px;
+      display:grid;
+      gap:8px;
+      min-width:150px;
+      align-content:start;
     }
 
-    .err {
-      position: absolute;
-      left: 10px;
-      right: 10px;
-      top: 96px;
-      padding: 10px;
-      display: none;
-      border-radius: 14px;
+    .err{
+      position:absolute; left:10px; right:10px; top:96px;
+      padding:10px; display:none;
+      border-radius:14px;
       background: rgba(120,0,0,0.35);
-      border: 1px solid rgba(255,120,120,0.28);
-      pointer-events: auto;
-      font-size: 12px;
-      line-height: 1.3;
-      z-index: 10;
+      border:1px solid rgba(255,120,120,0.28);
+      pointer-events:auto;
+      font-size:12px; line-height:1.3; z-index:10;
     }
-    .err.visible { display: block; }
+    .err.visible{ display:block; }
 
     @media (max-height: 740px) {
-      select, input[type="date"], input[type="time"] { padding: 7px 9px; font-size: 12.5px; }
-      .datePanel .big { font-size: 12px; }
+      select, input[type="date"], input[type="time"] { padding:7px 9px; font-size:12.5px; }
+      .datePanel .big { font-size:12px; }
     }
   </style>
 </head>
@@ -299,7 +229,6 @@
     // ===== canvas =====
     const canvas = document.getElementById("c");
     const ctx = canvas.getContext("2d", { alpha: false });
-
     function resize(){
       const dpr = window.devicePixelRatio || 1;
       canvas.width = Math.floor(window.innerWidth * dpr);
@@ -314,10 +243,8 @@
     function getClockGeometry(){
       const w = window.innerWidth;
       const h = window.innerHeight;
-
       const topReserve = 118;
 
-      // Dynamic bottom reserve based on bottom bar height (expanded in manual mode)
       const bottomBarEl = document.querySelector(".bottomBar");
       const bb = bottomBarEl?.getBoundingClientRect?.();
       const bottomReserve = Math.max(110, (bb?.height || 120) + 22);
@@ -330,7 +257,7 @@
       return { w, h, cx, cy, r };
     }
 
-    // ===== timezone helpers (Intl-only) =====
+    // ===== timezone helpers =====
     function getZonedParts(date, timeZone){
       const dtf = new Intl.DateTimeFormat("en-US", {
         timeZone,
@@ -340,11 +267,7 @@
       });
       const parts = dtf.formatToParts(date);
       const map = Object.fromEntries(parts.filter(p => p.type !== "literal").map(p => [p.type, p.value]));
-      return {
-        year:+map.year, month:+map.month, day:+map.day,
-        hour:+map.hour, minute:+map.minute, second:+map.second,
-        millisecond: date.getMilliseconds()
-      };
+      return { year:+map.year, month:+map.month, day:+map.day, hour:+map.hour, minute:+map.minute, second:+map.second, millisecond: date.getMilliseconds() };
     }
 
     function zonedPartsToUTC(parts, timeZone){
@@ -370,7 +293,7 @@
       return Math.floor((thisDay - start) / 86400000) + 1;
     }
 
-    // ===== sunrise/sunset (NOAA-ish) =====
+    // ===== sunrise/sunset =====
     function solarParamsFromLocalParts(parts){
       const doy = dayOfYearFromParts(parts);
       const hour = parts.hour + parts.minute/60 + parts.second/3600;
@@ -446,7 +369,7 @@
       return "Waning Crescent";
     }
 
-    // ===== cities (includes Israel) =====
+    // ===== cities =====
     const CITY_DB = [
       { country:"United States", city:"New York, NY",        lat:40.7128, lon:-74.0060, tz:"America/New_York" },
       { country:"United States", city:"Jersey City, NJ",     lat:40.7178, lon:-74.0431, tz:"America/New_York" },
@@ -490,34 +413,40 @@
 
     // ===== state =====
     let currentLat = 40.7128, currentLon = -74.0060, currentTZ = "America/New_York";
-    let mode = "real";                // real | manual
-    let manualInstant = new Date();   // UTC instant
-    let clockMode = "12";             // 12 | 24
+    let mode = "real";
+    let manualInstant = new Date();
+    let clockMode = "12";
 
     // weather state
-    let wxMode = "auto";              // auto | rain | snow
-    let wxKind = "none";              // none | rain | snow
-    let wxIntensity = 0;              // 0..1
+    let wxMode = "auto";     // auto | rain | snow
+    let wxKind = "none";     // none | rain | snow
+    let wxIntensity = 0;     // 0..1
     let wxText = "—";
     let lastRealtimeFetchMs = 0;
 
-    // historical cache: key "lat,lon,YYYY-MM-DD" => response JSON
+    // debounce + cache (DECLARED EARLY, BEFORE ANY CALLS)
+    let wxDebounce = null;
     const historyCache = new Map();
 
-    function updateWeatherLabel(){
-      weatherLabel.textContent = `Weather: ${wxText}`;
+    function updateWeatherLabel(){ weatherLabel.textContent = `Weather: ${wxText}`; }
+
+    // ===== weather scheduling (DECLARED EARLY) =====
+    function scheduleWeatherRefresh(force=false){
+      if (wxMode !== "auto") return;
+      clearTimeout(wxDebounce);
+      wxDebounce = setTimeout(() => refreshAutoWeather(force), force ? 0 : 250);
     }
 
+    // ===== mode + toggles =====
     function setClockMode(m){
       clockMode = m;
       btn12.classList.toggle("active", clockMode === "12");
       btn24.classList.toggle("active", clockMode === "24");
-      // changing dial changes the "hours per turn" for manual dragging, so refresh weather label timing too
       scheduleWeatherRefresh();
     }
-    setClockMode("12");
     btn12.addEventListener("click", () => setClockMode("12"));
     btn24.addEventListener("click", () => setClockMode("24"));
+    setClockMode("12");
 
     function setWxMode(m){
       wxMode = m;
@@ -525,14 +454,9 @@
       wxRainBtn.classList.toggle("active", wxMode === "rain");
       wxSnowBtn.classList.toggle("active", wxMode === "snow");
 
-      if (wxMode === "rain") {
-        wxKind = "rain"; wxIntensity = 0.75; wxText = "Manual: Rain"; updateWeatherLabel();
-      } else if (wxMode === "snow") {
-        wxKind = "snow"; wxIntensity = 0.75; wxText = "Manual: Snow"; updateWeatherLabel();
-      } else {
-        // auto
-        scheduleWeatherRefresh(true);
-      }
+      if (wxMode === "rain") { wxKind = "rain"; wxIntensity = 0.75; wxText = "Manual: Rain"; updateWeatherLabel(); }
+      else if (wxMode === "snow") { wxKind = "snow"; wxIntensity = 0.75; wxText = "Manual: Snow"; updateWeatherLabel(); }
+      else { scheduleWeatherRefresh(true); }
     }
     wxAutoBtn.addEventListener("click", () => setWxMode("auto"));
     wxRainBtn.addEventListener("click", () => setWxMode("rain"));
@@ -547,7 +471,6 @@
       if (mode === "manual") syncManualInputsFromInstant();
       scheduleWeatherRefresh(true);
     }
-
     btnReal.addEventListener("click", () => { manualInstant = new Date(); setMode("real"); });
     btnManual.addEventListener("click", () => { if (mode !== "manual") { manualInstant = new Date(); setMode("manual"); } });
 
@@ -659,7 +582,7 @@
     manualDateInput.addEventListener("input", () => { if (mode==="manual") { syncManualInstantFromInputs(); scheduleWeatherRefresh(); } });
     manualTimeInput.addEventListener("input", () => { if (mode==="manual") { syncManualInstantFromInputs(); scheduleWeatherRefresh(); } });
 
-    // ===== Weather: Open-Meteo (current + historical) =====
+    // ===== Weather fetchers =====
     function codeToText(code){
       if (code === 0) return "Clear";
       if ([1,2,3].includes(code)) return "Cloudy";
@@ -677,7 +600,7 @@
       if (wxMode !== "auto") return;
 
       const now = Date.now();
-      if (!force && (now - lastRealtimeFetchMs) < 10*60*1000) return; // 10 min
+      if (!force && (now - lastRealtimeFetchMs) < 10*60*1000) return;
       lastRealtimeFetchMs = now;
 
       const url =
@@ -717,12 +640,9 @@
     }
 
     function findClosestHourlyIndexByHour(timesISO, targetHour){
-      // timesISO like ["2025-03-02T00:00", ...] in requested timezone
-      let bestIdx = 0;
-      let bestD = Infinity;
+      let bestIdx = 0, bestD = Infinity;
       for (let i = 0; i < timesISO.length; i++){
-        const t = timesISO[i];
-        const hh = Number(t.slice(11, 13)); // "THH"
+        const hh = Number(timesISO[i].slice(11, 13));
         const d = Math.abs(hh - targetHour);
         if (d < bestD){ bestD = d; bestIdx = i; }
       }
@@ -754,7 +674,6 @@
       const times = data?.hourly?.time || [];
       if (!times.length) throw new Error("No historical hourly data");
 
-      // Choose closest hour (DST days may have 23/25 hours; this still picks closest)
       const idx = findClosestHourlyIndexByHour(times, zp.hour);
 
       const code = Number(data.hourly.weather_code?.[idx] ?? 0);
@@ -785,11 +704,8 @@
     async function refreshAutoWeather(force=false){
       if (wxMode !== "auto") return;
       try {
-        if (mode === "manual") {
-          await fetchHistoricalWeatherForManualTime();
-        } else {
-          await fetchRealtimeWeather(force);
-        }
+        if (mode === "manual") await fetchHistoricalWeatherForManualTime();
+        else await fetchRealtimeWeather(force);
       } catch {
         wxKind = "none";
         wxIntensity = 0;
@@ -798,17 +714,9 @@
       }
     }
 
-    let wxDebounce = null;
-    function scheduleWeatherRefresh(force=false){
-      if (wxMode !== "auto") return;
-      clearTimeout(wxDebounce);
-      wxDebounce = setTimeout(() => refreshAutoWeather(force), force ? 0 : 250);
-    }
-
-    // ===== Weather particles (rain/snow) =====
+    // ===== particles =====
     const rainDrops = [];
     const snowFlakes = [];
-
     function initParticles(){
       rainDrops.length = 0;
       snowFlakes.length = 0;
@@ -816,23 +724,10 @@
       const h = window.innerHeight;
 
       for (let i=0;i<260;i++){
-        rainDrops.push({
-          x: Math.random()*w,
-          y: Math.random()*h,
-          v: 450 + Math.random()*550,
-          len: 10 + Math.random()*18,
-          drift: -60 + Math.random()*120
-        });
+        rainDrops.push({ x:Math.random()*w, y:Math.random()*h, v:450+Math.random()*550, len:10+Math.random()*18, drift:-60+Math.random()*120 });
       }
       for (let i=0;i<220;i++){
-        snowFlakes.push({
-          x: Math.random()*w,
-          y: Math.random()*h,
-          v: 22 + Math.random()*55,
-          r: 1.2 + Math.random()*2.4,
-          sway: 10 + Math.random()*30,
-          phase: Math.random()*TAU
-        });
+        snowFlakes.push({ x:Math.random()*w, y:Math.random()*h, v:22+Math.random()*55, r:1.2+Math.random()*2.4, sway:10+Math.random()*30, phase:Math.random()*TAU });
       }
     }
     initParticles();
@@ -840,9 +735,7 @@
 
     function stepAndDrawWeather(dt){
       if (wxIntensity <= 0 || wxKind === "none") return;
-
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const w = window.innerWidth, h = window.innerHeight;
 
       if (wxKind === "rain"){
         const n = Math.floor(rainDrops.length * wxIntensity);
@@ -855,7 +748,6 @@
           const d = rainDrops[i];
           d.y += d.v * dt;
           d.x += d.drift * dt;
-
           if (d.y > h + 20) { d.y = -20; d.x = Math.random()*w; }
           if (d.x < -40) d.x = w + 40;
           if (d.x > w + 40) d.x = -40;
@@ -892,7 +784,7 @@
       }
     }
 
-    // ===== drawing helpers =====
+    // ===== drawing =====
     function drawHand(angle, length, width, color, backLen){
       ctx.save();
       ctx.rotate(angle);
@@ -975,7 +867,6 @@
       ctx.globalAlpha = dayFactor; ctx.fillStyle = day; ctx.fillRect(0, 0, w, h);
       ctx.globalAlpha = 1;
 
-      // stars
       if (dayFactor < 0.6) {
         const starAlpha = (1 - dayFactor) * 0.6;
         ctx.globalAlpha = starAlpha;
@@ -990,7 +881,6 @@
         ctx.globalAlpha = 1;
       }
 
-      // sun/moon
       const centerY = h * 0.60;
       const arcR = Math.min(w, h) * 0.38;
 
@@ -1120,7 +1010,6 @@
       ctx.restore();
     }
 
-    // ===== labels =====
     function updateLabels(instant){
       const p = getZonedParts(instant, currentTZ);
 
@@ -1137,8 +1026,8 @@
       }
 
       const phaseName = moonPhaseName(moonPhaseFraction(instant));
-
       const sun = sunriseSunsetHoursCityTZ(instant, currentLat, currentLon, currentTZ);
+
       let ssText = "";
       if (sun.alwaysDay) ssText = "Sun up all day";
       else if (sun.alwaysNight) ssText = "Sun down all day";
@@ -1152,7 +1041,7 @@
       updateWeatherLabel();
     }
 
-    // ===== continuous manual dragging (gear mapping) =====
+    // ===== dragging (manual mode) =====
     function angleFromCenter(x, y, cx, cy){
       const a = Math.atan2(y - cy, x - cx);
       return (a + Math.PI/2 + TAU) % TAU;
@@ -1201,8 +1090,8 @@
     function deltaSecondsForHand(hand, deltaAngle){
       const turns = deltaAngle / TAU;
       if (hand === "sec") return turns * 60;
-      if (hand === "min") return turns * 3600; // 1 full turn => 1 hour
-      const hoursPerTurn = (clockMode === "24") ? 24 : 12; // hour hand depends on dial
+      if (hand === "min") return turns * 3600;
+      const hoursPerTurn = (clockMode === "24") ? 24 : 12;
       return turns * hoursPerTurn * 3600;
     }
 
@@ -1212,8 +1101,6 @@
 
     window.addEventListener("pointerdown", (e) => {
       if (mode !== "manual") return;
-
-      // ignore UI touches (select/button/input/panels)
       const el = e.target;
       if (el && (el.tagName === "SELECT" || el.tagName === "BUTTON" || el.tagName === "INPUT" || el.closest(".panel"))) return;
 
@@ -1245,7 +1132,6 @@
         lastInputSync = now;
       }
 
-      // schedule historical weather lookup while dragging (debounced)
       scheduleWeatherRefresh();
     });
 
@@ -1259,6 +1145,74 @@
     window.addEventListener("pointerup", endDrag);
     window.addEventListener("pointercancel", endDrag);
 
+    // ===== particles =====
+    const rainDrops = [];
+    const snowFlakes = [];
+    function initParticles(){
+      rainDrops.length = 0;
+      snowFlakes.length = 0;
+      const w = window.innerWidth, h = window.innerHeight;
+      for (let i=0;i<260;i++){
+        rainDrops.push({ x:Math.random()*w, y:Math.random()*h, v:450+Math.random()*550, len:10+Math.random()*18, drift:-60+Math.random()*120 });
+      }
+      for (let i=0;i<220;i++){
+        snowFlakes.push({ x:Math.random()*w, y:Math.random()*h, v:22+Math.random()*55, r:1.2+Math.random()*2.4, sway:10+Math.random()*30, phase:Math.random()*TAU });
+      }
+    }
+    initParticles();
+    window.addEventListener("resize", initParticles);
+
+    function stepAndDrawWeather(dt){
+      if (wxIntensity <= 0 || wxKind === "none") return;
+      const w = window.innerWidth, h = window.innerHeight;
+
+      if (wxKind === "rain"){
+        const n = Math.floor(rainDrops.length * wxIntensity);
+        ctx.save();
+        ctx.globalAlpha = 0.55 + 0.35*wxIntensity;
+        ctx.strokeStyle = "rgba(200,220,255,0.9)";
+        ctx.lineWidth = 1.2;
+
+        for (let i=0;i<n;i++){
+          const d = rainDrops[i];
+          d.y += d.v * dt;
+          d.x += d.drift * dt;
+          if (d.y > h + 20) { d.y = -20; d.x = Math.random()*w; }
+          if (d.x < -40) d.x = w + 40;
+          if (d.x > w + 40) d.x = -40;
+
+          ctx.beginPath();
+          ctx.moveTo(d.x, d.y);
+          ctx.lineTo(d.x + d.drift*0.02, d.y + d.len);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      if (wxKind === "snow"){
+        const n = Math.floor(snowFlakes.length * wxIntensity);
+        ctx.save();
+        ctx.globalAlpha = 0.55 + 0.35*wxIntensity;
+        ctx.fillStyle = "rgba(255,255,255,0.92)";
+
+        for (let i=0;i<n;i++){
+          const f = snowFlakes[i];
+          f.phase += dt * 1.2;
+          f.y += f.v * dt;
+          f.x += Math.sin(f.phase) * (f.sway * dt);
+
+          if (f.y > h + 10) { f.y = -10; f.x = Math.random()*w; }
+          if (f.x < -20) f.x = w + 20;
+          if (f.x > w + 20) f.x = -20;
+
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r, 0, TAU);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
+
     // ===== main loop =====
     let lastFrame = performance.now();
     function frame(now){
@@ -1268,24 +1222,19 @@
       const geo = getClockGeometry();
       const instant = (mode === "real") ? new Date() : manualInstant;
 
-      // periodic realtime refresh in real mode
-      if (wxMode === "auto" && mode === "real") {
-        // this will only actually fetch every 10 minutes (unless forced)
-        refreshAutoWeather(false);
-      }
+      // keep realtime weather fresh (fetch throttled inside)
+      if (wxMode === "auto" && mode === "real") refreshAutoWeather(false);
 
       ctx.clearRect(0, 0, geo.w, geo.h);
       drawBackground(instant, geo);
       drawClockFace(instant, geo);
-
-      // weather overlay
       stepAndDrawWeather(dt);
-
       updateLabels(instant);
+
       requestAnimationFrame(frame);
     }
 
-    // start
+    // ===== start =====
     updateWeatherLabel();
     setMode("real");
     scheduleWeatherRefresh(true);

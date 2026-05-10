@@ -1,0 +1,1295 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Analog Clock (12/24 + City TZ + Weather)</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: #0b1020;
+      overflow: hidden;
+    }
+
+    /* Canvas never steals taps */
+    canvas { display:block; width:100vw; height:100vh; pointer-events:none; }
+
+    .hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    .panel {
+      pointer-events: auto;
+      background: rgba(0,0,0,0.40);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    /* ---------- Top bar ---------- */
+    .topBar {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: stretch;
+      z-index: 5;
+    }
+
+    .locationPanel {
+      padding: 10px 10px 9px;
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: 8px 10px;
+      align-items: center;
+      min-height: 74px;
+    }
+
+    .displayPanel {
+      padding: 10px 10px 9px;
+      min-width: 190px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    label { font-size: 12px; opacity: 0.88; line-height: 1.1; }
+
+    select, input[type="date"], input[type="time"] {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.25);
+      color: rgba(255,255,255,0.92);
+      font-size: 13px;
+      outline: none;
+    }
+
+    .tiny {
+      font-size: 11px;
+      opacity: 0.82;
+      line-height: 1.25;
+      margin-top: 6px;
+      grid-column: 1 / -1;
+    }
+
+    .pill {
+      display:inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      font-size: 11px;
+      opacity: 0.95;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .toggleRow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.35);
+      color: rgba(255,255,255,0.92);
+      padding: 9px 10px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn.active {
+      background: rgba(255,255,255,0.16);
+      border-color: rgba(255,255,255,0.30);
+    }
+
+    /* Weather override buttons */
+    .weatherControls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .miniBtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.28);
+      color: rgba(255,255,255,0.90);
+      padding:7px 8px;
+      border-radius:12px;
+      font-weight:700;
+      font-size:11px;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .miniBtn.active{
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(255,255,255,0.28);
+    }
+
+    /* ---------- Bottom bar ---------- */
+    .bottomBar {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
+      z-index: 6;
+    }
+
+    /* Info box expands upward in manual mode (includes date/time inputs) */
+    .datePanel {
+      padding: 10px 10px 9px;
+      display: grid;
+      align-content: start;
+      gap: 6px;
+      min-height: 46px;
+    }
+    .datePanel .small { font-size: 11px; opacity: 0.84; }
+    .datePanel .big   { font-size: 12px; font-weight: 650; line-height: 1.2; }
+
+    .weatherLine { font-size: 11px; opacity: 0.86; line-height: 1.25; }
+
+    .manualFields {
+      display: none;
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+    }
+    .datePanel.manualOpen .manualFields { display: block; }
+
+    .manualFieldsRow {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: 8px 10px;
+      align-items: center;
+    }
+
+    .controlsPanel {
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      min-width: 150px;
+      align-content: start;
+    }
+
+    .err {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      top: 96px;
+      padding: 10px;
+      display: none;
+      border-radius: 14px;
+      background: rgba(120,0,0,0.35);
+      border: 1px solid rgba(255,120,120,0.28);
+      pointer-events: auto;
+      font-size: 12px;
+      line-height: 1.3;
+      z-index: 10;
+    }
+    .err.visible { display: block; }
+
+    @media (max-height: 740px) {
+      select, input[type="date"], input[type="time"] { padding: 7px 9px; font-size: 12.5px; }
+      .datePanel .big { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div class="hud">
+    <div class="topBar">
+      <div class="panel locationPanel">
+        <label for="countrySel">Country</label>
+        <select id="countrySel"></select>
+
+        <label for="citySel">City</label>
+        <select id="citySel"></select>
+
+        <div class="tiny">
+          TZ: <span class="pill" id="tzPill">Detecting…</span><br/>
+          <span class="pill" id="locPill">Detecting…</span>
+        </div>
+      </div>
+
+      <div class="panel displayPanel">
+        <div class="toggleRow">
+          <button class="btn active" id="btn12">12-hour</button>
+          <button class="btn" id="btn24">24-hour</button>
+        </div>
+
+        <div class="tiny">Weather effect:</div>
+        <div class="weatherControls">
+          <button class="miniBtn active" id="wxAuto">Auto</button>
+          <button class="miniBtn" id="wxRain">Rain</button>
+          <button class="miniBtn" id="wxSnow">Snow</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel err" id="errBox"></div>
+
+    <div class="bottomBar">
+      <div class="panel datePanel" id="datePanel">
+        <div class="small" id="modeLabel">Real time</div>
+        <div class="big" id="dateLabel">—</div>
+        <div class="weatherLine" id="weatherLabel">Weather: —</div>
+
+        <div class="manualFields">
+          <div class="manualFieldsRow">
+            <label for="manualDate">Date</label>
+            <input id="manualDate" type="date" />
+            <label for="manualTime">Time</label>
+            <input id="manualTime" type="time" step="1" />
+          </div>
+        </div>
+      </div>
+
+      <div class="panel controlsPanel">
+        <button class="btn active" id="btnReal">Real time</button>
+        <button class="btn" id="btnManual">Manual</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== error banner =====
+    const errBox = document.getElementById("errBox");
+    window.addEventListener("error", (e) => {
+      errBox.classList.add("visible");
+      errBox.textContent = "Script error: " + (e?.message || "unknown") + (e?.filename ? ` (${e.filename.split("/").pop()}:${e.lineno})` : "");
+    });
+
+    // ===== helpers =====
+    const TAU = Math.PI * 2;
+    const rad = (d) => d * Math.PI / 180;
+    const deg = (r) => r * 180 / Math.PI;
+    const clamp01 = (x) => Math.max(0, Math.min(1, x));
+    const lerp = (a,b,t) => a + (b-a)*t;
+    const pad2 = (n) => String(n).padStart(2, "0");
+    function wrapDelta(a){
+      a = (a + Math.PI) % TAU;
+      if (a < 0) a += TAU;
+      return a - Math.PI;
+    }
+
+    // ===== canvas =====
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d", { alpha: false });
+
+    function resize(){
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    function getClockGeometry(){
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      const topReserve = 118;
+
+      // Dynamic bottom reserve based on bottom bar height (expanded in manual mode)
+      const bottomBarEl = document.querySelector(".bottomBar");
+      const bb = bottomBarEl?.getBoundingClientRect?.();
+      const bottomReserve = Math.max(110, (bb?.height || 120) + 22);
+
+      const usableH = Math.max(220, h - topReserve - bottomReserve);
+      const cx = w * 0.5;
+      const cy = topReserve + usableH * 0.58;
+      const r  = Math.min(w, usableH) * 0.36;
+
+      return { w, h, cx, cy, r };
+    }
+
+    // ===== timezone helpers (Intl-only) =====
+    function getZonedParts(date, timeZone){
+      const dtf = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        year:"numeric", month:"2-digit", day:"2-digit",
+        hour:"2-digit", minute:"2-digit", second:"2-digit",
+        hourCycle:"h23"
+      });
+      const parts = dtf.formatToParts(date);
+      const map = Object.fromEntries(parts.filter(p => p.type !== "literal").map(p => [p.type, p.value]));
+      return {
+        year:+map.year, month:+map.month, day:+map.day,
+        hour:+map.hour, minute:+map.minute, second:+map.second,
+        millisecond: date.getMilliseconds()
+      };
+    }
+
+    function zonedPartsToUTC(parts, timeZone){
+      const guessUTC = Date.UTC(parts.year, parts.month-1, parts.day, parts.hour, parts.minute, parts.second, parts.millisecond||0);
+
+      function tzOffsetMinutesForUTC(utcMs){
+        const d = new Date(utcMs);
+        const zp = getZonedParts(d, timeZone);
+        const zonedAsUTC = Date.UTC(zp.year, zp.month-1, zp.day, zp.hour, zp.minute, zp.second, zp.millisecond||0);
+        return Math.round((zonedAsUTC - utcMs) / 60000);
+      }
+
+      let o1 = tzOffsetMinutesForUTC(guessUTC);
+      let corrected = guessUTC - o1*60000;
+      let o2 = tzOffsetMinutesForUTC(corrected);
+      if (o2 !== o1) corrected = guessUTC - o2*60000;
+      return new Date(corrected);
+    }
+
+    function dayOfYearFromParts(parts){
+      const start = Date.UTC(parts.year, 0, 1);
+      const thisDay = Date.UTC(parts.year, parts.month-1, parts.day);
+      return Math.floor((thisDay - start) / 86400000) + 1;
+    }
+
+    // ===== sunrise/sunset (NOAA-ish) =====
+    function solarParamsFromLocalParts(parts){
+      const doy = dayOfYearFromParts(parts);
+      const hour = parts.hour + parts.minute/60 + parts.second/3600;
+      const gamma = TAU/365 * (doy - 1 + (hour - 12)/24);
+
+      const eqTime = 229.18 * (
+        0.000075 + 0.001868*Math.cos(gamma) - 0.032077*Math.sin(gamma)
+        - 0.014615*Math.cos(2*gamma) - 0.040849*Math.sin(2*gamma)
+      );
+
+      const decl = (
+        0.006918 - 0.399912*Math.cos(gamma) + 0.070257*Math.sin(gamma)
+        - 0.006758*Math.cos(2*gamma) + 0.000907*Math.sin(2*gamma)
+        - 0.002697*Math.cos(3*gamma) + 0.00148*Math.sin(3*gamma)
+      );
+      return { eqTime, decl };
+    }
+
+    function tzOffsetHoursAtInstant(instant, timeZone){
+      const utcMs = instant.getTime();
+      const zp = getZonedParts(instant, timeZone);
+      const zonedAsUTC = Date.UTC(zp.year, zp.month-1, zp.day, zp.hour, zp.minute, zp.second, zp.millisecond||0);
+      return (zonedAsUTC - utcMs) / 3600000;
+    }
+
+    function sunriseSunsetHoursCityTZ(instant, latDeg, lonDeg, timeZone){
+      const zenith = rad(90.833);
+      const localParts = getZonedParts(instant, timeZone);
+      const { eqTime, decl } = solarParamsFromLocalParts(localParts);
+
+      const lat = rad(latDeg);
+      const cosH = (Math.cos(zenith) - Math.sin(lat)*Math.sin(decl)) / (Math.cos(lat)*Math.cos(decl));
+      if (cosH > 1) return { sunrise:null, sunset:null, alwaysNight:true, alwaysDay:false };
+      if (cosH < -1) return { sunrise:null, sunset:null, alwaysNight:false, alwaysDay:true };
+
+      const H = Math.acos(cosH);
+      const Hdeg = deg(H);
+      const tzOff = tzOffsetHoursAtInstant(instant, timeZone);
+
+      const solarNoonMin = 720 - (eqTime + 4*lonDeg - 60*tzOff);
+      const sunriseMin = solarNoonMin - 4*Hdeg;
+      const sunsetMin  = solarNoonMin + 4*Hdeg;
+
+      const toHours = (min) => {
+        let h = (min/60) % 24;
+        if (h < 0) h += 24;
+        return h;
+      };
+      return { sunrise: toHours(sunriseMin), sunset: toHours(sunsetMin), alwaysNight:false, alwaysDay:false };
+    }
+
+    function hoursDecimalFromParts(parts){
+      return parts.hour + parts.minute/60 + parts.second/3600 + (parts.millisecond||0)/3600000;
+    }
+
+    // ===== moon phase =====
+    function moonPhaseFraction(date){
+      const epoch = Date.UTC(2000,0,6,18,14,0);
+      const synodic = 29.53058867*86400000;
+      const t = date.getTime();
+      return ((t-epoch) % synodic + synodic) / synodic;
+    }
+    function moonIllumination(frac){ return (1 - Math.cos(TAU*frac))/2; }
+    function moonPhaseName(frac){
+      const p=frac;
+      if (p < 0.03 || p > 0.97) return "New Moon";
+      if (p < 0.22) return "Waxing Crescent";
+      if (p < 0.28) return "First Quarter";
+      if (p < 0.47) return "Waxing Gibbous";
+      if (p < 0.53) return "Full Moon";
+      if (p < 0.72) return "Waning Gibbous";
+      if (p < 0.78) return "Last Quarter";
+      return "Waning Crescent";
+    }
+
+    // ===== cities (includes Israel) =====
+    const CITY_DB = [
+      { country:"United States", city:"New York, NY",        lat:40.7128, lon:-74.0060, tz:"America/New_York" },
+      { country:"United States", city:"Jersey City, NJ",     lat:40.7178, lon:-74.0431, tz:"America/New_York" },
+      { country:"United States", city:"Chicago, IL",         lat:41.8781, lon:-87.6298, tz:"America/Chicago" },
+      { country:"United States", city:"Los Angeles, CA",     lat:34.0522, lon:-118.2437, tz:"America/Los_Angeles" },
+      { country:"Canada",        city:"Toronto, ON",         lat:43.6532, lon:-79.3832,  tz:"America/Toronto" },
+      { country:"United Kingdom",city:"London",              lat:51.5072, lon:-0.1276,   tz:"Europe/London" },
+      { country:"France",        city:"Paris",               lat:48.8566, lon:2.3522,    tz:"Europe/Paris" },
+      { country:"Germany",       city:"Berlin",              lat:52.5200, lon:13.4050,   tz:"Europe/Berlin" },
+      { country:"Croatia",       city:"Split",               lat:43.5081, lon:16.4402,   tz:"Europe/Zagreb" },
+      { country:"Croatia",       city:"Dubrovnik",           lat:42.6507, lon:18.0944,   tz:"Europe/Zagreb" },
+      { country:"Japan",         city:"Tokyo",               lat:35.6762, lon:139.6503,  tz:"Asia/Tokyo" },
+      { country:"Australia",     city:"Sydney",              lat:-33.8688,lon:151.2093,  tz:"Australia/Sydney" },
+      { country:"Israel",        city:"Tel Aviv",            lat:32.0853, lon:34.7818,   tz:"Asia/Jerusalem" },
+      { country:"Israel",        city:"Jerusalem",           lat:31.7683, lon:35.2137,   tz:"Asia/Jerusalem" },
+    ];
+
+    // ===== UI refs =====
+    const countrySel = document.getElementById("countrySel");
+    const citySel = document.getElementById("citySel");
+    const tzPill = document.getElementById("tzPill");
+    const locPill = document.getElementById("locPill");
+
+    const btn12 = document.getElementById("btn12");
+    const btn24 = document.getElementById("btn24");
+
+    const wxAutoBtn = document.getElementById("wxAuto");
+    const wxRainBtn = document.getElementById("wxRain");
+    const wxSnowBtn = document.getElementById("wxSnow");
+
+    const datePanel = document.getElementById("datePanel");
+    const modeLabel = document.getElementById("modeLabel");
+    const dateLabel = document.getElementById("dateLabel");
+    const weatherLabel = document.getElementById("weatherLabel");
+
+    const btnReal = document.getElementById("btnReal");
+    const btnManual = document.getElementById("btnManual");
+
+    const manualDateInput = document.getElementById("manualDate");
+    const manualTimeInput = document.getElementById("manualTime");
+
+    // ===== state =====
+    let currentLat = 40.7128, currentLon = -74.0060, currentTZ = "America/New_York";
+    let mode = "real";                // real | manual
+    let manualInstant = new Date();   // UTC instant
+    let clockMode = "12";             // 12 | 24
+
+    // weather state
+    let wxMode = "auto";              // auto | rain | snow
+    let wxKind = "none";              // none | rain | snow
+    let wxIntensity = 0;              // 0..1
+    let wxText = "—";
+    let lastRealtimeFetchMs = 0;
+
+    // historical cache: key "lat,lon,YYYY-MM-DD" => response JSON
+    const historyCache = new Map();
+
+    function updateWeatherLabel(){
+      weatherLabel.textContent = `Weather: ${wxText}`;
+    }
+
+    function setClockMode(m){
+      clockMode = m;
+      btn12.classList.toggle("active", clockMode === "12");
+      btn24.classList.toggle("active", clockMode === "24");
+      // changing dial changes the "hours per turn" for manual dragging, so refresh weather label timing too
+      scheduleWeatherRefresh();
+    }
+    setClockMode("12");
+    btn12.addEventListener("click", () => setClockMode("12"));
+    btn24.addEventListener("click", () => setClockMode("24"));
+
+    function setWxMode(m){
+      wxMode = m;
+      wxAutoBtn.classList.toggle("active", wxMode === "auto");
+      wxRainBtn.classList.toggle("active", wxMode === "rain");
+      wxSnowBtn.classList.toggle("active", wxMode === "snow");
+
+      if (wxMode === "rain") {
+        wxKind = "rain"; wxIntensity = 0.75; wxText = "Manual: Rain"; updateWeatherLabel();
+      } else if (wxMode === "snow") {
+        wxKind = "snow"; wxIntensity = 0.75; wxText = "Manual: Snow"; updateWeatherLabel();
+      } else {
+        // auto
+        scheduleWeatherRefresh(true);
+      }
+    }
+    wxAutoBtn.addEventListener("click", () => setWxMode("auto"));
+    wxRainBtn.addEventListener("click", () => setWxMode("rain"));
+    wxSnowBtn.addEventListener("click", () => setWxMode("snow"));
+
+    function setMode(newMode){
+      mode = newMode;
+      btnReal.classList.toggle("active", mode === "real");
+      btnManual.classList.toggle("active", mode === "manual");
+      datePanel.classList.toggle("manualOpen", mode === "manual");
+      modeLabel.textContent = (mode === "real") ? "Real time" : "Manual";
+      if (mode === "manual") syncManualInputsFromInstant();
+      scheduleWeatherRefresh(true);
+    }
+
+    btnReal.addEventListener("click", () => { manualInstant = new Date(); setMode("real"); });
+    btnManual.addEventListener("click", () => { if (mode !== "manual") { manualInstant = new Date(); setMode("manual"); } });
+
+    function setCity(rec, labelOverride){
+      currentLat = rec.lat;
+      currentLon = rec.lon;
+      currentTZ = rec.tz;
+      tzPill.textContent = currentTZ;
+      locPill.textContent = labelOverride || `Selected: ${rec.city}, ${rec.country}`;
+      if (mode === "manual") syncManualInputsFromInstant();
+      scheduleWeatherRefresh(true);
+    }
+
+    function initPickers(){
+      const countries = [...new Set(CITY_DB.map(x => x.country))].sort();
+      countrySel.innerHTML = countries.map(c => `<option value="${c}">${c}</option>`).join("");
+
+      function fillCities(country){
+        const cities = CITY_DB.filter(x => x.country === country).map(x => x.city).sort();
+        citySel.innerHTML = cities.map(c => `<option value="${c}">${c}</option>`).join("");
+      }
+
+      countrySel.addEventListener("change", () => {
+        fillCities(countrySel.value);
+        citySel.dispatchEvent(new Event("change"));
+      });
+
+      citySel.addEventListener("change", () => {
+        const rec = CITY_DB.find(x => x.country === countrySel.value && x.city === citySel.value);
+        if (rec) setCity(rec);
+      });
+
+      countrySel.value = "United States";
+      fillCities(countrySel.value);
+      citySel.value = "New York, NY";
+      citySel.dispatchEvent(new Event("change"));
+    }
+    initPickers();
+
+    async function reverseGeocodeName(lat, lon){
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+        const res = await fetch(url, { headers: { "Accept":"application/json" } });
+        if (!res.ok) throw new Error("reverse geocode failed");
+        const data = await res.json();
+        const addr = data.address || {};
+        return { country: addr.country || "", city: addr.city || addr.town || addr.village || addr.hamlet || addr.county || "" };
+      } catch { return { country:"", city:"" }; }
+    }
+
+    function closestCity(lat, lon){
+      let best = CITY_DB[0], bestD = Infinity;
+      for (const c of CITY_DB) {
+        const d = Math.hypot(c.lat - lat, c.lon - lon);
+        if (d < bestD) { bestD = d; best = c; }
+      }
+      return best;
+    }
+
+    async function detectLocation(){
+      try {
+        if (!navigator.geolocation) throw new Error("Geolocation not available");
+        locPill.textContent = "Asking permission…";
+        tzPill.textContent = "Detecting…";
+
+        const pos = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy:true, timeout:8000, maximumAge:60000 });
+        });
+
+        const lat = pos.coords.latitude, lon = pos.coords.longitude;
+        const best = closestCity(lat, lon);
+
+        countrySel.value = best.country;
+        countrySel.dispatchEvent(new Event("change"));
+        citySel.value = best.city;
+
+        const name = await reverseGeocodeName(lat, lon);
+        const label = (name.city || name.country)
+          ? `Detected near: ${name.city || best.city}, ${name.country || best.country}`
+          : `Detected near: ${best.city}, ${best.country}`;
+
+        setCity(best, label);
+      } catch {
+        tzPill.textContent = currentTZ;
+        locPill.textContent = "Using selected city";
+        scheduleWeatherRefresh(true);
+      }
+    }
+    detectLocation();
+
+    function syncManualInputsFromInstant(){
+      const p = getZonedParts(manualInstant, currentTZ);
+      manualDateInput.value = `${p.year}-${pad2(p.month)}-${pad2(p.day)}`;
+      manualTimeInput.value = `${pad2(p.hour)}:${pad2(p.minute)}:${pad2(p.second)}`;
+    }
+
+    function syncManualInstantFromInputs(){
+      const dateStr = manualDateInput.value;
+      const timeStr = manualTimeInput.value || "00:00:00";
+      if (!dateStr) return;
+
+      const [Y,M,D] = dateStr.split("-").map(Number);
+      const t = timeStr.split(":").map(Number);
+      const hh = t[0]||0, mm=t[1]||0, ss=t[2]||0;
+
+      manualInstant = zonedPartsToUTC({ year:Y, month:M, day:D, hour:hh, minute:mm, second:ss, millisecond:0 }, currentTZ);
+    }
+
+    manualDateInput.addEventListener("input", () => { if (mode==="manual") { syncManualInstantFromInputs(); scheduleWeatherRefresh(); } });
+    manualTimeInput.addEventListener("input", () => { if (mode==="manual") { syncManualInstantFromInputs(); scheduleWeatherRefresh(); } });
+
+    // ===== Weather: Open-Meteo (current + historical) =====
+    function codeToText(code){
+      if (code === 0) return "Clear";
+      if ([1,2,3].includes(code)) return "Cloudy";
+      if ([45,48].includes(code)) return "Fog";
+      if ([51,53,55,56,57].includes(code)) return "Drizzle";
+      if ([61,63,65,66,67].includes(code)) return "Rain";
+      if ([71,73,75,77].includes(code)) return "Snow";
+      if ([80,81,82].includes(code)) return "Rain showers";
+      if ([85,86].includes(code)) return "Snow showers";
+      if ([95,96,99].includes(code)) return "Thunderstorm";
+      return "—";
+    }
+
+    async function fetchRealtimeWeather(force=false){
+      if (wxMode !== "auto") return;
+
+      const now = Date.now();
+      if (!force && (now - lastRealtimeFetchMs) < 10*60*1000) return; // 10 min
+      lastRealtimeFetchMs = now;
+
+      const url =
+        `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(currentLat)}` +
+        `&longitude=${encodeURIComponent(currentLon)}` +
+        `&current=temperature_2m,weather_code,precipitation,snowfall,wind_speed_10m` +
+        `&timezone=${encodeURIComponent(currentTZ)}`;
+
+      const res = await fetch(url, { headers: { "Accept":"application/json" } });
+      if (!res.ok) throw new Error("Realtime weather fetch failed");
+      const data = await res.json();
+
+      const cur = data.current || {};
+      const code = Number(cur.weather_code ?? 0);
+      const precip = Number(cur.precipitation ?? 0);
+      const snow = Number(cur.snowfall ?? 0);
+      const temp = (cur.temperature_2m != null) ? Number(cur.temperature_2m) : null;
+
+      const base = codeToText(code);
+      const tempTxt = (temp == null) ? "" : ` • ${Math.round(temp)}°`;
+      wxText = `${base}${tempTxt}`;
+
+      if (snow > 0 || base.toLowerCase().includes("snow")) {
+        wxKind = "snow";
+        wxIntensity = clamp01(0.25 + snow * 0.8);
+        wxText += " • Snow";
+      } else if (precip > 0 || base.toLowerCase().includes("rain") || base.toLowerCase().includes("drizzle") || base.toLowerCase().includes("thunder")) {
+        wxKind = "rain";
+        wxIntensity = clamp01(0.25 + precip * 0.9);
+        wxText += " • Rain";
+      } else {
+        wxKind = "none";
+        wxIntensity = 0;
+      }
+
+      updateWeatherLabel();
+    }
+
+    function findClosestHourlyIndexByHour(timesISO, targetHour){
+      // timesISO like ["2025-03-02T00:00", ...] in requested timezone
+      let bestIdx = 0;
+      let bestD = Infinity;
+      for (let i = 0; i < timesISO.length; i++){
+        const t = timesISO[i];
+        const hh = Number(t.slice(11, 13)); // "THH"
+        const d = Math.abs(hh - targetHour);
+        if (d < bestD){ bestD = d; bestIdx = i; }
+      }
+      return bestIdx;
+    }
+
+    async function fetchHistoricalWeatherForManualTime(){
+      if (wxMode !== "auto") return;
+
+      const zp = getZonedParts(manualInstant, currentTZ);
+      const dayISO = `${zp.year}-${pad2(zp.month)}-${pad2(zp.day)}`;
+      const key = `${currentLat.toFixed(4)},${currentLon.toFixed(4)},${dayISO}`;
+
+      let data = historyCache.get(key);
+      if (!data){
+        const url =
+          `https://archive-api.open-meteo.com/v1/archive?latitude=${encodeURIComponent(currentLat)}` +
+          `&longitude=${encodeURIComponent(currentLon)}` +
+          `&start_date=${dayISO}&end_date=${dayISO}` +
+          `&hourly=precipitation,snowfall,weather_code,temperature_2m` +
+          `&timezone=${encodeURIComponent(currentTZ)}`;
+
+        const res = await fetch(url, { headers: { "Accept":"application/json" } });
+        if (!res.ok) throw new Error("Historical weather fetch failed");
+        data = await res.json();
+        historyCache.set(key, data);
+      }
+
+      const times = data?.hourly?.time || [];
+      if (!times.length) throw new Error("No historical hourly data");
+
+      // Choose closest hour (DST days may have 23/25 hours; this still picks closest)
+      const idx = findClosestHourlyIndexByHour(times, zp.hour);
+
+      const code = Number(data.hourly.weather_code?.[idx] ?? 0);
+      const precip = Number(data.hourly.precipitation?.[idx] ?? 0);
+      const snow = Number(data.hourly.snowfall?.[idx] ?? 0);
+      const temp = (data.hourly.temperature_2m?.[idx] != null) ? Number(data.hourly.temperature_2m[idx]) : null;
+
+      const base = codeToText(code);
+      const tempTxt = (temp == null) ? "" : ` • ${Math.round(temp)}°`;
+      wxText = `Past: ${base}${tempTxt}`;
+
+      if (snow > 0 || base.toLowerCase().includes("snow")){
+        wxKind = "snow";
+        wxIntensity = clamp01(0.25 + snow * 0.8);
+        wxText += " • Snow";
+      } else if (precip > 0 || base.toLowerCase().includes("rain") || base.toLowerCase().includes("drizzle") || base.toLowerCase().includes("thunder")){
+        wxKind = "rain";
+        wxIntensity = clamp01(0.25 + precip * 0.9);
+        wxText += " • Rain";
+      } else {
+        wxKind = "none";
+        wxIntensity = 0;
+      }
+
+      updateWeatherLabel();
+    }
+
+    async function refreshAutoWeather(force=false){
+      if (wxMode !== "auto") return;
+      try {
+        if (mode === "manual") {
+          await fetchHistoricalWeatherForManualTime();
+        } else {
+          await fetchRealtimeWeather(force);
+        }
+      } catch {
+        wxKind = "none";
+        wxIntensity = 0;
+        wxText = "Unavailable";
+        updateWeatherLabel();
+      }
+    }
+
+    let wxDebounce = null;
+    function scheduleWeatherRefresh(force=false){
+      if (wxMode !== "auto") return;
+      clearTimeout(wxDebounce);
+      wxDebounce = setTimeout(() => refreshAutoWeather(force), force ? 0 : 250);
+    }
+
+    // ===== Weather particles (rain/snow) =====
+    const rainDrops = [];
+    const snowFlakes = [];
+
+    function initParticles(){
+      rainDrops.length = 0;
+      snowFlakes.length = 0;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      for (let i=0;i<260;i++){
+        rainDrops.push({
+          x: Math.random()*w,
+          y: Math.random()*h,
+          v: 450 + Math.random()*550,
+          len: 10 + Math.random()*18,
+          drift: -60 + Math.random()*120
+        });
+      }
+      for (let i=0;i<220;i++){
+        snowFlakes.push({
+          x: Math.random()*w,
+          y: Math.random()*h,
+          v: 22 + Math.random()*55,
+          r: 1.2 + Math.random()*2.4,
+          sway: 10 + Math.random()*30,
+          phase: Math.random()*TAU
+        });
+      }
+    }
+    initParticles();
+    window.addEventListener("resize", initParticles);
+
+    function stepAndDrawWeather(dt){
+      if (wxIntensity <= 0 || wxKind === "none") return;
+
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      if (wxKind === "rain"){
+        const n = Math.floor(rainDrops.length * wxIntensity);
+        ctx.save();
+        ctx.globalAlpha = 0.55 + 0.35*wxIntensity;
+        ctx.strokeStyle = "rgba(200,220,255,0.9)";
+        ctx.lineWidth = 1.2;
+
+        for (let i=0;i<n;i++){
+          const d = rainDrops[i];
+          d.y += d.v * dt;
+          d.x += d.drift * dt;
+
+          if (d.y > h + 20) { d.y = -20; d.x = Math.random()*w; }
+          if (d.x < -40) d.x = w + 40;
+          if (d.x > w + 40) d.x = -40;
+
+          ctx.beginPath();
+          ctx.moveTo(d.x, d.y);
+          ctx.lineTo(d.x + d.drift*0.02, d.y + d.len);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      if (wxKind === "snow"){
+        const n = Math.floor(snowFlakes.length * wxIntensity);
+        ctx.save();
+        ctx.globalAlpha = 0.55 + 0.35*wxIntensity;
+        ctx.fillStyle = "rgba(255,255,255,0.92)";
+
+        for (let i=0;i<n;i++){
+          const f = snowFlakes[i];
+          f.phase += dt * 1.2;
+          f.y += f.v * dt;
+          f.x += Math.sin(f.phase) * (f.sway * dt);
+
+          if (f.y > h + 10) { f.y = -10; f.x = Math.random()*w; }
+          if (f.x < -20) f.x = w + 20;
+          if (f.x > w + 20) f.x = -20;
+
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r, 0, TAU);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
+
+    // ===== drawing helpers =====
+    function drawHand(angle, length, width, color, backLen){
+      ctx.save();
+      ctx.rotate(angle);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(0, backLen || 0);
+      ctx.lineTo(0, -length);
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(0, backLen || 0, width*0.42, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawMoon(instant, mx, my, alphaScale){
+      const phase = moonPhaseFraction(instant);
+      const illum = moonIllumination(phase);
+      const waxing = phase < 0.5;
+
+      ctx.save();
+      ctx.globalAlpha = 0.75 * alphaScale;
+      const glow = ctx.createRadialGradient(mx, my, 0, mx, my, 70);
+      glow.addColorStop(0, "rgba(210,225,255,0.35)");
+      glow.addColorStop(1, "rgba(210,225,255,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(mx, my, 70, 0, TAU); ctx.fill();
+      ctx.restore();
+
+      const R = 16;
+      ctx.save();
+      ctx.globalAlpha = 0.9 * alphaScale;
+      ctx.fillStyle = "rgba(230,235,245,0.95)";
+      ctx.beginPath(); ctx.arc(mx, my, R, 0, TAU); ctx.fill();
+
+      const offset = (1 - illum) * R * 2;
+      ctx.fillStyle = "rgba(10,18,40,0.85)";
+      ctx.beginPath();
+      const sx = mx + (waxing ? -offset/2 : offset/2);
+      ctx.arc(sx, my, R, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawBackground(instant, geo){
+      const { w, h } = geo;
+
+      const localParts = getZonedParts(instant, currentTZ);
+      const sun = sunriseSunsetHoursCityTZ(instant, currentLat, currentLon, currentTZ);
+      const t = hoursDecimalFromParts(localParts);
+
+      let dayFactor = 0;
+      const tw = 0.75;
+
+      if (sun.alwaysDay) dayFactor = 1;
+      else if (sun.alwaysNight) dayFactor = 0;
+      else {
+        const sunrise = sun.sunrise, sunset = sun.sunset;
+        if (sunrise == null || sunset == null) dayFactor = 0;
+        else if (t < sunrise - tw) dayFactor = 0;
+        else if (t < sunrise + tw) dayFactor = clamp01((t - (sunrise - tw)) / (2*tw));
+        else if (t < sunset - tw) dayFactor = 1;
+        else if (t < sunset + tw) dayFactor = 1 - clamp01((t - (sunset - tw)) / (2*tw));
+        else dayFactor = 0;
+      }
+
+      const night = ctx.createLinearGradient(0, 0, 0, h);
+      night.addColorStop(0, "#050814");
+      night.addColorStop(0.6, "#0a1230");
+      night.addColorStop(1, "#03050c");
+
+      const day = ctx.createLinearGradient(0, 0, 0, h);
+      day.addColorStop(0, "#7ec9ff");
+      day.addColorStop(0.55, "#c8f0ff");
+      day.addColorStop(1, "#ffe9b5");
+
+      ctx.fillStyle = night; ctx.fillRect(0, 0, w, h);
+      ctx.globalAlpha = dayFactor; ctx.fillStyle = day; ctx.fillRect(0, 0, w, h);
+      ctx.globalAlpha = 1;
+
+      // stars
+      if (dayFactor < 0.6) {
+        const starAlpha = (1 - dayFactor) * 0.6;
+        ctx.globalAlpha = starAlpha;
+        const count = Math.floor(140 * (1 - dayFactor));
+        for (let i=0;i<count;i++){
+          const x = (Math.sin(i*999.1) * 0.5 + 0.5) * w;
+          const y = (Math.sin(i*427.7 + 1.3) * 0.5 + 0.5) * (h * 0.62);
+          const s = (Math.sin(i*91.3 + 2.1) * 0.5 + 0.5) * 1.6 + 0.3;
+          ctx.fillStyle = "rgba(255,255,255,0.9)";
+          ctx.fillRect(x, y, s, s);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      // sun/moon
+      const centerY = h * 0.60;
+      const arcR = Math.min(w, h) * 0.38;
+
+      if (dayFactor >= 0.5 && !sun.alwaysNight) {
+        const sunrise = (sun.sunrise ?? 6);
+        const sunset  = (sun.sunset  ?? 18);
+        const span = Math.max(0.1, sunset - sunrise);
+        const u = clamp01((t - sunrise) / span);
+        const ang = lerp(Math.PI, 0, u);
+        const sx = w*0.5 + Math.cos(ang) * arcR;
+        const sy = centerY - Math.sin(ang) * arcR;
+
+        ctx.save();
+        ctx.globalAlpha = 0.85 * dayFactor;
+        const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, 90);
+        g.addColorStop(0, "rgba(255,230,140,0.95)");
+        g.addColorStop(0.35, "rgba(255,210,110,0.35)");
+        g.addColorStop(1, "rgba(255,210,110,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(sx, sy, 90, 0, TAU); ctx.fill();
+        ctx.fillStyle = "rgba(255,235,170,0.95)";
+        ctx.beginPath(); ctx.arc(sx, sy, 18, 0, TAU); ctx.fill();
+        ctx.restore();
+      } else {
+        if (sun.alwaysNight || sun.sunrise == null || sun.sunset == null) {
+          drawMoon(instant, w*0.75, h*0.20, 1);
+        } else {
+          const sunset = sun.sunset, sunrise = sun.sunrise;
+          let nightSpan = (sunrise + 24) - sunset;
+          if (nightSpan < 0.1) nightSpan = 12;
+
+          let u = (t >= sunset) ? (t - sunset) / nightSpan : (t + 24 - sunset) / nightSpan;
+          u = clamp01(u);
+
+          const ang = lerp(Math.PI, 0, u);
+          const mx = w*0.5 + Math.cos(ang) * arcR;
+          const my = centerY - Math.sin(ang) * arcR;
+          drawMoon(instant, mx, my, (1 - dayFactor));
+        }
+      }
+    }
+
+    function drawClockFace(instant, geo){
+      const { cx, cy, r } = geo;
+      const p = getZonedParts(instant, currentTZ);
+
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      ctx.beginPath(); ctx.arc(0, 0, r*1.03, 0, TAU);
+      ctx.fillStyle = "rgba(0,0,0,0.22)"; ctx.fill();
+
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU);
+      ctx.fillStyle = "rgba(10,12,18,0.42)"; ctx.fill();
+
+      const sheen = ctx.createRadialGradient(-r*0.3, -r*0.5, 5, 0, 0, r*1.2);
+      sheen.addColorStop(0, "rgba(255,255,255,0.12)");
+      sheen.addColorStop(0.4, "rgba(255,255,255,0.03)");
+      sheen.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = sheen;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();
+
+      const tickCount = (clockMode === "24") ? 240 : 120;
+      for (let i=0;i<tickCount;i++){
+        const a = (i / tickCount) * TAU;
+        const isMajor = (i % 10 === 0);
+        const isQuarter = (i % 30 === 0);
+        const len = isMajor ? r*0.10 : r*0.05;
+        const lw  = isMajor ? (isQuarter ? 3.0 : 2.2) : 1.2;
+
+        ctx.strokeStyle = isMajor ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.18)";
+        ctx.lineWidth = lw;
+        ctx.beginPath();
+        const x1 = Math.sin(a) * (r - len - r*0.02);
+        const y1 = -Math.cos(a) * (r - len - r*0.02);
+        const x2 = Math.sin(a) * (r - r*0.02);
+        const y2 = -Math.cos(a) * (r - r*0.02);
+        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      }
+
+      ctx.fillStyle = "rgba(255,255,255,0.86)";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = `700 ${Math.max(12, r*0.10)}px system-ui`;
+
+      if (clockMode === "24") {
+        for (let h=0;h<24;h++){
+          const a = (h / 24) * TAU;
+          const rr = r * 0.80;
+          ctx.globalAlpha = (h % 3 === 0) ? 0.95 : 0.70;
+          ctx.fillText(String(h), Math.sin(a)*rr, -Math.cos(a)*rr);
+        }
+      } else {
+        for (let h=1;h<=12;h++){
+          const a = ((h % 12) / 12) * TAU;
+          const rr = r * 0.80;
+          ctx.globalAlpha = (h % 3 === 0) ? 0.95 : 0.75;
+          ctx.fillText(String(h), Math.sin(a)*rr, -Math.cos(a)*rr);
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      const hour24 = p.hour + p.minute/60 + p.second/3600 + (p.millisecond||0)/3600000;
+      const minute = p.minute + p.second/60 + (p.millisecond||0)/60000;
+      const second = p.second + (p.millisecond||0)/1000;
+
+      const hourAngle = (clockMode === "24") ? (hour24/24)*TAU : ((hour24%12)/12)*TAU;
+      const minAngle  = (minute/60)*TAU;
+      const secAngle  = (second/60)*TAU;
+
+      drawHand(hourAngle, r*0.55, 6.0, "rgba(255,255,255,0.88)", r*0.08);
+      drawHand(minAngle,  r*0.74, 4.2, "rgba(255,255,255,0.78)", r*0.06);
+      drawHand(secAngle,  r*0.80, 2.2, "rgba(255,90,90,0.90)",  r*0.05);
+
+      ctx.fillStyle = "rgba(255,255,255,0.90)";
+      ctx.beginPath(); ctx.arc(0, 0, r*0.03, 0, TAU); ctx.fill();
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.beginPath(); ctx.arc(0, 0, r*0.015, 0, TAU); ctx.fill();
+
+      if (clockMode === "12") {
+        const isPM = p.hour >= 12;
+        ctx.font = `800 ${Math.max(10, r*0.085)}px system-ui`;
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.fillText(isPM ? "PM" : "AM", 0, r*0.33);
+      }
+
+      ctx.restore();
+    }
+
+    // ===== labels =====
+    function updateLabels(instant){
+      const p = getZonedParts(instant, currentTZ);
+
+      const weekday = new Intl.DateTimeFormat(undefined, { timeZone: currentTZ, weekday:"short" }).format(instant);
+      const dStr = new Intl.DateTimeFormat(undefined, { timeZone: currentTZ, year:"numeric", month:"short", day:"numeric" }).format(instant);
+
+      let tStr;
+      if (clockMode === "24") {
+        tStr = `${pad2(p.hour)}:${pad2(p.minute)}:${pad2(p.second)}`;
+      } else {
+        const h12 = (p.hour % 12) || 12;
+        const ampm = (p.hour >= 12) ? "PM" : "AM";
+        tStr = `${pad2(h12)}:${pad2(p.minute)}:${pad2(p.second)} ${ampm}`;
+      }
+
+      const phaseName = moonPhaseName(moonPhaseFraction(instant));
+
+      const sun = sunriseSunsetHoursCityTZ(instant, currentLat, currentLon, currentTZ);
+      let ssText = "";
+      if (sun.alwaysDay) ssText = "Sun up all day";
+      else if (sun.alwaysNight) ssText = "Sun down all day";
+      else if (sun.sunrise != null && sun.sunset != null) {
+        const srH = Math.floor(sun.sunrise), srM = Math.round((sun.sunrise - srH)*60) % 60;
+        const seH = Math.floor(sun.sunset),  seM = Math.round((sun.sunset - seH)*60) % 60;
+        ssText = `Sunrise ${pad2(srH)}:${pad2(srM)} • Sunset ${pad2(seH)}:${pad2(seM)}`;
+      }
+
+      dateLabel.textContent = `${weekday} • ${dStr} • ${tStr} • ${phaseName} • ${ssText}`;
+      updateWeatherLabel();
+    }
+
+    // ===== continuous manual dragging (gear mapping) =====
+    function angleFromCenter(x, y, cx, cy){
+      const a = Math.atan2(y - cy, x - cx);
+      return (a + Math.PI/2 + TAU) % TAU;
+    }
+    function smallestAngleDiff(a,b){
+      let d = (a - b) % TAU;
+      if (d < -Math.PI) d += TAU;
+      if (d >  Math.PI) d -= TAU;
+      return Math.abs(d);
+    }
+    function zonedAnglesFromInstant(instant){
+      const p = getZonedParts(instant, currentTZ);
+      const hour24 = p.hour + p.minute/60 + p.second/3600 + (p.millisecond||0)/3600000;
+      const minute = p.minute + p.second/60 + (p.millisecond||0)/60000;
+      const second = p.second + (p.millisecond||0)/1000;
+
+      const hourCycle = (clockMode === "24") ? 24 : 12;
+      const hourDisplay = (clockMode === "24") ? hour24 : (hour24 % 12);
+
+      return {
+        hourAngle: (hourDisplay / hourCycle) * TAU,
+        minAngle:  (minute / 60) * TAU,
+        secAngle:  (second / 60) * TAU
+      };
+    }
+    function pickHand(x, y){
+      const { cx, cy, r } = getClockGeometry();
+      const dist = Math.hypot(x - cx, y - cy);
+      if (dist < r*0.15 || dist > r*1.05) return null;
+
+      const a = angleFromCenter(x, y, cx, cy);
+      const { hourAngle, minAngle, secAngle } = zonedAnglesFromInstant(manualInstant);
+
+      const dh = smallestAngleDiff(a, hourAngle);
+      const dm = smallestAngleDiff(a, minAngle);
+      const ds = smallestAngleDiff(a, secAngle);
+
+      const cand = [
+        {hand:"hour", d:dh, th:0.28},
+        {hand:"min",  d:dm, th:0.22},
+        {hand:"sec",  d:ds, th:0.18},
+      ].filter(x => x.d < x.th).sort((a,b)=>a.d-b.d);
+
+      return cand.length ? cand[0].hand : null;
+    }
+    function deltaSecondsForHand(hand, deltaAngle){
+      const turns = deltaAngle / TAU;
+      if (hand === "sec") return turns * 60;
+      if (hand === "min") return turns * 3600; // 1 full turn => 1 hour
+      const hoursPerTurn = (clockMode === "24") ? 24 : 12; // hour hand depends on dial
+      return turns * hoursPerTurn * 3600;
+    }
+
+    let dragging = null;
+    let lastAngle = 0;
+    let lastInputSync = 0;
+
+    window.addEventListener("pointerdown", (e) => {
+      if (mode !== "manual") return;
+
+      // ignore UI touches (select/button/input/panels)
+      const el = e.target;
+      if (el && (el.tagName === "SELECT" || el.tagName === "BUTTON" || el.tagName === "INPUT" || el.closest(".panel"))) return;
+
+      const hand = pickHand(e.clientX, e.clientY);
+      if (!hand) return;
+
+      const { cx, cy } = getClockGeometry();
+      dragging = { hand, pointerId: e.pointerId };
+      lastAngle = angleFromCenter(e.clientX, e.clientY, cx, cy);
+      lastInputSync = performance.now();
+      window.setPointerCapture?.(e.pointerId);
+    });
+
+    window.addEventListener("pointermove", (e) => {
+      if (mode !== "manual") return;
+      if (!dragging || e.pointerId !== dragging.pointerId) return;
+
+      const { cx, cy } = getClockGeometry();
+      const a = angleFromCenter(e.clientX, e.clientY, cx, cy);
+      const dAng = wrapDelta(a - lastAngle);
+      lastAngle = a;
+
+      const dSec = deltaSecondsForHand(dragging.hand, dAng);
+      if (dSec) manualInstant = new Date(manualInstant.getTime() + dSec * 1000);
+
+      const now = performance.now();
+      if (now - lastInputSync > 120) {
+        syncManualInputsFromInstant();
+        lastInputSync = now;
+      }
+
+      // schedule historical weather lookup while dragging (debounced)
+      scheduleWeatherRefresh();
+    });
+
+    function endDrag(e){
+      if (!dragging) return;
+      if (e.pointerId !== dragging.pointerId) return;
+      dragging = null;
+      syncManualInputsFromInstant();
+      scheduleWeatherRefresh(true);
+    }
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+
+    // ===== main loop =====
+    let lastFrame = performance.now();
+    function frame(now){
+      const dt = Math.min(0.05, Math.max(0.0, (now - lastFrame) / 1000));
+      lastFrame = now;
+
+      const geo = getClockGeometry();
+      const instant = (mode === "real") ? new Date() : manualInstant;
+
+      // periodic realtime refresh in real mode
+      if (wxMode === "auto" && mode === "real") {
+        // this will only actually fetch every 10 minutes (unless forced)
+        refreshAutoWeather(false);
+      }
+
+      ctx.clearRect(0, 0, geo.w, geo.h);
+      drawBackground(instant, geo);
+      drawClockFace(instant, geo);
+
+      // weather overlay
+      stepAndDrawWeather(dt);
+
+      updateLabels(instant);
+      requestAnimationFrame(frame);
+    }
+
+    // start
+    updateWeatherLabel();
+    setMode("real");
+    scheduleWeatherRefresh(true);
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

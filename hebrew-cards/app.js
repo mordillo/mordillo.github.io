@@ -77,6 +77,8 @@ const levels = [
   }
 ];
 
+levels.push(...additionalLevels);
+
 let levelIndex = 0;
 let cardIndex = 0;
 let isFlipped = false;
@@ -180,9 +182,14 @@ function findHebrewVoice() {
 function stopSpeech() {
   playbackVersion += 1;
   recordedSpeech.pause();
-  recordedSpeech.currentTime = 0;
+  // Safari can reject seeking media whose metadata has not loaded yet.
+  if (recordedSpeech.readyState > 0) {
+    try { recordedSpeech.currentTime = 0; } catch (_) { /* Navigation must still work. */ }
+  }
+  // Avoid canceling the idle speech engine on every recorded-audio tap.
+  const synth = window.speechSynthesis;
+  if (activeUtterance || synth?.speaking || synth?.pending) synth?.cancel();
   activeUtterance = null;
-  window.speechSynthesis?.cancel();
   speechStatus.textContent = "";
 }
 
@@ -254,13 +261,9 @@ function speakHebrew() {
     return;
   }
 
-  const voices = findHebrewVoice();
-  // An empty list can mean that voices are still loading. Let the browser
-  // resolve he-IL in that case, but never deliberately select an English voice.
-  if (voices.length && !hebrewVoice) {
-    speechStatus.textContent = "No Hebrew voice is available. Add one in your device’s Accessibility speech settings, then reload.";
-    return;
-  }
+  findHebrewVoice();
+  // Some iOS versions omit installed Hebrew voices from getVoices().
+  // Let he-IL resolve through the OS instead of blocking playback.
 
   // Niqqud is speech-only: disambiguate vowels, shin/sin and grammatical forms
   // while leaving the familiar unpointed spelling on the learning cards.
@@ -283,7 +286,7 @@ function speakHebrew() {
       : "The voice could not play. Try another Hebrew voice in Audio settings, then tap Hear Hebrew.";
   };
   // Keep this synchronous with the tap for Safari's user-gesture requirement.
-  window.speechSynthesis.resume();
+  if (window.speechSynthesis.paused) window.speechSynthesis.resume();
   window.speechSynthesis.speak(utterance);
 }
 

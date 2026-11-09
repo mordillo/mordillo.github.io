@@ -1,0 +1,745 @@
+﻿Recording ID,Level,Stage,English cue,Hebrew to record,Notes
+v2-001,Level 1: Basic Words,words,Mom,אמא,
+v2-002,Level 1: Basic Words,words,Dad,אבא,
+v2-003,Level 1: Basic Words,words,House,בית,
+v2-004,Level 1: Basic Words,words,Water,מים,
+v2-005,Level 1: Basic Words,words,Book,ספר,
+v2-006,Level 1: Basic Words,words,Dog,כלב,
+v2-007,Level 1: Basic Words,words,Cat,חתול,
+v2-008,Level 1: Basic Words,words,Hello,שלום,
+v2-009,Level 2: More Everyday Words,words,Food,אוכל,
+v2-010,Level 2: More Everyday Words,words,Apple,תפוח,
+v2-011,Level 2: More Everyday Words,words,Milk,חלב,
+v2-012,Level 2: More Everyday Words,words,School,בית ספר,
+v2-013,Level 2: More Everyday Words,words,Friend,חבר,
+v2-014,Level 2: More Everyday Words,words,Car,מכונית,
+v2-015,Level 2: More Everyday Words,words,Sun,שמש,
+v2-016,Level 2: More Everyday Words,words,Moon,ירח,
+v2-017,Level 3: Family and Home,words,Brother,אח,
+v2-018,Level 3: Family and Home,words,Sister,אחות,
+v2-019,Level 3: Family and Home,words,Grandfather,סבא,
+v2-020,Level 3: Family and Home,words,Grandmother,סבתא,
+v2-021,Level 3: Family and Home,words,Baby,תינוק,
+v2-022,Level 3: Family and Home,words,Boy,ילד,
+v2-023,Level 3: Family and Home,words,Girl,ילדה,
+v2-024,Level 3: Family and Home,words,Family,משפחה,
+v2-025,Level 3: Family and Home,words,Room,חדר,
+v2-026,Level 3: Family and Home,words,Kitchen,מטבח,
+v2-027,Level 3: Family and Home,words,Bathroom,חדר אמבטיה,
+v2-028,Level 3: Family and Home,words,Toilet,שירותים,
+v2-029,Level 3: Family and Home,words,Bed,מיטה,
+v2-030,Level 3: Family and Home,words,Pillow,כרית,
+v2-031,Level 3: Family and Home,words,Blanket,שמיכה,
+v2-032,Level 3: Family and Home,words,Table,שולחן,
+v2-033,Level 3: Family and Home,words,Chair,כיסא,
+v2-034,Level 3: Family and Home,words,Door,דלת,
+v2-035,Level 3: Family and Home,words,Window,חלון,
+v2-036,Level 3: Family and Home,words,Key,מפתח,
+v2-037,Level 4: Food and Meals,words,Bread,לחם,
+v2-038,Level 4: Food and Meals,words,Egg,ביצה,
+v2-039,Level 4: Food and Meals,words,Cheese,גבינה,
+v2-040,Level 4: Food and Meals,words,Rice,אורז,
+v2-041,Level 4: Food and Meals,words,Pasta,פסטה,
+v2-042,Level 4: Food and Meals,words,Chicken (food),עוף,
+v2-043,Level 4: Food and Meals,words,Fish,דג,
+v2-044,Level 4: Food and Meals,words,Soup,מרק,
+v2-045,Level 4: Food and Meals,words,Banana,בננה,
+v2-046,Level 4: Food and Meals,words,Orange (fruit),תפוז,
+v2-047,Level 4: Food and Meals,words,Grapes,ענבים,
+v2-048,Level 4: Food and Meals,words,Strawberry,תות,
+v2-049,Level 4: Food and Meals,words,Cucumber,מלפפון,
+v2-050,Level 4: Food and Meals,words,Tomato,עגבנייה,
+v2-051,Level 4: Food and Meals,words,Carrot,גזר,
+v2-052,Level 4: Food and Meals,words,Broccoli,ברוקולי,
+v2-053,Level 4: Food and Meals,words,Plate,צלחת,
+v2-054,Level 4: Food and Meals,words,Cup,כוס,
+v2-055,Level 4: Food and Meals,words,Spoon,כף,
+v2-056,Level 4: Food and Meals,words,Fork,מזלג,
+v2-057,Level 5: My Body,words,Head,ראש,
+v2-058,Level 5: My Body,words,Hair,שיער,
+v2-059,Level 5: My Body,words,Face,פנים,
+v2-060,Level 5: My Body,words,Eye,עין,
+v2-061,Level 5: My Body,words,Ear,אוזן,
+v2-062,Level 5: My Body,words,Nose,אף,
+v2-063,Level 5: My Body,words,Mouth,פה,
+v2-064,Level 5: My Body,words,Tooth,שן,
+v2-065,Level 5: My Body,words,Tongue,לשון,
+v2-066,Level 5: My Body,words,Neck,צוואר,
+v2-067,Level 5: My Body,words,Shoulder,כתף,
+v2-068,Level 5: My Body,words,Arm / hand,יד,
+v2-069,Level 5: My Body,words,Finger,אצבע,
+v2-070,Level 5: My Body,words,Belly,בטן,
+v2-071,Level 5: My Body,words,Back (body),גב,
+v2-072,Level 5: My Body,words,Leg / foot,רגל,
+v2-073,Level 5: My Body,words,Knee,ברך,
+v2-074,Level 5: My Body,words,Heart,לב,
+v2-075,Level 5: My Body,words,Heel,עקב,
+v2-076,Level 5: My Body,words,Elbow,מרפק,
+v2-077,Level 6: Everyday Actions,words,To eat,לאכול,
+v2-078,Level 6: Everyday Actions,words,To drink,לשתות,
+v2-079,Level 6: Everyday Actions,words,To sleep,לישון,
+v2-080,Level 6: Everyday Actions,words,To wake up,להתעורר,
+v2-081,Level 6: Everyday Actions,words,To go / walk,ללכת,
+v2-082,Level 6: Everyday Actions,words,To run,לרוץ,
+v2-083,Level 6: Everyday Actions,words,To jump,לקפוץ,
+v2-084,Level 6: Everyday Actions,words,To sit,לשבת,
+v2-085,Level 6: Everyday Actions,words,To stand,לעמוד,
+v2-086,Level 6: Everyday Actions,words,To play,לשחק,
+v2-087,Level 6: Everyday Actions,words,To read,לקרוא,
+v2-088,Level 6: Everyday Actions,words,To write,לכתוב,
+v2-089,Level 6: Everyday Actions,words,To draw,לצייר,
+v2-090,Level 6: Everyday Actions,words,To sing,לשיר,
+v2-091,Level 6: Everyday Actions,words,To dance,לרקוד,
+v2-092,Level 6: Everyday Actions,words,To open,לפתוח,
+v2-093,Level 6: Everyday Actions,words,To close,לסגור,
+v2-094,Level 6: Everyday Actions,words,To wash,לשטוף,
+v2-095,Level 6: Everyday Actions,words,To help,לעזור,
+v2-096,Level 6: Everyday Actions,words,To wait,לחכות,
+v2-097,Level 7: Feelings and Opposites,words,Happy (boy),שמח,
+v2-098,Level 7: Feelings and Opposites,words,Sad (boy),עצוב,
+v2-099,Level 7: Feelings and Opposites,words,Angry (boy),כועס,
+v2-100,Level 7: Feelings and Opposites,words,Scared (boy),מפחד,
+v2-101,Level 7: Feelings and Opposites,words,Tired (boy),עייף,
+v2-102,Level 7: Feelings and Opposites,words,Thirsty (boy),צמא,
+v2-103,Level 7: Feelings and Opposites,words,Big (masculine),גדול,
+v2-104,Level 7: Feelings and Opposites,words,Small (masculine),קטן,
+v2-105,Level 7: Feelings and Opposites,words,Long (masculine),ארוך,
+v2-106,Level 7: Feelings and Opposites,words,Short (masculine),קצר,
+v2-107,Level 7: Feelings and Opposites,words,Hot (masculine),חם,
+v2-108,Level 7: Feelings and Opposites,words,Cold (masculine),קר,
+v2-109,Level 7: Feelings and Opposites,words,Clean (masculine),נקי,
+v2-110,Level 7: Feelings and Opposites,words,Dirty (masculine),מלוכלך,
+v2-111,Level 7: Feelings and Opposites,words,Fast (masculine),מהיר,
+v2-112,Level 7: Feelings and Opposites,words,Slow (masculine),איטי,
+v2-113,Level 7: Feelings and Opposites,words,Full (masculine),מלא,
+v2-114,Level 7: Feelings and Opposites,words,Empty (masculine),ריק,
+v2-115,Level 7: Feelings and Opposites,words,Easy (masculine),קל,
+v2-116,Level 7: Feelings and Opposites,words,Difficult (masculine),קשה,
+v2-117,Level 8: Kindergarten and Play,words,Kindergarten,גן ילדים,
+v2-118,Level 8: Kindergarten and Play,words,Kindergarten teacher (woman),גננת,
+v2-119,Level 8: Kindergarten and Play,words,Teacher (man),מורה,
+v2-120,Level 8: Kindergarten and Play,words,Friend (girl),חברה,
+v2-121,Level 8: Kindergarten and Play,words,Children,ילדים,
+v2-122,Level 8: Kindergarten and Play,words,Ball,כדור,
+v2-123,Level 8: Kindergarten and Play,words,Doll,בובה,
+v2-124,Level 8: Kindergarten and Play,words,Puzzle,פאזל,
+v2-125,Level 8: Kindergarten and Play,words,Game,משחק,
+v2-126,Level 8: Kindergarten and Play,words,Toy,צעצוע,
+v2-127,Level 8: Kindergarten and Play,words,Building blocks,קוביות,
+v2-128,Level 8: Kindergarten and Play,words,Swing,נדנדה,
+v2-129,Level 8: Kindergarten and Play,words,Slide,מגלשה,
+v2-130,Level 8: Kindergarten and Play,words,Sand,חול,
+v2-131,Level 8: Kindergarten and Play,words,Bucket,דלי,
+v2-132,Level 8: Kindergarten and Play,words,Pencil,עיפרון,
+v2-133,Level 8: Kindergarten and Play,words,Crayon / color,צבע,
+v2-134,Level 8: Kindergarten and Play,words,Paper,נייר,
+v2-135,Level 8: Kindergarten and Play,words,Scissors,מספריים,
+v2-136,Level 8: Kindergarten and Play,words,Glue,דבק,
+v2-137,Level 9: Clothes and Getting Ready,words,Shirt,חולצה,
+v2-138,Level 9: Clothes and Getting Ready,words,Pants,מכנסיים,
+v2-139,Level 9: Clothes and Getting Ready,words,Shorts,מכנסיים קצרים,
+v2-140,Level 9: Clothes and Getting Ready,words,Dress,שמלה,
+v2-141,Level 9: Clothes and Getting Ready,words,Skirt,חצאית,
+v2-142,Level 9: Clothes and Getting Ready,words,Socks,גרביים,
+v2-143,Level 9: Clothes and Getting Ready,words,Shoes,נעליים,
+v2-144,Level 9: Clothes and Getting Ready,words,Boots,מגפיים,
+v2-145,Level 9: Clothes and Getting Ready,words,Sandals,סנדלים,
+v2-146,Level 9: Clothes and Getting Ready,words,Coat,מעיל,
+v2-147,Level 9: Clothes and Getting Ready,words,Sweater,סוודר,
+v2-148,Level 9: Clothes and Getting Ready,words,Hat,כובע,
+v2-149,Level 9: Clothes and Getting Ready,words,Pajamas,פיג'מה,
+v2-150,Level 9: Clothes and Getting Ready,words,Underwear,תחתונים,
+v2-151,Level 9: Clothes and Getting Ready,words,Swimsuit,בגד ים,
+v2-152,Level 9: Clothes and Getting Ready,words,Bag,תיק,
+v2-153,Level 9: Clothes and Getting Ready,words,Umbrella,מטרייה,
+v2-154,Level 9: Clothes and Getting Ready,words,Towel,מגבת,
+v2-155,Level 9: Clothes and Getting Ready,words,Soap,סבון,
+v2-156,Level 9: Clothes and Getting Ready,words,Toothbrush,מברשת שיניים,
+v2-157,Level 10: Animals and Nature,words,Bird,ציפור,
+v2-158,Level 10: Animals and Nature,words,Cow,פרה,
+v2-159,Level 10: Animals and Nature,words,Horse,סוס,
+v2-160,Level 10: Animals and Nature,words,Sheep,כבשה,
+v2-161,Level 10: Animals and Nature,words,Goat,עז,
+v2-162,Level 10: Animals and Nature,words,Rabbit,ארנב,
+v2-163,Level 10: Animals and Nature,words,Lion,אריה,
+v2-164,Level 10: Animals and Nature,words,Elephant,פיל,
+v2-165,Level 10: Animals and Nature,words,Monkey,קוף,
+v2-166,Level 10: Animals and Nature,words,Butterfly,פרפר,
+v2-167,Level 10: Animals and Nature,words,Ant,נמלה,
+v2-168,Level 10: Animals and Nature,words,Bee,דבורה,
+v2-169,Level 10: Animals and Nature,words,Tree,עץ,
+v2-170,Level 10: Animals and Nature,words,Flower,פרח,
+v2-171,Level 10: Animals and Nature,words,Leaf,עלה,
+v2-172,Level 10: Animals and Nature,words,Grass,דשא,
+v2-173,Level 10: Animals and Nature,words,Rain,גשם,
+v2-174,Level 10: Animals and Nature,words,Wind,רוח,
+v2-175,Level 10: Animals and Nature,words,Cloud,ענן,
+v2-176,Level 10: Animals and Nature,words,Sea,ים,
+v2-177,Level 11: Colors and Shapes,words,Red (masculine),אדום,
+v2-178,Level 11: Colors and Shapes,words,Blue (masculine),כחול,
+v2-179,Level 11: Colors and Shapes,words,Yellow (masculine),צהוב,
+v2-180,Level 11: Colors and Shapes,words,Green (masculine),ירוק,
+v2-181,Level 11: Colors and Shapes,words,"Orange (color, masculine)",כתום,
+v2-182,Level 11: Colors and Shapes,words,Purple (masculine),סגול,
+v2-183,Level 11: Colors and Shapes,words,Pink (masculine),ורוד,
+v2-184,Level 11: Colors and Shapes,words,Brown (masculine),חום,
+v2-185,Level 11: Colors and Shapes,words,Black (masculine),שחור,
+v2-186,Level 11: Colors and Shapes,words,White (masculine),לבן,
+v2-187,Level 11: Colors and Shapes,words,Gray (masculine),אפור,
+v2-188,Level 11: Colors and Shapes,words,Circle,עיגול,
+v2-189,Level 11: Colors and Shapes,words,Square,ריבוע,
+v2-190,Level 11: Colors and Shapes,words,Triangle,משולש,
+v2-191,Level 11: Colors and Shapes,words,Rectangle,מלבן,
+v2-192,Level 11: Colors and Shapes,words,Star,כוכב,
+v2-193,Level 11: Colors and Shapes,words,Oval,אליפסה,
+v2-194,Level 11: Colors and Shapes,words,Straight line,קו ישר,
+v2-195,Level 11: Colors and Shapes,words,Curved line,קו עקום,
+v2-196,Level 11: Colors and Shapes,words,Dot,נקודה,
+v2-197,Level 12: Places and Transportation,words,Street,רחוב,
+v2-198,Level 12: Places and Transportation,words,Road,כביש,
+v2-199,Level 12: Places and Transportation,words,Sidewalk,מדרכה,
+v2-200,Level 12: Places and Transportation,words,Crosswalk,מעבר חצייה,
+v2-201,Level 12: Places and Transportation,words,Traffic light,רמזור,
+v2-202,Level 12: Places and Transportation,words,Bridge,גשר,
+v2-203,Level 12: Places and Transportation,words,Drawbridge,גשר מתרומם,
+v2-204,Level 12: Places and Transportation,words,Bus,אוטובוס,
+v2-205,Level 12: Places and Transportation,words,Train,רכבת,
+v2-206,Level 12: Places and Transportation,words,Airplane,מטוס,
+v2-207,Level 12: Places and Transportation,words,Boat,סירה,
+v2-208,Level 12: Places and Transportation,words,Bicycle,אופניים,
+v2-209,Level 12: Places and Transportation,words,Truck,משאית,
+v2-210,Level 12: Places and Transportation,words,Fire engine,כבאית,
+v2-211,Level 12: Places and Transportation,words,Ambulance,אמבולנס,
+v2-212,Level 12: Places and Transportation,words,Store,חנות,
+v2-213,Level 12: Places and Transportation,words,Park,פארק,
+v2-214,Level 12: Places and Transportation,words,Playground,גן שעשועים,
+v2-215,Level 12: Places and Transportation,words,Library,ספרייה,
+v2-216,Level 12: Places and Transportation,words,Beach,חוף ים,
+v2-217,Level 13: Time and Useful Words,words,Today,היום,
+v2-218,Level 13: Time and Useful Words,words,Tomorrow,מחר,
+v2-219,Level 13: Time and Useful Words,words,Yesterday,אתמול,
+v2-220,Level 13: Time and Useful Words,words,Now,עכשיו,
+v2-221,Level 13: Time and Useful Words,words,Later,אחר כך,
+v2-222,Level 13: Time and Useful Words,words,Before,לפני,
+v2-223,Level 13: Time and Useful Words,words,After,אחרי,
+v2-224,Level 13: Time and Useful Words,words,Morning,בוקר,
+v2-225,Level 13: Time and Useful Words,words,Afternoon,אחר הצוהריים,
+v2-226,Level 13: Time and Useful Words,words,Evening,ערב,
+v2-227,Level 13: Time and Useful Words,words,Night,לילה,
+v2-228,Level 13: Time and Useful Words,words,Who?,מי?,
+v2-229,Level 13: Time and Useful Words,words,What?,מה?,
+v2-230,Level 13: Time and Useful Words,words,Where?,איפה?,
+v2-231,Level 13: Time and Useful Words,words,When?,מתי?,
+v2-232,Level 13: Time and Useful Words,words,Why?,למה?,
+v2-233,Level 13: Time and Useful Words,words,How?,איך?,
+v2-234,Level 13: Time and Useful Words,words,Yes,כן,
+v2-235,Level 13: Time and Useful Words,words,No,לא,
+v2-236,Level 13: Time and Useful Words,words,Please,בבקשה,
+v2-237,"Level 14: Math, Maps and Space",words,Number,מספר,
+v2-238,"Level 14: Math, Maps and Space",words,To count,לספור,
+v2-239,"Level 14: Math, Maps and Space",words,Plus,ועוד,
+v2-240,"Level 14: Math, Maps and Space",words,Minus,פחות,
+v2-241,"Level 14: Math, Maps and Space",words,Equals,שווה,
+v2-242,"Level 14: Math, Maps and Space",words,Half,חצי,
+v2-243,"Level 14: Math, Maps and Space",words,More,יותר,
+v2-244,"Level 14: Math, Maps and Space",words,Less,פחות,
+v2-245,"Level 14: Math, Maps and Space",words,The same thing,אותו דבר,
+v2-246,"Level 14: Math, Maps and Space",words,Map,מפה,
+v2-247,"Level 14: Math, Maps and Space",words,Country,מדינה,
+v2-248,"Level 14: Math, Maps and Space",words,City,עיר,
+v2-249,"Level 14: Math, Maps and Space",words,World,עולם,
+v2-250,"Level 14: Math, Maps and Space",words,North,צפון,
+v2-251,"Level 14: Math, Maps and Space",words,South,דרום,
+v2-252,"Level 14: Math, Maps and Space",words,East,מזרח,
+v2-253,"Level 14: Math, Maps and Space",words,West,מערב,
+v2-254,"Level 14: Math, Maps and Space",words,Space,חלל,
+v2-255,"Level 14: Math, Maps and Space",words,Planet,כוכב לכת,
+v2-256,Level 15: Words for Building Sentences,words,I,אני,
+v2-257,Level 15: Words for Building Sentences,words,You (boy),אתה,
+v2-258,Level 15: Words for Building Sentences,words,You (girl),את,
+v2-259,Level 15: Words for Building Sentences,words,He,הוא,
+v2-260,Level 15: Words for Building Sentences,words,She,היא,
+v2-261,Level 15: Words for Building Sentences,words,We,אנחנו,
+v2-262,Level 15: Words for Building Sentences,words,You (boys or mixed group),אתם,
+v2-263,Level 15: Words for Building Sentences,words,You (girls),אתן,
+v2-264,Level 15: Words for Building Sentences,words,They (boys or mixed group),הם,
+v2-265,Level 15: Words for Building Sentences,words,They (girls),הן,
+v2-266,Level 15: Words for Building Sentences,words,This (masculine),זה,
+v2-267,Level 15: Words for Building Sentences,words,This (feminine),זאת,
+v2-268,Level 15: Words for Building Sentences,words,These,אלה,
+v2-269,Level 15: Words for Building Sentences,words,There is / there are,יש,
+v2-270,Level 15: Words for Building Sentences,words,There is not / there are not,אין,
+v2-271,Level 15: Words for Building Sentences,words,Of / belonging to,של,
+v2-272,Level 15: Words for Building Sentences,words,Mine / my,שלי,
+v2-273,Level 15: Words for Building Sentences,words,Yours / your (to a boy),שלך,
+v2-274,Level 15: Words for Building Sentences,words,With,עם,
+v2-275,Level 15: Words for Building Sentences,words,Without,בלי,
+v2-276,Level 15: Words for Building Sentences,words,Inside,בתוך,
+v2-277,Level 15: Words for Building Sentences,words,On,על,
+v2-278,Level 15: Words for Building Sentences,words,Under,מתחת,
+v2-279,Level 15: Words for Building Sentences,words,Next to,ליד,
+v2-280,Level 15: Words for Building Sentences,words,Between,בין,
+v2-281,Level 15: Words for Building Sentences,words,Here,כאן,
+v2-282,Level 15: Words for Building Sentences,words,There,שם,
+v2-283,Level 15: Words for Building Sentences,words,Because,כי,
+v2-284,Level 15: Words for Building Sentences,words,But,אבל,
+v2-285,Level 15: Words for Building Sentences,words,And also,וגם,
+v2-286,Level 15: Words for Building Sentences,words,Want (boy),רוצה,
+v2-287,Level 15: Words for Building Sentences,words,Love / like (boy),אוהב,
+v2-288,Level 15: Words for Building Sentences,words,Can (boy),יכול,
+v2-289,Level 15: Words for Building Sentences,words,Need (boy),צריך,
+v2-290,Level 15: Words for Building Sentences,words,Outside,בחוץ,
+v2-291,Level 15: Words for Building Sentences,words,Hungry (boy),רעב,
+v2-292,Level 15: Words for Building Sentences,words,To see,לראות,
+v2-293,Level 15: Words for Building Sentences,words,To talk,לדבר,
+v2-294,Level 15: Words for Building Sentences,words,To come,לבוא,
+v2-295,Level 15: Words for Building Sentences,words,To take,לקחת,
+v2-296,Level 16: Numbers: 0–10,words,0,אפס,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-297,Level 16: Numbers: 0–10,words,1,אחת,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-298,Level 16: Numbers: 0–10,words,2,שתיים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-299,Level 16: Numbers: 0–10,words,3,שלוש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-300,Level 16: Numbers: 0–10,words,4,ארבע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-301,Level 16: Numbers: 0–10,words,5,חמש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-302,Level 16: Numbers: 0–10,words,6,שש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-303,Level 16: Numbers: 0–10,words,7,שבע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-304,Level 16: Numbers: 0–10,words,8,שמונה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-305,Level 16: Numbers: 0–10,words,9,תשע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-306,Level 16: Numbers: 0–10,words,10,עשר,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-307,Level 17: Numbers: 11–20,words,11,אחת עשרה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-308,Level 17: Numbers: 11–20,words,12,שתים עשרה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-309,Level 17: Numbers: 11–20,words,13,שלוש עשרה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-310,Level 17: Numbers: 11–20,words,14,ארבע עשרה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-311,Level 17: Numbers: 11–20,words,15,חמש עשרה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-312,Level 17: Numbers: 11–20,words,16,שש עשרה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-313,Level 17: Numbers: 11–20,words,17,שבע עשרה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-314,Level 17: Numbers: 11–20,words,18,שמונה עשרה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-315,Level 17: Numbers: 11–20,words,19,תשע עשרה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-316,Level 17: Numbers: 11–20,words,20,עשרים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-317,Level 18: Tens: 10–100,words,10,עשר,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-318,Level 18: Tens: 10–100,words,20,עשרים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-319,Level 18: Tens: 10–100,words,30,שלושים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-320,Level 18: Tens: 10–100,words,40,ארבעים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-321,Level 18: Tens: 10–100,words,50,חמישים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-322,Level 18: Tens: 10–100,words,60,שישים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-323,Level 18: Tens: 10–100,words,70,שבעים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-324,Level 18: Tens: 10–100,words,80,שמונים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-325,Level 18: Tens: 10–100,words,90,תשעים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-326,Level 18: Tens: 10–100,words,100,מאה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-327,Level 19: Mixed Numbers: 21–99,words,21,עשרים ואחת,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-328,Level 19: Mixed Numbers: 21–99,words,22,עשרים ושתיים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-329,Level 19: Mixed Numbers: 21–99,words,23,עשרים ושלוש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-330,Level 19: Mixed Numbers: 21–99,words,24,עשרים וארבע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-331,Level 19: Mixed Numbers: 21–99,words,25,עשרים וחמש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-332,Level 19: Mixed Numbers: 21–99,words,26,עשרים ושש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-333,Level 19: Mixed Numbers: 21–99,words,27,עשרים ושבע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-334,Level 19: Mixed Numbers: 21–99,words,28,עשרים ושמונה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-335,Level 19: Mixed Numbers: 21–99,words,29,עשרים ותשע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-336,Level 19: Mixed Numbers: 21–99,words,31,שלושים ואחת,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-337,Level 19: Mixed Numbers: 21–99,words,32,שלושים ושתיים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-338,Level 19: Mixed Numbers: 21–99,words,35,שלושים וחמש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-339,Level 19: Mixed Numbers: 21–99,words,39,שלושים ותשע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-340,Level 19: Mixed Numbers: 21–99,words,41,ארבעים ואחת,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-341,Level 19: Mixed Numbers: 21–99,words,47,ארבעים ושבע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-342,Level 19: Mixed Numbers: 21–99,words,52,חמישים ושתיים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-343,Level 19: Mixed Numbers: 21–99,words,58,חמישים ושמונה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-344,Level 19: Mixed Numbers: 21–99,words,63,שישים ושלוש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-345,Level 19: Mixed Numbers: 21–99,words,69,שישים ותשע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-346,Level 19: Mixed Numbers: 21–99,words,74,שבעים וארבע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-347,Level 19: Mixed Numbers: 21–99,words,76,שבעים ושש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-348,Level 19: Mixed Numbers: 21–99,words,82,שמונים ושתיים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-349,Level 19: Mixed Numbers: 21–99,words,89,שמונים ותשע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-350,Level 19: Mixed Numbers: 21–99,words,91,תשעים ואחת,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-351,Level 19: Mixed Numbers: 21–99,words,95,תשעים וחמש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-352,Level 19: Mixed Numbers: 21–99,words,99,תשעים ותשע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-353,Level 20: Hundreds and Mixed Hundreds,words,100,מאה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-354,Level 20: Hundreds and Mixed Hundreds,words,101,מאה ואחת,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-355,Level 20: Hundreds and Mixed Hundreds,words,110,מאה ועשר,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-356,Level 20: Hundreds and Mixed Hundreds,words,111,מאה ואחת עשרה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-357,Level 20: Hundreds and Mixed Hundreds,words,120,מאה ועשרים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-358,Level 20: Hundreds and Mixed Hundreds,words,125,מאה עשרים וחמש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-359,Level 20: Hundreds and Mixed Hundreds,words,150,מאה וחמישים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-360,Level 20: Hundreds and Mixed Hundreds,words,199,מאה תשעים ותשע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-361,Level 20: Hundreds and Mixed Hundreds,words,200,מאתיים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-362,Level 20: Hundreds and Mixed Hundreds,words,201,מאתיים ואחת,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-363,Level 20: Hundreds and Mixed Hundreds,words,250,מאתיים וחמישים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-364,Level 20: Hundreds and Mixed Hundreds,words,300,שלוש מאות,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-365,Level 20: Hundreds and Mixed Hundreds,words,345,שלוש מאות ארבעים וחמש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-366,Level 20: Hundreds and Mixed Hundreds,words,400,ארבע מאות,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-367,Level 20: Hundreds and Mixed Hundreds,words,456,ארבע מאות חמישים ושש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-368,Level 20: Hundreds and Mixed Hundreds,words,500,חמש מאות,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-369,Level 20: Hundreds and Mixed Hundreds,words,567,חמש מאות שישים ושבע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-370,Level 20: Hundreds and Mixed Hundreds,words,600,שש מאות,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-371,Level 20: Hundreds and Mixed Hundreds,words,678,שש מאות שבעים ושמונה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-372,Level 20: Hundreds and Mixed Hundreds,words,700,שבע מאות,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-373,Level 20: Hundreds and Mixed Hundreds,words,789,שבע מאות שמונים ותשע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-374,Level 20: Hundreds and Mixed Hundreds,words,800,שמונה מאות,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-375,Level 20: Hundreds and Mixed Hundreds,words,890,שמונה מאות ותשעים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-376,Level 20: Hundreds and Mixed Hundreds,words,900,תשע מאות,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-377,Level 20: Hundreds and Mixed Hundreds,words,999,תשע מאות תשעים ותשע,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-378,Level 21: Thousands and Beyond,words,"1,000",אלף,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-379,Level 21: Thousands and Beyond,words,"1,001",אלף ואחת,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-380,Level 21: Thousands and Beyond,words,"1,010",אלף ועשר,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-381,Level 21: Thousands and Beyond,words,"1,100",אלף ומאה,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-382,Level 21: Thousands and Beyond,words,"1,250",אלף מאתיים וחמישים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-383,Level 21: Thousands and Beyond,words,"2,000",אלפיים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-384,Level 21: Thousands and Beyond,words,"2,026",אלפיים עשרים ושש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-385,Level 21: Thousands and Beyond,words,"2,345",אלפיים שלוש מאות ארבעים וחמש,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-386,Level 21: Thousands and Beyond,words,"3,000",שלושת אלפים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-387,Level 21: Thousands and Beyond,words,"4,000",ארבעת אלפים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-388,Level 21: Thousands and Beyond,words,"5,000",חמשת אלפים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-389,Level 21: Thousands and Beyond,words,"10,000",עשרת אלפים,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-390,Level 21: Thousands and Beyond,words,"100,000",מאה אלף,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-391,Level 21: Thousands and Beyond,words,"1,000,000",מיליון,Standalone counting forms (feminine). Forms change with the gender of a counted noun.
+v2-392,Level 22: Short Sentences: Everyday Talk,short,"Hello, Mom and Dad.","שלום, אמא ואבא.",
+v2-393,Level 22: Short Sentences: Everyday Talk,short,The dog and cat are in the house.,הכלב והחתול בבית.,
+v2-394,Level 22: Short Sentences: Everyday Talk,short,I want water and a book.,אני רוצה מים וספר.,
+v2-395,Level 22: Short Sentences: Everyday Talk,short,"I want food, an apple, and milk.","אני רוצה אוכל, תפוח וחלב.",
+v2-396,Level 22: Short Sentences: Everyday Talk,short,My friend goes to school.,חבר שלי הולך לבית ספר.,
+v2-397,Level 22: Short Sentences: Everyday Talk,short,The car is next to the house.,המכונית ליד הבית.,
+v2-398,Level 22: Short Sentences: Everyday Talk,short,I see the sun and the moon.,אני רואה את השמש ואת הירח.,
+v2-399,Level 22: Short Sentences: Everyday Talk,short,Good morning!,בוקר טוב!,
+v2-400,Level 22: Short Sentences: Everyday Talk,short,Good night!,לילה טוב!,
+v2-401,Level 22: Short Sentences: Everyday Talk,short,Thank you very much.,תודה רבה.,
+v2-402,Level 22: Short Sentences: Everyday Talk,short,I am hungry.,אני רעב.,
+v2-403,Level 22: Short Sentences: Everyday Talk,short,Where is Dad?,איפה אבא?,
+v2-404,Level 23: Short Sentences: Joining Words Together,short,I am here.,אני כאן.,
+v2-405,Level 23: Short Sentences: Joining Words Together,short,You are happy. (to a boy),אתה שמח.,
+v2-406,Level 23: Short Sentences: Joining Words Together,short,You are happy. (to a girl),את שמחה.,
+v2-407,Level 23: Short Sentences: Joining Words Together,short,He is at home.,הוא בבית.,
+v2-408,Level 23: Short Sentences: Joining Words Together,short,She is at home.,היא בבית.,
+v2-409,Level 23: Short Sentences: Joining Words Together,short,We are in the park.,אנחנו בפארק.,
+v2-410,Level 23: Short Sentences: Joining Words Together,short,You are playing. (boys or mixed group),אתם משחקים.,
+v2-411,Level 23: Short Sentences: Joining Words Together,short,You are playing. (girls),אתן משחקות.,
+v2-412,Level 23: Short Sentences: Joining Words Together,short,They are running. (boys or mixed group),הם רצים.,
+v2-413,Level 23: Short Sentences: Joining Words Together,short,They are running. (girls),הן רצות.,
+v2-414,Level 23: Short Sentences: Joining Words Together,short,This is a book.,זה ספר.,
+v2-415,Level 23: Short Sentences: Joining Words Together,short,This is a doll.,זאת בובה.,
+v2-416,Level 23: Short Sentences: Joining Words Together,short,These are my shoes.,אלה הנעליים שלי.,
+v2-417,Level 23: Short Sentences: Joining Words Together,short,There is water in the cup.,יש מים בכוס.,
+v2-418,Level 23: Short Sentences: Joining Words Together,short,There is no milk in the cup.,אין חלב בכוס.,
+v2-419,Level 23: Short Sentences: Joining Words Together,short,This is Dad's hat.,זה הכובע של אבא.,
+v2-420,Level 23: Short Sentences: Joining Words Together,short,The ball is mine.,הכדור שלי.,
+v2-421,Level 23: Short Sentences: Joining Words Together,short,This is your bag. (to a boy),זה התיק שלך.,
+v2-422,Level 23: Short Sentences: Joining Words Together,short,I am with Mom.,אני עם אמא.,
+v2-423,Level 23: Short Sentences: Joining Words Together,short,I want bread without cheese.,אני רוצה לחם בלי גבינה.,
+v2-424,Level 23: Short Sentences: Joining Words Together,short,The toy is inside the bag.,הצעצוע בתוך התיק.,
+v2-425,Level 23: Short Sentences: Joining Words Together,short,The book is on the table.,הספר על השולחן.,
+v2-426,Level 23: Short Sentences: Joining Words Together,short,The dog is under the table.,הכלב מתחת לשולחן.,
+v2-427,Level 23: Short Sentences: Joining Words Together,short,I sit next to Dad.,אני יושב ליד אבא.,
+v2-428,Level 23: Short Sentences: Joining Words Together,short,The chair is between the beds.,הכיסא בין המיטות.,
+v2-429,Level 23: Short Sentences: Joining Words Together,short,My friend is here.,חבר שלי כאן.,
+v2-430,Level 23: Short Sentences: Joining Words Together,short,The bus is there.,האוטובוס שם.,
+v2-431,Level 23: Short Sentences: Joining Words Together,short,I drink because I am thirsty.,אני שותה כי אני צמא.,
+v2-432,Level 23: Short Sentences: Joining Words Together,short,"I am tired, but I want to play.","אני עייף, אבל אני רוצה לשחק.",
+v2-433,Level 23: Short Sentences: Joining Words Together,short,I like apples and also grapes.,אני אוהב תפוחים וגם ענבים.,
+v2-434,Level 23: Short Sentences: Joining Words Together,short,I want to read.,אני רוצה לקרוא.,
+v2-435,Level 23: Short Sentences: Joining Words Together,short,I love my family.,אני אוהב את המשפחה שלי.,
+v2-436,Level 23: Short Sentences: Joining Words Together,short,I can count.,אני יכול לספור.,
+v2-437,Level 23: Short Sentences: Joining Words Together,short,I need to wait.,אני צריך לחכות.,
+v2-438,Level 23: Short Sentences: Joining Words Together,short,The children play outside.,הילדים משחקים בחוץ.,
+v2-439,Level 23: Short Sentences: Joining Words Together,short,I am hungry and want food.,אני רעב ורוצה אוכל.,
+v2-440,Level 23: Short Sentences: Joining Words Together,short,I want to see the map.,אני רוצה לראות את המפה.,
+v2-441,Level 23: Short Sentences: Joining Words Together,short,I want to talk with my friend.,אני רוצה לדבר עם חבר שלי.,
+v2-442,Level 23: Short Sentences: Joining Words Together,short,I want to come with you.,אני רוצה לבוא איתך.,
+v2-443,Level 23: Short Sentences: Joining Words Together,short,I want to take the book.,אני רוצה לקחת את הספר.,
+v2-444,Level 24: Short Sentences: Family and Home,short,My brother and sister are here.,אח שלי ואחות שלי כאן.,
+v2-445,Level 24: Short Sentences: Family and Home,short,Grandpa is with Grandma.,סבא עם סבתא.,
+v2-446,Level 24: Short Sentences: Family and Home,short,The baby is with the boy.,התינוק עם הילד.,
+v2-447,Level 24: Short Sentences: Family and Home,short,The girl is with the family.,הילדה עם המשפחה.,
+v2-448,Level 24: Short Sentences: Family and Home,short,The room is next to the kitchen.,החדר ליד המטבח.,
+v2-449,Level 24: Short Sentences: Family and Home,short,The toilet is next to the bathroom.,השירותים ליד חדר האמבטיה.,
+v2-450,Level 24: Short Sentences: Family and Home,short,The pillow is on the bed.,הכרית על המיטה.,
+v2-451,Level 24: Short Sentences: Family and Home,short,The blanket is under the table.,השמיכה מתחת לשולחן.,
+v2-452,Level 24: Short Sentences: Family and Home,short,The chair is next to the door.,הכיסא ליד הדלת.,
+v2-453,Level 24: Short Sentences: Family and Home,short,The key is next to the window.,המפתח ליד החלון.,
+v2-454,Level 25: Short Sentences: Food and Meals,short,I eat bread and an egg.,אני אוכל לחם וביצה.,
+v2-455,Level 25: Short Sentences: Food and Meals,short,I like cheese and rice.,אני אוהב גבינה ואורז.,
+v2-456,Level 25: Short Sentences: Food and Meals,short,I want pasta and chicken.,אני רוצה פסטה ועוף.,
+v2-457,Level 25: Short Sentences: Food and Meals,short,The fish is next to the soup.,הדג ליד המרק.,
+v2-458,Level 25: Short Sentences: Food and Meals,short,I have a banana and an orange.,יש לי בננה ותפוז.,
+v2-459,Level 25: Short Sentences: Food and Meals,short,I like grapes and strawberries.,אני אוהב ענבים ותותים.,
+v2-460,Level 25: Short Sentences: Food and Meals,short,The cucumber is next to the tomato.,המלפפון ליד העגבנייה.,
+v2-461,Level 25: Short Sentences: Food and Meals,short,I eat carrots and broccoli.,אני אוכל גזר וברוקולי.,
+v2-462,Level 25: Short Sentences: Food and Meals,short,The cup is next to the plate.,הכוס ליד הצלחת.,
+v2-463,Level 25: Short Sentences: Food and Meals,short,The spoon is next to the fork.,הכף ליד המזלג.,
+v2-464,Level 26: Short Sentences: My Body,short,The hair is on the head.,השיער על הראש.,
+v2-465,Level 26: Short Sentences: My Body,short,I have two eyes in my face.,יש לי שתי עיניים בפנים.,
+v2-466,Level 26: Short Sentences: My Body,short,My nose is next to my ear.,האף שלי ליד האוזן.,
+v2-467,Level 26: Short Sentences: My Body,short,The tooth is inside the mouth.,השן בתוך הפה.,
+v2-468,Level 26: Short Sentences: My Body,short,I see a tongue and a neck.,אני רואה לשון וצוואר.,
+v2-469,Level 26: Short Sentences: My Body,short,I can move my arm and shoulder.,אני יכול להזיז יד וכתף.,
+v2-470,Level 26: Short Sentences: My Body,short,My finger is on my belly.,האצבע שלי על הבטן.,
+v2-471,Level 26: Short Sentences: My Body,short,My back and leg are clean.,הגב והרגל שלי נקיים.,
+v2-472,Level 26: Short Sentences: My Body,short,My knee is below my heart.,הברך שלי מתחת ללב.,
+v2-473,Level 26: Short Sentences: My Body,short,I can touch my heel and elbow.,אני יכול לגעת בעקב ובמרפק.,
+v2-474,Level 27: Short Sentences: Everyday Actions,short,I want to eat and drink.,אני רוצה לאכול ולשתות.,
+v2-475,Level 27: Short Sentences: Everyday Actions,short,I need to sleep and wake up.,אני צריך לישון ולהתעורר.,
+v2-476,Level 27: Short Sentences: Everyday Actions,short,I can walk and run.,אני יכול ללכת ולרוץ.,
+v2-477,Level 27: Short Sentences: Everyday Actions,short,I want to jump and sit.,אני רוצה לקפוץ ולשבת.,
+v2-478,Level 27: Short Sentences: Everyday Actions,short,I can stand and play.,אני יכול לעמוד ולשחק.,
+v2-479,Level 27: Short Sentences: Everyday Actions,short,I want to read and write.,אני רוצה לקרוא ולכתוב.,
+v2-480,Level 27: Short Sentences: Everyday Actions,short,I like to draw and sing.,אני אוהב לצייר ולשיר.,
+v2-481,Level 27: Short Sentences: Everyday Actions,short,I want to dance and open the door.,אני רוצה לרקוד ולפתוח דלת.,
+v2-482,Level 27: Short Sentences: Everyday Actions,short,I need to close the door and wash my hands.,אני צריך לסגור דלת ולשטוף ידיים.,
+v2-483,Level 27: Short Sentences: Everyday Actions,short,I can help and wait.,אני יכול לעזור ולחכות.,
+v2-484,Level 28: Short Sentences: Feelings and Opposites,short,"I am happy, but my brother is sad.","אני שמח, אבל אח שלי עצוב.",
+v2-485,Level 28: Short Sentences: Feelings and Opposites,short,He is angry and scared.,הוא כועס ומפחד.,
+v2-486,Level 28: Short Sentences: Feelings and Opposites,short,I am tired and thirsty.,אני עייף וצמא.,
+v2-487,Level 28: Short Sentences: Feelings and Opposites,short,"The dog is big, and the cat is small.",הכלב גדול והחתול קטן.,
+v2-488,Level 28: Short Sentences: Feelings and Opposites,short,"This line is long, and that line is short.",הקו הזה ארוך והקו ההוא קצר.,
+v2-489,Level 28: Short Sentences: Feelings and Opposites,short,"The soup is hot, and the water is cold.",המרק חם והמים קרים.,
+v2-490,Level 28: Short Sentences: Feelings and Opposites,short,"The table is clean, but the chair is dirty.","השולחן נקי, אבל הכיסא מלוכלך.",
+v2-491,Level 28: Short Sentences: Feelings and Opposites,short,"The rabbit is fast, and the ant is slow.",הארנב מהיר והנמלה איטית.,
+v2-492,Level 28: Short Sentences: Feelings and Opposites,short,"The cup is full, and the plate is empty.",הכוס מלאה והצלחת ריקה.,
+v2-493,Level 28: Short Sentences: Feelings and Opposites,short,"This game is easy, and that game is difficult.",המשחק הזה קל והמשחק ההוא קשה.,
+v2-494,Level 29: Short Sentences: Kindergarten and Play,short,The kindergarten teacher is in the kindergarten.,הגננת בגן הילדים.,
+v2-495,Level 29: Short Sentences: Kindergarten and Play,short,The teacher is with a friend.,המורה עם חברה.,
+v2-496,Level 29: Short Sentences: Kindergarten and Play,short,The children play with a ball.,הילדים משחקים בכדור.,
+v2-497,Level 29: Short Sentences: Kindergarten and Play,short,The doll is next to the puzzle.,הבובה ליד הפאזל.,
+v2-498,Level 29: Short Sentences: Kindergarten and Play,short,This game is next to my toy.,המשחק הזה ליד הצעצוע שלי.,
+v2-499,Level 29: Short Sentences: Kindergarten and Play,short,The blocks are next to the swing.,הקוביות ליד הנדנדה.,
+v2-500,Level 29: Short Sentences: Kindergarten and Play,short,There is sand under the slide.,יש חול מתחת למגלשה.,
+v2-501,Level 29: Short Sentences: Kindergarten and Play,short,The pencil is inside the bucket.,העיפרון בתוך הדלי.,
+v2-502,Level 29: Short Sentences: Kindergarten and Play,short,I draw with a crayon on paper.,אני מצייר בצבע על נייר.,
+v2-503,Level 29: Short Sentences: Kindergarten and Play,short,I need scissors and glue.,אני צריך מספריים ודבק.,
+v2-504,Level 30: Short Sentences: Clothes and Getting Ready,short,My shirt is next to my pants.,החולצה שלי ליד המכנסיים שלי.,
+v2-505,Level 30: Short Sentences: Clothes and Getting Ready,short,The shorts are next to the dress.,המכנסיים הקצרים ליד השמלה.,
+v2-506,Level 30: Short Sentences: Clothes and Getting Ready,short,The socks are under the skirt.,הגרביים מתחת לחצאית.,
+v2-507,Level 30: Short Sentences: Clothes and Getting Ready,short,The shoes are next to the boots.,הנעליים ליד המגפיים.,
+v2-508,Level 30: Short Sentences: Clothes and Getting Ready,short,The sandals are under the coat.,הסנדלים מתחת למעיל.,
+v2-509,Level 30: Short Sentences: Clothes and Getting Ready,short,My sweater is next to my hat.,הסוודר שלי ליד הכובע שלי.,
+v2-510,Level 30: Short Sentences: Clothes and Getting Ready,short,The pajamas are next to the underwear.,הפיג'מה ליד התחתונים.,
+v2-511,Level 30: Short Sentences: Clothes and Getting Ready,short,The swimsuit is inside the bag.,בגד הים בתוך התיק.,
+v2-512,Level 30: Short Sentences: Clothes and Getting Ready,short,The umbrella is next to the towel.,המטרייה ליד המגבת.,
+v2-513,Level 30: Short Sentences: Clothes and Getting Ready,short,The soap is next to the toothbrush.,הסבון ליד מברשת השיניים.,
+v2-514,Level 31: Short Sentences: Animals and Nature,short,The bird is next to the cow.,הציפור ליד הפרה.,
+v2-515,Level 31: Short Sentences: Animals and Nature,short,The horse is with the sheep.,הסוס עם הכבשה.,
+v2-516,Level 31: Short Sentences: Animals and Nature,short,The goat is next to the rabbit.,העז ליד הארנב.,
+v2-517,Level 31: Short Sentences: Animals and Nature,short,"The lion is big, and the elephant is big too.",האריה גדול וגם הפיל גדול.,
+v2-518,Level 31: Short Sentences: Animals and Nature,short,The monkey sees a butterfly.,הקוף רואה פרפר.,
+v2-519,Level 31: Short Sentences: Animals and Nature,short,The ant is next to the bee.,הנמלה ליד הדבורה.,
+v2-520,Level 31: Short Sentences: Animals and Nature,short,The flower is under the tree.,הפרח מתחת לעץ.,
+v2-521,Level 31: Short Sentences: Animals and Nature,short,The leaf is on the grass.,העלה על הדשא.,
+v2-522,Level 31: Short Sentences: Animals and Nature,short,There is rain and wind outside.,יש גשם ורוח בחוץ.,
+v2-523,Level 31: Short Sentences: Animals and Nature,short,There is a cloud above the sea.,יש ענן מעל הים.,
+v2-524,Level 32: Short Sentences: Colors and Shapes,short,The red ball is next to the blue ball.,הכדור האדום ליד הכדור הכחול.,
+v2-525,Level 32: Short Sentences: Colors and Shapes,short,The yellow crayon is next to the green crayon.,הצבע הצהוב ליד הצבע הירוק.,
+v2-526,Level 32: Short Sentences: Colors and Shapes,short,I have an orange hat and a purple hat.,יש לי כובע כתום וכובע סגול.,
+v2-527,Level 32: Short Sentences: Colors and Shapes,short,"The doll is pink, and the bear is brown.",הבובה ורודה והדוב חום.,
+v2-528,Level 32: Short Sentences: Colors and Shapes,short,"The cat is black, and the dog is white.",החתול שחור והכלב לבן.,
+v2-529,Level 32: Short Sentences: Colors and Shapes,short,The circle is gray.,העיגול אפור.,
+v2-530,Level 32: Short Sentences: Colors and Shapes,short,The square is next to the triangle.,הריבוע ליד המשולש.,
+v2-531,Level 32: Short Sentences: Colors and Shapes,short,The star is inside the rectangle.,הכוכב בתוך המלבן.,
+v2-532,Level 32: Short Sentences: Colors and Shapes,short,The oval is next to the straight line.,האליפסה ליד הקו הישר.,
+v2-533,Level 32: Short Sentences: Colors and Shapes,short,The dot is on the curved line.,הנקודה על הקו העקום.,
+v2-534,Level 33: Short Sentences: Places and Transportation,short,There is a road in our street.,יש כביש ברחוב שלנו.,
+v2-535,Level 33: Short Sentences: Places and Transportation,short,The crosswalk is next to the sidewalk.,מעבר החצייה ליד המדרכה.,
+v2-536,Level 33: Short Sentences: Places and Transportation,short,The traffic light is next to the bridge.,הרמזור ליד הגשר.,
+v2-537,Level 33: Short Sentences: Places and Transportation,short,The bus is next to the drawbridge.,האוטובוס ליד הגשר המתרומם.,
+v2-538,Level 33: Short Sentences: Places and Transportation,short,"The train is fast, and the airplane is fast too.",הרכבת מהירה וגם המטוס מהיר.,
+v2-539,Level 33: Short Sentences: Places and Transportation,short,I see a boat and a bicycle.,אני רואה סירה ואופניים.,
+v2-540,Level 33: Short Sentences: Places and Transportation,short,The truck is next to the fire engine.,המשאית ליד הכבאית.,
+v2-541,Level 33: Short Sentences: Places and Transportation,short,The ambulance is next to the store.,האמבולנס ליד החנות.,
+v2-542,Level 33: Short Sentences: Places and Transportation,short,There is a playground in the park.,יש גן שעשועים בפארק.,
+v2-543,Level 33: Short Sentences: Places and Transportation,short,The library is next to the beach.,הספרייה ליד חוף הים.,
+v2-544,Level 34: Short Sentences: Time and Useful Words,short,"Today I play, and tomorrow I read.",היום אני משחק ומחר אני קורא.,
+v2-545,Level 34: Short Sentences: Time and Useful Words,short,"Yesterday I drew, and now I sing.",אתמול ציירתי ועכשיו אני שר.,
+v2-546,Level 34: Short Sentences: Time and Useful Words,short,We eat first and play later.,אנחנו אוכלים לפני המשחק ומשחקים אחר כך.,
+v2-547,Level 34: Short Sentences: Time and Useful Words,short,In the morning we eat after we wake up.,בבוקר אוכלים אחרי שמתעוררים.,
+v2-548,Level 34: Short Sentences: Time and Useful Words,short,"In the afternoon we play, and in the evening we read.",אחר הצוהריים אנחנו משחקים ובערב קוראים.,
+v2-549,Level 34: Short Sentences: Time and Useful Words,short,Who is awake at night?,מי ער בלילה?,
+v2-550,Level 34: Short Sentences: Time and Useful Words,short,"What is here, and where is my bag?",מה יש כאן ואיפה התיק שלי?,
+v2-551,Level 34: Short Sentences: Time and Useful Words,short,"When do we go, and why do we wait?",מתי הולכים ולמה מחכים?,
+v2-552,Level 34: Short Sentences: Time and Useful Words,short,"Yes, I know how to count.","כן, אני יודע איך לספור.",
+v2-553,Level 34: Short Sentences: Time and Useful Words,short,"No, thank you. Water, please.","לא, תודה. מים, בבקשה.",
+v2-554,"Level 35: Short Sentences: Math, Maps and Space",short,I want to count up to this number.,אני רוצה לספור עד המספר הזה.,
+v2-555,"Level 35: Short Sentences: Math, Maps and Space",short,One plus one minus one equals one.,אחת ועוד אחת פחות אחת שווה אחת.,
+v2-556,"Level 35: Short Sentences: Math, Maps and Space",short,Half is less than one.,חצי הוא פחות מאחת.,
+v2-557,"Level 35: Short Sentences: Math, Maps and Space",short,I want more of the same thing.,אני רוצה יותר מאותו דבר.,
+v2-558,"Level 35: Short Sentences: Math, Maps and Space",short,The city is on the map.,העיר על המפה.,
+v2-559,"Level 35: Short Sentences: Math, Maps and Space",short,Our country is part of the world.,המדינה שלנו היא חלק מהעולם.,
+v2-560,"Level 35: Short Sentences: Math, Maps and Space",short,North is opposite south.,צפון מול דרום.,
+v2-561,"Level 35: Short Sentences: Math, Maps and Space",short,East is opposite west.,מזרח מול מערב.,
+v2-562,"Level 35: Short Sentences: Math, Maps and Space",short,The planet is in space.,כוכב הלכת בחלל.,
+v2-563,Level 36: Number Sentences: 0–10,medium,The number on the card is 0.,המספר על הכרטיס הוא אפס.,"Read the whole Hebrew sentence, including the number."
+v2-564,Level 36: Number Sentences: 0–10,medium,The number on the card is 1.,המספר על הכרטיס הוא אחת.,"Read the whole Hebrew sentence, including the number."
+v2-565,Level 36: Number Sentences: 0–10,medium,The number on the card is 2.,המספר על הכרטיס הוא שתיים.,"Read the whole Hebrew sentence, including the number."
+v2-566,Level 36: Number Sentences: 0–10,medium,The number on the card is 3.,המספר על הכרטיס הוא שלוש.,"Read the whole Hebrew sentence, including the number."
+v2-567,Level 36: Number Sentences: 0–10,medium,The number on the card is 4.,המספר על הכרטיס הוא ארבע.,"Read the whole Hebrew sentence, including the number."
+v2-568,Level 36: Number Sentences: 0–10,medium,The number on the card is 5.,המספר על הכרטיס הוא חמש.,"Read the whole Hebrew sentence, including the number."
+v2-569,Level 36: Number Sentences: 0–10,medium,The number on the card is 6.,המספר על הכרטיס הוא שש.,"Read the whole Hebrew sentence, including the number."
+v2-570,Level 36: Number Sentences: 0–10,medium,The number on the card is 7.,המספר על הכרטיס הוא שבע.,"Read the whole Hebrew sentence, including the number."
+v2-571,Level 36: Number Sentences: 0–10,medium,The number on the card is 8.,המספר על הכרטיס הוא שמונה.,"Read the whole Hebrew sentence, including the number."
+v2-572,Level 36: Number Sentences: 0–10,medium,The number on the card is 9.,המספר על הכרטיס הוא תשע.,"Read the whole Hebrew sentence, including the number."
+v2-573,Level 36: Number Sentences: 0–10,medium,The number on the card is 10.,המספר על הכרטיס הוא עשר.,"Read the whole Hebrew sentence, including the number."
+v2-574,Level 37: Number Sentences: 11–20,medium,The number on the card is 11.,המספר על הכרטיס הוא אחת עשרה.,"Read the whole Hebrew sentence, including the number."
+v2-575,Level 37: Number Sentences: 11–20,medium,The number on the card is 12.,המספר על הכרטיס הוא שתים עשרה.,"Read the whole Hebrew sentence, including the number."
+v2-576,Level 37: Number Sentences: 11–20,medium,The number on the card is 13.,המספר על הכרטיס הוא שלוש עשרה.,"Read the whole Hebrew sentence, including the number."
+v2-577,Level 37: Number Sentences: 11–20,medium,The number on the card is 14.,המספר על הכרטיס הוא ארבע עשרה.,"Read the whole Hebrew sentence, including the number."
+v2-578,Level 37: Number Sentences: 11–20,medium,The number on the card is 15.,המספר על הכרטיס הוא חמש עשרה.,"Read the whole Hebrew sentence, including the number."
+v2-579,Level 37: Number Sentences: 11–20,medium,The number on the card is 16.,המספר על הכרטיס הוא שש עשרה.,"Read the whole Hebrew sentence, including the number."
+v2-580,Level 37: Number Sentences: 11–20,medium,The number on the card is 17.,המספר על הכרטיס הוא שבע עשרה.,"Read the whole Hebrew sentence, including the number."
+v2-581,Level 37: Number Sentences: 11–20,medium,The number on the card is 18.,המספר על הכרטיס הוא שמונה עשרה.,"Read the whole Hebrew sentence, including the number."
+v2-582,Level 37: Number Sentences: 11–20,medium,The number on the card is 19.,המספר על הכרטיס הוא תשע עשרה.,"Read the whole Hebrew sentence, including the number."
+v2-583,Level 37: Number Sentences: 11–20,medium,The number on the card is 20.,המספר על הכרטיס הוא עשרים.,"Read the whole Hebrew sentence, including the number."
+v2-584,Level 38: Number Sentences: Tens: 10–100,medium,The number on the card is 10.,המספר על הכרטיס הוא עשר.,"Read the whole Hebrew sentence, including the number."
+v2-585,Level 38: Number Sentences: Tens: 10–100,medium,The number on the card is 20.,המספר על הכרטיס הוא עשרים.,"Read the whole Hebrew sentence, including the number."
+v2-586,Level 38: Number Sentences: Tens: 10–100,medium,The number on the card is 30.,המספר על הכרטיס הוא שלושים.,"Read the whole Hebrew sentence, including the number."
+v2-587,Level 38: Number Sentences: Tens: 10–100,medium,The number on the card is 40.,המספר על הכרטיס הוא ארבעים.,"Read the whole Hebrew sentence, including the number."
+v2-588,Level 38: Number Sentences: Tens: 10–100,medium,The number on the card is 50.,המספר על הכרטיס הוא חמישים.,"Read the whole Hebrew sentence, including the number."
+v2-589,Level 38: Number Sentences: Tens: 10–100,medium,The number on the card is 60.,המספר על הכרטיס הוא שישים.,"Read the whole Hebrew sentence, including the number."
+v2-590,Level 38: Number Sentences: Tens: 10–100,medium,The number on the card is 70.,המספר על הכרטיס הוא שבעים.,"Read the whole Hebrew sentence, including the number."
+v2-591,Level 38: Number Sentences: Tens: 10–100,medium,The number on the card is 80.,המספר על הכרטיס הוא שמונים.,"Read the whole Hebrew sentence, including the number."
+v2-592,Level 38: Number Sentences: Tens: 10–100,medium,The number on the card is 90.,המספר על הכרטיס הוא תשעים.,"Read the whole Hebrew sentence, including the number."
+v2-593,Level 38: Number Sentences: Tens: 10–100,medium,The number on the card is 100.,המספר על הכרטיס הוא מאה.,"Read the whole Hebrew sentence, including the number."
+v2-594,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 21.,המספר על הכרטיס הוא עשרים ואחת.,"Read the whole Hebrew sentence, including the number."
+v2-595,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 22.,המספר על הכרטיס הוא עשרים ושתיים.,"Read the whole Hebrew sentence, including the number."
+v2-596,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 23.,המספר על הכרטיס הוא עשרים ושלוש.,"Read the whole Hebrew sentence, including the number."
+v2-597,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 24.,המספר על הכרטיס הוא עשרים וארבע.,"Read the whole Hebrew sentence, including the number."
+v2-598,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 25.,המספר על הכרטיס הוא עשרים וחמש.,"Read the whole Hebrew sentence, including the number."
+v2-599,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 26.,המספר על הכרטיס הוא עשרים ושש.,"Read the whole Hebrew sentence, including the number."
+v2-600,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 27.,המספר על הכרטיס הוא עשרים ושבע.,"Read the whole Hebrew sentence, including the number."
+v2-601,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 28.,המספר על הכרטיס הוא עשרים ושמונה.,"Read the whole Hebrew sentence, including the number."
+v2-602,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 29.,המספר על הכרטיס הוא עשרים ותשע.,"Read the whole Hebrew sentence, including the number."
+v2-603,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 31.,המספר על הכרטיס הוא שלושים ואחת.,"Read the whole Hebrew sentence, including the number."
+v2-604,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 32.,המספר על הכרטיס הוא שלושים ושתיים.,"Read the whole Hebrew sentence, including the number."
+v2-605,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 35.,המספר על הכרטיס הוא שלושים וחמש.,"Read the whole Hebrew sentence, including the number."
+v2-606,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 39.,המספר על הכרטיס הוא שלושים ותשע.,"Read the whole Hebrew sentence, including the number."
+v2-607,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 41.,המספר על הכרטיס הוא ארבעים ואחת.,"Read the whole Hebrew sentence, including the number."
+v2-608,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 47.,המספר על הכרטיס הוא ארבעים ושבע.,"Read the whole Hebrew sentence, including the number."
+v2-609,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 52.,המספר על הכרטיס הוא חמישים ושתיים.,"Read the whole Hebrew sentence, including the number."
+v2-610,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 58.,המספר על הכרטיס הוא חמישים ושמונה.,"Read the whole Hebrew sentence, including the number."
+v2-611,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 63.,המספר על הכרטיס הוא שישים ושלוש.,"Read the whole Hebrew sentence, including the number."
+v2-612,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 69.,המספר על הכרטיס הוא שישים ותשע.,"Read the whole Hebrew sentence, including the number."
+v2-613,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 74.,המספר על הכרטיס הוא שבעים וארבע.,"Read the whole Hebrew sentence, including the number."
+v2-614,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 76.,המספר על הכרטיס הוא שבעים ושש.,"Read the whole Hebrew sentence, including the number."
+v2-615,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 82.,המספר על הכרטיס הוא שמונים ושתיים.,"Read the whole Hebrew sentence, including the number."
+v2-616,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 89.,המספר על הכרטיס הוא שמונים ותשע.,"Read the whole Hebrew sentence, including the number."
+v2-617,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 91.,המספר על הכרטיס הוא תשעים ואחת.,"Read the whole Hebrew sentence, including the number."
+v2-618,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 95.,המספר על הכרטיס הוא תשעים וחמש.,"Read the whole Hebrew sentence, including the number."
+v2-619,Level 39: Number Sentences: Mixed Numbers: 21–99,medium,The number on the card is 99.,המספר על הכרטיס הוא תשעים ותשע.,"Read the whole Hebrew sentence, including the number."
+v2-620,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 100.,המספר על הכרטיס הוא מאה.,"Read the whole Hebrew sentence, including the number."
+v2-621,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 101.,המספר על הכרטיס הוא מאה ואחת.,"Read the whole Hebrew sentence, including the number."
+v2-622,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 110.,המספר על הכרטיס הוא מאה ועשר.,"Read the whole Hebrew sentence, including the number."
+v2-623,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 111.,המספר על הכרטיס הוא מאה ואחת עשרה.,"Read the whole Hebrew sentence, including the number."
+v2-624,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 120.,המספר על הכרטיס הוא מאה ועשרים.,"Read the whole Hebrew sentence, including the number."
+v2-625,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 125.,המספר על הכרטיס הוא מאה עשרים וחמש.,"Read the whole Hebrew sentence, including the number."
+v2-626,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 150.,המספר על הכרטיס הוא מאה וחמישים.,"Read the whole Hebrew sentence, including the number."
+v2-627,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 199.,המספר על הכרטיס הוא מאה תשעים ותשע.,"Read the whole Hebrew sentence, including the number."
+v2-628,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 200.,המספר על הכרטיס הוא מאתיים.,"Read the whole Hebrew sentence, including the number."
+v2-629,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 201.,המספר על הכרטיס הוא מאתיים ואחת.,"Read the whole Hebrew sentence, including the number."
+v2-630,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 250.,המספר על הכרטיס הוא מאתיים וחמישים.,"Read the whole Hebrew sentence, including the number."
+v2-631,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 300.,המספר על הכרטיס הוא שלוש מאות.,"Read the whole Hebrew sentence, including the number."
+v2-632,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 345.,המספר על הכרטיס הוא שלוש מאות ארבעים וחמש.,"Read the whole Hebrew sentence, including the number."
+v2-633,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 400.,המספר על הכרטיס הוא ארבע מאות.,"Read the whole Hebrew sentence, including the number."
+v2-634,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 456.,המספר על הכרטיס הוא ארבע מאות חמישים ושש.,"Read the whole Hebrew sentence, including the number."
+v2-635,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 500.,המספר על הכרטיס הוא חמש מאות.,"Read the whole Hebrew sentence, including the number."
+v2-636,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 567.,המספר על הכרטיס הוא חמש מאות שישים ושבע.,"Read the whole Hebrew sentence, including the number."
+v2-637,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 600.,המספר על הכרטיס הוא שש מאות.,"Read the whole Hebrew sentence, including the number."
+v2-638,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 678.,המספר על הכרטיס הוא שש מאות שבעים ושמונה.,"Read the whole Hebrew sentence, including the number."
+v2-639,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 700.,המספר על הכרטיס הוא שבע מאות.,"Read the whole Hebrew sentence, including the number."
+v2-640,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 789.,המספר על הכרטיס הוא שבע מאות שמונים ותשע.,"Read the whole Hebrew sentence, including the number."
+v2-641,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 800.,המספר על הכרטיס הוא שמונה מאות.,"Read the whole Hebrew sentence, including the number."
+v2-642,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 890.,המספר על הכרטיס הוא שמונה מאות ותשעים.,"Read the whole Hebrew sentence, including the number."
+v2-643,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 900.,המספר על הכרטיס הוא תשע מאות.,"Read the whole Hebrew sentence, including the number."
+v2-644,Level 40: Number Sentences: Hundreds and Mixed Hundreds,medium,The number on the card is 999.,המספר על הכרטיס הוא תשע מאות תשעים ותשע.,"Read the whole Hebrew sentence, including the number."
+v2-645,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 1,000.",המספר על הכרטיס הוא אלף.,"Read the whole Hebrew sentence, including the number."
+v2-646,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 1,001.",המספר על הכרטיס הוא אלף ואחת.,"Read the whole Hebrew sentence, including the number."
+v2-647,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 1,010.",המספר על הכרטיס הוא אלף ועשר.,"Read the whole Hebrew sentence, including the number."
+v2-648,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 1,100.",המספר על הכרטיס הוא אלף ומאה.,"Read the whole Hebrew sentence, including the number."
+v2-649,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 1,250.",המספר על הכרטיס הוא אלף מאתיים וחמישים.,"Read the whole Hebrew sentence, including the number."
+v2-650,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 2,000.",המספר על הכרטיס הוא אלפיים.,"Read the whole Hebrew sentence, including the number."
+v2-651,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 2,026.",המספר על הכרטיס הוא אלפיים עשרים ושש.,"Read the whole Hebrew sentence, including the number."
+v2-652,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 2,345.",המספר על הכרטיס הוא אלפיים שלוש מאות ארבעים וחמש.,"Read the whole Hebrew sentence, including the number."
+v2-653,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 3,000.",המספר על הכרטיס הוא שלושת אלפים.,"Read the whole Hebrew sentence, including the number."
+v2-654,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 4,000.",המספר על הכרטיס הוא ארבעת אלפים.,"Read the whole Hebrew sentence, including the number."
+v2-655,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 5,000.",המספר על הכרטיס הוא חמשת אלפים.,"Read the whole Hebrew sentence, including the number."
+v2-656,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 10,000.",המספר על הכרטיס הוא עשרת אלפים.,"Read the whole Hebrew sentence, including the number."
+v2-657,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 100,000.",המספר על הכרטיס הוא מאה אלף.,"Read the whole Hebrew sentence, including the number."
+v2-658,Level 41: Number Sentences: Thousands and Beyond,medium,"The number on the card is 1,000,000.",המספר על הכרטיס הוא מיליון.,"Read the whole Hebrew sentence, including the number."
+v2-659,Level 42: Medium Sentences: Home and Daily Routines,medium,I want to read a book,אני רוצה לקרוא ספר,
+v2-660,Level 42: Medium Sentences: Home and Daily Routines,medium,The dog is in the house,הכלב בבית,
+v2-661,Level 42: Medium Sentences: Home and Daily Routines,medium,I am going to school,אני הולך לבית ספר,
+v2-662,Level 42: Medium Sentences: Home and Daily Routines,medium,Can I have water?,אפשר לקבל מים?,
+v2-663,Level 42: Medium Sentences: Home and Daily Routines,medium,I love Mom and Dad,אני אוהב את אמא ואבא,
+v2-664,Level 42: Medium Sentences: Home and Daily Routines,medium,I want to play outside,אני רוצה לשחק בחוץ,
+v2-665,Level 42: Medium Sentences: Home and Daily Routines,medium,I want to read a book with Mom in my room.,אני רוצה לקרוא ספר עם אמא בחדר שלי.,
+v2-666,Level 42: Medium Sentences: Home and Daily Routines,medium,"The dog is in the house, under the big table.","הכלב בבית, מתחת לשולחן הגדול.",
+v2-667,Level 42: Medium Sentences: Home and Daily Routines,medium,"Before I sleep, I put my head on the pillow.","לפני שאני ישן, אני מניח את הראש על הכרית.",
+v2-668,Level 42: Medium Sentences: Home and Daily Routines,medium,My sister sits on the chair next to the window.,אחות שלי יושבת על הכיסא ליד החלון.,
+v2-669,Level 42: Medium Sentences: Home and Daily Routines,medium,In the morning I wash my face with soap and water.,בבוקר אני שוטף את הפנים בסבון ובמים.,
+v2-670,Level 42: Medium Sentences: Home and Daily Routines,medium,I need my toothbrush before I go to sleep.,אני צריך את מברשת השיניים לפני שאני הולך לישון.,
+v2-671,Level 42: Medium Sentences: Home and Daily Routines,medium,"The blanket is on the bed, and the pajamas are in the bag.",השמיכה על המיטה והפיג'מה בתיק.,
+v2-672,Level 42: Medium Sentences: Home and Daily Routines,medium,I want to help Dad open the kitchen door.,אני רוצה לעזור לאבא לפתוח את הדלת של המטבח.,
+v2-673,Level 42: Medium Sentences: Home and Daily Routines,medium,I love Mom and Dad and want to come with them.,אני אוהב את אמא ואבא ורוצה לבוא איתם.,
+v2-674,Level 42: Medium Sentences: Home and Daily Routines,medium,"Can I have water in my blue cup, please?","אפשר לקבל מים בכוס הכחולה שלי, בבקשה?",
+v2-675,Level 42: Medium Sentences: Home and Daily Routines,medium,"I am hungry, so I want to eat an apple.","אני רעב, אז אני רוצה לאכול תפוח.",
+v2-676,Level 42: Medium Sentences: Home and Daily Routines,medium,I want to play outside after I eat.,אני רוצה לשחק בחוץ אחרי שאני אוכל.,
+v2-677,"Level 43: Medium Sentences: Meals, Feelings and Clothes",medium,I put the spoon and fork next to the plate.,אני מניח את הכף ואת המזלג ליד הצלחת.,
+v2-678,"Level 43: Medium Sentences: Meals, Feelings and Clothes",medium,"The soup is hot, but the water in the cup is cold.","המרק חם, אבל המים בכוס קרים.",
+v2-679,"Level 43: Medium Sentences: Meals, Feelings and Clothes",medium,I want bread with cheese and a cucumber without salt.,אני רוצה לחם עם גבינה ומלפפון בלי מלח.,
+v2-680,"Level 43: Medium Sentences: Meals, Feelings and Clothes",medium,"My brother likes pasta, and my sister likes rice.",אח שלי אוהב פסטה ואחות שלי אוהבת אורז.,
+v2-681,"Level 43: Medium Sentences: Meals, Feelings and Clothes",medium,I want a banana now and grapes later.,אני רוצה בננה עכשיו וענבים אחר כך.,
+v2-682,"Level 43: Medium Sentences: Meals, Feelings and Clothes",medium,"The milk is in the kitchen, next to the eggs.","החלב במטבח, ליד הביצים.",
+v2-683,"Level 43: Medium Sentences: Meals, Feelings and Clothes",medium,I am happy because we are going to the beach.,אני שמח כי אנחנו הולכים לחוף הים.,
+v2-684,"Level 43: Medium Sentences: Meals, Feelings and Clothes",medium,"My friend is sad, so I sit next to him.","חבר שלי עצוב, אז אני יושב לידו.",
+v2-685,"Level 43: Medium Sentences: Meals, Feelings and Clothes",medium,I need a coat and boots because it is cold outside.,אני צריך מעיל ומגפיים כי קר בחוץ.,
+v2-686,"Level 43: Medium Sentences: Meals, Feelings and Clothes",medium,My red shirt is next to my short pants.,החולצה האדומה שלי ליד המכנסיים הקצרים שלי.,
+v2-687,"Level 43: Medium Sentences: Meals, Feelings and Clothes",medium,I put my swimsuit and towel inside the bag.,אני מכניס את בגד הים ואת המגבת לתיק.,
+v2-688,"Level 43: Medium Sentences: Meals, Feelings and Clothes",medium,"The hat is mine, and the umbrella is yours.",הכובע שלי והמטרייה שלך.,
+v2-689,"Level 44: Medium Sentences: Play, Animals and Shapes",medium,The kindergarten teacher helps the children with the difficult puzzle.,הגננת עוזרת לילדים עם הפאזל הקשה.,
+v2-690,"Level 44: Medium Sentences: Play, Animals and Shapes",medium,I draw a yellow circle and a purple triangle on paper.,אני מצייר עיגול צהוב ומשולש סגול על נייר.,
+v2-691,"Level 44: Medium Sentences: Play, Animals and Shapes",medium,"The ball is under the slide, next to the sand.","הכדור מתחת למגלשה, ליד החול.",
+v2-692,"Level 44: Medium Sentences: Play, Animals and Shapes",medium,I put the building blocks in the bucket after the game.,אני שם את הקוביות בדלי אחרי המשחק.,
+v2-693,"Level 44: Medium Sentences: Play, Animals and Shapes",medium,I can sing and dance with my friends in kindergarten.,אני יכול לשיר ולרקוד עם החברים שלי בגן.,
+v2-694,"Level 44: Medium Sentences: Play, Animals and Shapes",medium,I need scissors and glue to make a paper star.,אני צריך מספריים ודבק כדי להכין כוכב מנייר.,
+v2-695,"Level 44: Medium Sentences: Play, Animals and Shapes",medium,The small bird sits on the tree above the flower.,הציפור הקטנה יושבת על העץ מעל הפרח.,
+v2-696,"Level 44: Medium Sentences: Play, Animals and Shapes",medium,"The rabbit runs fast, but the ant walks slowly.","הארנב רץ מהר, אבל הנמלה הולכת לאט.",
+v2-697,"Level 44: Medium Sentences: Play, Animals and Shapes",medium,The elephant stands next to the horse and the cow.,הפיל עומד ליד הסוס והפרה.,
+v2-698,"Level 44: Medium Sentences: Play, Animals and Shapes",medium,I see a bee on a flower and a butterfly on a leaf.,אני רואה דבורה על פרח ופרפר על עלה.,
+v2-699,"Level 44: Medium Sentences: Play, Animals and Shapes",medium,The black cat sleeps next to the white dog.,החתול השחור ישן ליד הכלב הלבן.,
+v2-700,"Level 44: Medium Sentences: Play, Animals and Shapes",medium,I want to draw an oval inside the big rectangle.,אני רוצה לצייר אליפסה בתוך המלבן הגדול.,
+v2-701,"Level 45: Medium Sentences: Travel, Maps and Questions",medium,"I walk on the sidewalk with Dad, next to the road.","אני הולך על המדרכה עם אבא, ליד הכביש.",
+v2-702,"Level 45: Medium Sentences: Travel, Maps and Questions",medium,We wait at the traffic light before we cross the street.,אנחנו מחכים ברמזור לפני שאנחנו חוצים את הרחוב.,
+v2-703,"Level 45: Medium Sentences: Travel, Maps and Questions",medium,The bus goes over the bridge next to the park.,האוטובוס עובר על הגשר ליד הפארק.,
+v2-704,"Level 45: Medium Sentences: Travel, Maps and Questions",medium,I see a boat under the drawbridge from the sidewalk.,אני רואה סירה מתחת לגשר המתרומם מהמדרכה.,
+v2-705,"Level 45: Medium Sentences: Travel, Maps and Questions",medium,Where is the library on the map of our city?,איפה הספרייה במפה של העיר שלנו?,
+v2-706,"Level 45: Medium Sentences: Travel, Maps and Questions",medium,When will we take the train to the big city?,מתי ניסע ברכבת לעיר הגדולה?,
+v2-707,"Level 45: Medium Sentences: Travel, Maps and Questions",medium,Why is the ambulance next to the store today?,למה האמבולנס ליד החנות היום?,
+v2-708,"Level 45: Medium Sentences: Travel, Maps and Questions",medium,How many bicycles are next to the playground?,כמה אופניים יש ליד גן השעשועים?,
+v2-709,"Level 45: Medium Sentences: Travel, Maps and Questions",medium,"North is at the top of this map, and south is at the bottom.",הצפון למעלה במפה הזאת והדרום למטה.,
+v2-710,"Level 45: Medium Sentences: Travel, Maps and Questions",medium,I can see our country on the map of the world.,אני יכול לראות את המדינה שלנו במפת העולם.,
+v2-711,"Level 45: Medium Sentences: Travel, Maps and Questions",medium,"The sun is a star, and Earth is a planet.",השמש היא כוכב וכדור הארץ הוא כוכב לכת.,
+v2-712,"Level 45: Medium Sentences: Travel, Maps and Questions",medium,I want to read a book about the moon and space.,אני רוצה לקרוא ספר על הירח ועל החלל.,
+v2-713,Level 46: Longer Sentences: A Day at Home,long,"In the morning I wake up, wash my face, and put on my shirt and pants.","בבוקר אני מתעורר, שוטף את הפנים ולובש חולצה ומכנסיים.",
+v2-714,Level 46: Longer Sentences: A Day at Home,long,"After I eat bread and an egg, I put my plate and cup on the table.","אחרי שאני אוכל לחם וביצה, אני שם את הצלחת ואת הכוס על השולחן.",
+v2-715,Level 46: Longer Sentences: A Day at Home,long,"My sister wants to read a book, but I want to play outside with Dad.","אחות שלי רוצה לקרוא ספר, אבל אני רוצה לשחק בחוץ עם אבא.",
+v2-716,Level 46: Longer Sentences: A Day at Home,long,"Before we go to kindergarten, Mom puts an apple and a banana inside my bag.","לפני שאנחנו הולכים לגן, אמא מכניסה תפוח ובננה לתיק שלי.",
+v2-717,Level 46: Longer Sentences: A Day at Home,long,"When it is cold and rainy, I take my coat, boots, and umbrella with me.","כשקר ויש גשם, אני לוקח איתי מעיל, מגפיים ומטרייה.",
+v2-718,Level 46: Longer Sentences: A Day at Home,long,"In the evening I am tired, so I put on pajamas and lie down under the blanket.","בערב אני עייף, אז אני לובש פיג'מה ושוכב מתחת לשמיכה.",
+v2-719,Level 46: Longer Sentences: A Day at Home,long,Grandpa sits next to Grandma in the kitchen while the baby sleeps in the room.,סבא יושב ליד סבתא במטבח בזמן שהתינוק ישן בחדר.,
+v2-720,Level 46: Longer Sentences: A Day at Home,long,"I want to help my family, so I put the clean spoons and forks next to the plates.","אני רוצה לעזור למשפחה שלי, אז אני מניח את הכפות והמזלגות הנקיים ליד הצלחות.",
+v2-721,Level 47: Longer Sentences: Kindergarten and Friends,long,"The kindergarten teacher gives us paper and crayons, and we draw circles, squares, and triangles.","הגננת נותנת לנו נייר וצבעים, ואנחנו מציירים עיגולים, ריבועים ומשולשים.",
+v2-722,Level 47: Longer Sentences: Kindergarten and Friends,long,"My friend is sad because he cannot find his ball, so I help him look under the slide.","חבר שלי עצוב כי הוא לא מוצא את הכדור שלו, אז אני עוזר לו לחפש מתחת למגלשה.",
+v2-723,Level 47: Longer Sentences: Kindergarten and Friends,long,"After we finish the puzzle, we put the toys and building blocks inside the big bucket.","אחרי שאנחנו מסיימים את הפאזל, אנחנו מכניסים את הצעצועים ואת הקוביות לדלי הגדול.",
+v2-724,Level 47: Longer Sentences: Kindergarten and Friends,long,"I want to go on the swing, but first I need to wait for my friend.","אני רוצה לעלות על הנדנדה, אבל קודם אני צריך לחכות לחבר שלי.",
+v2-725,Level 47: Longer Sentences: Kindergarten and Friends,long,We draw a purple star inside a yellow circle and put a small dot next to it.,אנחנו מציירים כוכב סגול בתוך עיגול צהוב ומוסיפים לידו נקודה קטנה.,
+v2-726,Level 47: Longer Sentences: Kindergarten and Friends,long,"The game is difficult at first, but when we help each other it becomes easier.","המשחק קשה בהתחלה, אבל כשאנחנו עוזרים זה לזה הוא נעשה קל יותר.",
+v2-727,Level 47: Longer Sentences: Kindergarten and Friends,long,"Before we eat, the children wash their hands with soap and sit around the table.","לפני שאנחנו אוכלים, הילדים שוטפים ידיים בסבון ויושבים מסביב לשולחן.",
+v2-728,Level 47: Longer Sentences: Kindergarten and Friends,long,Tomorrow I want to bring my new book to kindergarten and read it with my friends.,מחר אני רוצה להביא את הספר החדש שלי לגן ולקרוא אותו עם החברים שלי.,
+v2-729,"Level 48: Longer Sentences: Animals, Nature and the Beach",long,"At the beach I see the sea, a white cloud, and a small boat near the shore.","בחוף הים אני רואה את הים, ענן לבן וסירה קטנה ליד החוף.",
+v2-730,"Level 48: Longer Sentences: Animals, Nature and the Beach",long,"There is a big tree next to the playground, and a yellow butterfly rests on one of its leaves.","יש עץ גדול ליד גן השעשועים, ופרפר צהוב נח על אחד העלים שלו.",
+v2-731,"Level 48: Longer Sentences: Animals, Nature and the Beach",long,The rabbit runs across the grass while the sheep and goat stand next to the flower.,הארנב רץ על הדשא בזמן שהכבשה והעז עומדות ליד הפרח.,
+v2-732,"Level 48: Longer Sentences: Animals, Nature and the Beach",long,"I put on my swimsuit and sandals, and Dad puts the towel and water inside our bag.","אני לובש בגד ים ונועל סנדלים, ואבא מכניס את המגבת ואת המים לתיק שלנו.",
+v2-733,"Level 48: Longer Sentences: Animals, Nature and the Beach",long,"When the wind gets stronger, we close the umbrella and take our things back home.","כשהרוח מתחזקת, אנחנו סוגרים את המטרייה ולוקחים את הדברים שלנו הביתה.",
+v2-734,"Level 48: Longer Sentences: Animals, Nature and the Beach",long,"The monkey sits in the tree and looks at the lion, the elephant, and the brown horse.","הקוף יושב על העץ ומסתכל על האריה, על הפיל ועל הסוס החום.",
+v2-735,"Level 48: Longer Sentences: Animals, Nature and the Beach",long,I see an ant under a leaf and a bee on a flower next to the tree.,אני רואה נמלה מתחת לעלה ודבורה על פרח ליד העץ.,
+v2-736,"Level 48: Longer Sentences: Animals, Nature and the Beach",long,"After we walk by the sea, I am thirsty and want cold water and a sweet strawberry.","אחרי שאנחנו הולכים ליד הים, אני צמא ורוצה מים קרים ותות מתוק.",
+v2-737,"Level 49: Longer Sentences: Maps, Numbers and Adventures",long,"We take the bus to the library, and on the way we see a truck and a fire engine.","אנחנו נוסעים באוטובוס לספרייה, ובדרך אנחנו רואים משאית וכבאית.",
+v2-738,"Level 49: Longer Sentences: Maps, Numbers and Adventures",long,"Before we cross the road, we stand on the sidewalk and wait next to the traffic light.","לפני שאנחנו חוצים את הכביש, אנחנו עומדים על המדרכה ומחכים ליד הרמזור.",
+v2-739,"Level 49: Longer Sentences: Maps, Numbers and Adventures",long,"The drawbridge opens for a boat, so the cars and bicycles wait on both sides of the road.","הגשר המתרומם נפתח לסירה, אז המכוניות והאופניים מחכים בשני צידי הכביש.",
+v2-740,"Level 49: Longer Sentences: Maps, Numbers and Adventures",long,I look at the map and find our city in the north and another city in the south.,אני מסתכל במפה ומוצא את העיר שלנו בצפון ועיר אחרת בדרום.,
+v2-741,"Level 49: Longer Sentences: Maps, Numbers and Adventures",long,"If I have twelve blocks and get three more, I can count fifteen blocks altogether.","אם יש לי שתים עשרה קוביות ואני מקבל עוד שלוש, אני יכול לספור חמש עשרה קוביות בסך הכול.",
+v2-742,"Level 49: Longer Sentences: Maps, Numbers and Adventures",long,"I count twenty-one red dots and thirty-two blue dots, then compare which group has more.","אני סופר עשרים ואחת נקודות אדומות ושלושים ושתיים נקודות כחולות, ואז משווה באיזו קבוצה יש יותר.",
+v2-743,"Level 49: Longer Sentences: Maps, Numbers and Adventures",long,"The book has one hundred and twenty-five pages, and today we read page forty-seven together.","בספר יש מאה עשרים וחמישה עמודים, והיום אנחנו קוראים יחד את עמוד ארבעים ושבע.",
+v2-744,"Level 49: Longer Sentences: Maps, Numbers and Adventures",long,"I want to travel around the world and learn about countries, cities, planets, and space.","אני רוצה לטייל בעולם וללמוד על מדינות, על ערים, על כוכבי לכת ועל החלל.",

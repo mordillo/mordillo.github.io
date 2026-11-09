@@ -1,83 +1,4 @@
-const levels = [
-  {
-    title: "Level 1: Basic Words",
-    cards: [
-      { audio: "parent-001-v1.mp3", english: "Mom", hebrew: "אמא", speak: "אִמָּא", pronunciation: "ima" },
-      { audio: "parent-002-v1.mp3", english: "Dad", hebrew: "אבא", speak: "אַבָּא", pronunciation: "aba" },
-      { audio: "parent-003-v1.mp3", english: "House", hebrew: "בית", speak: "בַּיִת", pronunciation: "bayit" },
-      { audio: "parent-004-v1.mp3", english: "Water", hebrew: "מים", speak: "מַיִם", pronunciation: "mayim" },
-      { audio: "parent-005-v1.mp3", english: "Book", hebrew: "ספר", speak: "סֵפֶר", pronunciation: "sefer" },
-      { audio: "parent-006-v1.mp3", english: "Dog", hebrew: "כלב", speak: "כֶּלֶב", pronunciation: "kelev" },
-      { audio: "parent-007-v1.mp3", english: "Cat", hebrew: "חתול", speak: "חָתוּל", pronunciation: "chatul" },
-      { audio: "parent-008-v1.mp3", english: "Hello", hebrew: "שלום", speak: "שָׁלוֹם", pronunciation: "shalom" }
-    ]
-  },
-  {
-    title: "Level 2: Numbers",
-    cards: [
-      { english: "One", hebrew: "אחת", speak: "אַחַת", pronunciation: "achat" },
-      { english: "Two", hebrew: "שתיים", speak: "שְׁתַּיִם", pronunciation: "shtayim" },
-      { english: "Three", hebrew: "שלוש", speak: "שָׁלוֹשׁ", pronunciation: "shalosh" },
-      { english: "Four", hebrew: "ארבע", speak: "אַרְבַּע", pronunciation: "arba" },
-      { english: "Five", hebrew: "חמש", speak: "חָמֵשׁ", pronunciation: "chamesh" },
-      { english: "Six", hebrew: "שש", speak: "שֵׁשׁ", pronunciation: "shesh" },
-      { english: "Seven", hebrew: "שבע", speak: "שֶׁבַע", pronunciation: "sheva" },
-      { english: "Eight", hebrew: "שמונה", speak: "שְׁמוֹנֶה", pronunciation: "shmoneh" },
-      { english: "Nine", hebrew: "תשע", speak: "תֵּשַׁע", pronunciation: "tesha" },
-      { english: "Ten", hebrew: "עשר", speak: "עֶשֶׂר", pronunciation: "eser" }
-    ]
-  },
-  {
-    title: "Level 3: More Basic Vocabulary",
-    cards: [
-      { english: "Food", hebrew: "אוכל", speak: "אֹכֶל", pronunciation: "ochel" },
-      { english: "Apple", hebrew: "תפוח", speak: "תַּפּוּחַ", pronunciation: "tapuach" },
-      { english: "Milk", hebrew: "חלב", speak: "חָלָב", pronunciation: "chalav" },
-      { english: "School", hebrew: "בית ספר", speak: "בֵּית סֵפֶר", pronunciation: "beit sefer" },
-      { english: "Friend", hebrew: "חבר", speak: "חָבֵר", pronunciation: "chaver" },
-      { english: "Car", hebrew: "מכונית", speak: "מְכוֹנִית", pronunciation: "mechonit" },
-      { english: "Sun", hebrew: "שמש", speak: "שֶׁמֶשׁ", pronunciation: "shemesh" },
-      { english: "Moon", hebrew: "ירח", speak: "יָרֵחַ", pronunciation: "yareach" }
-    ]
-  },
-  {
-    title: "Level 4: Higher Numbers",
-    cards: [
-      { english: "Eleven", hebrew: "אחת עשרה", speak: "אַחַת עֶשְׂרֵה", pronunciation: "achat esreh" },
-      { english: "Twelve", hebrew: "שתים עשרה", speak: "שְׁתֵּים עֶשְׂרֵה", pronunciation: "shteym esreh" },
-      { english: "Thirteen", hebrew: "שלוש עשרה", speak: "שְׁלֹשׁ עֶשְׂרֵה", pronunciation: "shlosh esreh" },
-      { english: "Twenty", hebrew: "עשרים", speak: "עֶשְׂרִים", pronunciation: "esrim" },
-      { english: "Thirty", hebrew: "שלושים", speak: "שְׁלוֹשִׁים", pronunciation: "shloshim" },
-      { english: "Forty", hebrew: "ארבעים", speak: "אַרְבָּעִים", pronunciation: "arbaim" },
-      { english: "Fifty", hebrew: "חמישים", speak: "חֲמִשִּׁים", pronunciation: "chamishim" },
-      { english: "One hundred", hebrew: "מאה", speak: "מֵאָה", pronunciation: "me'ah" }
-    ]
-  },
-  {
-    title: "Level 5: Short Sentences",
-    cards: [
-      { english: "Good morning", hebrew: "בוקר טוב", speak: "בֹּקֶר טוֹב.", pronunciation: "boker tov" },
-      { english: "Good night", hebrew: "לילה טוב", speak: "לַיְלָה טוֹב.", pronunciation: "layla tov" },
-      { english: "Thank you", hebrew: "תודה רבה", speak: "תּוֹדָה רַבָּה.", pronunciation: "todah rabah" },
-      { english: "I want water", hebrew: "אני רוצה מים", speak: "אֲנִי רוֹצֶה מַיִם.", pronunciation: "ani rotzeh mayim" },
-      { english: "I am hungry", hebrew: "אני רעב", speak: "אֲנִי רָעֵב.", pronunciation: "ani ra'ev" },
-      { english: "Where is Dad?", hebrew: "איפה אבא?", speak: "אֵיפֹה אַבָּא?", pronunciation: "eifo aba?" }
-    ]
-  },
-  {
-    title: "Level 6: Longer Sentences",
-    cards: [
-      { english: "I want to read a book", hebrew: "אני רוצה לקרוא ספר", speak: "אֲנִי רוֹצֶה לִקְרֹא סֵפֶר.", pronunciation: "ani rotzeh likro sefer" },
-      { english: "The dog is in the house", hebrew: "הכלב בבית", speak: "הַכֶּלֶב בַּבַּיִת.", pronunciation: "hakelev babayit" },
-      { english: "I am going to school", hebrew: "אני הולך לבית ספר", speak: "אֲנִי הוֹלֵךְ לְבֵית סֵפֶר.", pronunciation: "ani holech lebeit sefer" },
-      { english: "Can I have water?", hebrew: "אפשר לקבל מים?", speak: "אֶפְשָׁר לְקַבֵּל מַיִם?", pronunciation: "efshar lekabel mayim?" },
-      { english: "I love Mom and Dad", hebrew: "אני אוהב את אמא ואבא", speak: "אֲנִי אוֹהֵב אֶת אִמָּא וְאַבָּא.", pronunciation: "ani ohev et ima ve'aba" },
-      { english: "I want to play outside", hebrew: "אני רוצה לשחק בחוץ", speak: "אֲנִי רוֹצֶה לְשַׂחֵק בַּחוּץ.", pronunciation: "ani rotzeh lesachek bachutz" }
-    ]
-  }
-];
-
-levels.push(...additionalLevels);
+const levels = curriculumLevels;
 
 let levelIndex = 0;
 let cardIndex = 0;
@@ -204,6 +125,9 @@ function renderCard() {
   levelTitle.textContent = level.title;
   cardCounter.textContent = `${cardIndex + 1} of ${level.cards.length}`;
   englishWord.textContent = current.english;
+  const isSentence = level.stage !== "words";
+  card.classList.toggle("sentence-card", isSentence);
+  card.classList.toggle("long-sentence-card", level.stage === "long");
   englishHint.textContent = "Tap to see Hebrew";
   hebrewWord.textContent = current.hebrew;
   pronunciation.textContent = current.pronunciation

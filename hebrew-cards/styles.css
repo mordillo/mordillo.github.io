@@ -298,3 +298,17 @@ select {
   outline: 3px solid #0078d4;
   outline-offset: 3px;
 }
+
+/* Sentences wrap at words and use a readable size on iPhone and iPad. */
+.sentence-card .word {
+  font-size: clamp(1.2rem, 5.8vw, 2.6rem);
+  line-height: 1.25;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.long-sentence-card .word {
+  font-size: clamp(1.05rem, 4.7vw, 1.95rem);
+  line-height: 1.28;
+}
+.sentence-card .hint:empty { display: none; }
+.sentence-card .card-face { padding: 48px 20px 20px; }

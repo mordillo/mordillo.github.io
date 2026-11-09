@@ -2,14 +2,14 @@ const levels = [
   {
     title: "Level 1: Basic Words",
     cards: [
-      { audio: "audio-mom.mp3", english: "Mom", hebrew: "אמא", speak: "אִמָּא", pronunciation: "ima" },
-      { audio: "audio-dad.mp3", english: "Dad", hebrew: "אבא", speak: "אַבָּא", pronunciation: "aba" },
-      { english: "House", hebrew: "בית", speak: "בַּיִת", pronunciation: "bayit" },
-      { audio: "audio-water.mp3", english: "Water", hebrew: "מים", speak: "מַיִם", pronunciation: "mayim" },
-      { audio: "audio-book.mp3", english: "Book", hebrew: "ספר", speak: "סֵפֶר", pronunciation: "sefer" },
-      { english: "Dog", hebrew: "כלב", speak: "כֶּלֶב", pronunciation: "kelev" },
-      { audio: "audio-cat.mp3", english: "Cat", hebrew: "חתול", speak: "חָתוּל", pronunciation: "chatul" },
-      { english: "Hello", hebrew: "שלום", speak: "שָׁלוֹם", pronunciation: "shalom" }
+      { audio: "parent-001-v1.mp3", english: "Mom", hebrew: "אמא", speak: "אִמָּא", pronunciation: "ima" },
+      { audio: "parent-002-v1.mp3", english: "Dad", hebrew: "אבא", speak: "אַבָּא", pronunciation: "aba" },
+      { audio: "parent-003-v1.mp3", english: "House", hebrew: "בית", speak: "בַּיִת", pronunciation: "bayit" },
+      { audio: "parent-004-v1.mp3", english: "Water", hebrew: "מים", speak: "מַיִם", pronunciation: "mayim" },
+      { audio: "parent-005-v1.mp3", english: "Book", hebrew: "ספר", speak: "סֵפֶר", pronunciation: "sefer" },
+      { audio: "parent-006-v1.mp3", english: "Dog", hebrew: "כלב", speak: "כֶּלֶב", pronunciation: "kelev" },
+      { audio: "parent-007-v1.mp3", english: "Cat", hebrew: "חתול", speak: "חָתוּל", pronunciation: "chatul" },
+      { audio: "parent-008-v1.mp3", english: "Hello", hebrew: "שלום", speak: "שָׁלוֹם", pronunciation: "shalom" }
     ]
   },
   {
@@ -210,7 +210,7 @@ function renderCard() {
     ? `Sounds like: ${current.pronunciation}`
     : "";
 
-  audioSource.textContent = current.audio ? "Recorded Hebrew voice" : "Device Hebrew voice";
+  audioSource.textContent = current.audio?.startsWith("parent-") ? "Dad’s voice" : current.audio ? "Recorded Hebrew voice" : "Device Hebrew voice";
   // Prepare each recording on navigation; playback still starts directly from a tap.
   if (current.audio && recordedSpeech.getAttribute("src") !== current.audio) {
     recordedSpeech.src = current.audio;

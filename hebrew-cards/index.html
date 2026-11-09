@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>Hebrew Flashcards</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=audio2" />
   <link rel="stylesheet" href="../game-menu.css">
 </head>
 <body>
@@ -40,7 +40,7 @@
         </div>
         <div class="card-face card-back">
           <div class="side-label">Hebrew</div>
-          <div id="hebrewWord" class="word hebrew" dir="rtl"></div>
+          <div id="hebrewWord" class="word hebrew" dir="rtl" lang="he"></div>
           <div id="pronunciation" class="hint"></div>
         </div>
       </div>
@@ -48,6 +48,20 @@
 
     <section class="audio-row">
       <button id="speakBtn" type="button" class="speaker">🔊 Hear Hebrew</button>
+      <details class="audio-settings">
+        <summary>Audio settings</summary>
+        <div class="audio-options">
+          <label for="voiceSelect">Hebrew voice</label>
+          <select id="voiceSelect" aria-describedby="voiceHelp"></select>
+          <label for="speechRate">Speaking speed</label>
+          <select id="speechRate">
+            <option value="1">Natural</option>
+            <option value="0.85">Slower</option>
+          </select>
+          <p id="voiceHelp" class="voice-help"></p>
+        </div>
+      </details>
+      <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     </section>
 
     <nav class="bottom-bar" aria-label="Card navigation">
@@ -57,7 +71,7 @@
     </nav>
   </main>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=audio2"></script>
   <a id="game-menu-link" href="../index.html" aria-label="Back to Tyler’s Game Shelf">← Menu</a>
   <script src="../game-menu.js"></script>
 </body>

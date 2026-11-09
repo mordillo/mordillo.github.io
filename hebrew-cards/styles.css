@@ -268,3 +268,33 @@ select {
     justify-self: center;
   }
 }
+
+/* Optional audio controls stay tucked away until a parent opens them. */
+.audio-settings { margin-top: 4px; }
+.audio-settings summary {
+  min-height: 44px;
+  display: list-item;
+  align-content: center;
+  padding: 10px 4px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #3e4c59;
+  touch-action: manipulation;
+}
+.audio-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #cbd2d9;
+  border-radius: 14px;
+  background: #fff;
+}
+.audio-options label { font-weight: 700; color: #3e4c59; }
+.audio-options select { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.voice-help, .speech-status { margin: 0; color: #52606d; font-size: .9rem; line-height: 1.4; }
+.speech-status:not(:empty) { padding: 8px 0; }
+.audio-settings summary:focus-visible, .audio-options select:focus-visible {
+  outline: 3px solid #0078d4;
+  outline-offset: 3px;
+}

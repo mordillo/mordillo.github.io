@@ -51,7 +51,7 @@
       <details class="audio-settings">
         <summary>Audio settings</summary>
         <div class="audio-options">
-          <label for="voiceSelect">Hebrew voice</label>
+          <label for="voiceSelect">Device Hebrew voice (other cards)</label>
           <select id="voiceSelect" aria-describedby="voiceHelp"></select>
           <label for="speechRate">Speaking speed</label>
           <select id="speechRate">
@@ -59,8 +59,11 @@
             <option value="0.85">Slower</option>
           </select>
           <p id="voiceHelp" class="voice-help"></p>
+          <p class="voice-help">Mom, Dad, Water, Book and Cat use human recordings. <a href="audio-credits.html">Recording credits</a></p>
         </div>
       </details>
+      <audio id="recordedSpeech" preload="auto" hidden></audio>
+      <p id="audioSource" class="voice-help"></p>
       <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     </section>
 
@@ -71,7 +74,7 @@
     </nav>
   </main>
 
-  <script src="app.js?v=audio2"></script>
+  <script src="app.js?v=audio3"></script>
   <a id="game-menu-link" href="../index.html" aria-label="Back to Tyler’s Game Shelf">← Menu</a>
   <script src="../game-menu.js"></script>
 </body>

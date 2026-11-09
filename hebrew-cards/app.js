@@ -2,13 +2,13 @@ const levels = [
   {
     title: "Level 1: Basic Words",
     cards: [
-      { english: "Mom", hebrew: "אמא", speak: "אִמָּא", pronunciation: "ima" },
-      { english: "Dad", hebrew: "אבא", speak: "אַבָּא", pronunciation: "aba" },
+      { audio: "audio-mom.mp3", english: "Mom", hebrew: "אמא", speak: "אִמָּא", pronunciation: "ima" },
+      { audio: "audio-dad.mp3", english: "Dad", hebrew: "אבא", speak: "אַבָּא", pronunciation: "aba" },
       { english: "House", hebrew: "בית", speak: "בַּיִת", pronunciation: "bayit" },
-      { english: "Water", hebrew: "מים", speak: "מַיִם", pronunciation: "mayim" },
-      { english: "Book", hebrew: "ספר", speak: "סֵפֶר", pronunciation: "sefer" },
+      { audio: "audio-water.mp3", english: "Water", hebrew: "מים", speak: "מַיִם", pronunciation: "mayim" },
+      { audio: "audio-book.mp3", english: "Book", hebrew: "ספר", speak: "סֵפֶר", pronunciation: "sefer" },
       { english: "Dog", hebrew: "כלב", speak: "כֶּלֶב", pronunciation: "kelev" },
-      { english: "Cat", hebrew: "חתול", speak: "חָתוּל", pronunciation: "chatul" },
+      { audio: "audio-cat.mp3", english: "Cat", hebrew: "חתול", speak: "חָתוּל", pronunciation: "chatul" },
       { english: "Hello", hebrew: "שלום", speak: "שָׁלוֹם", pronunciation: "shalom" }
     ]
   },
@@ -83,6 +83,7 @@ let isFlipped = false;
 let hebrewVoice = null;
 let hebrewVoices = [];
 let activeUtterance = null;
+let playbackVersion = 0;
 const speechPreferencesKey = "hebrewCards.speech.v1";
 let speechPreferences = {};
 try {
@@ -105,6 +106,8 @@ const flipBtn = document.getElementById("flipBtn");
 const voiceSelect = document.getElementById("voiceSelect");
 const speechRate = document.getElementById("speechRate");
 const voiceHelp = document.getElementById("voiceHelp");
+const recordedSpeech = document.getElementById("recordedSpeech");
+const audioSource = document.getElementById("audioSource");
 const speechStatus = document.getElementById("speechStatus");
 speechRate.value = speechPreferences.rate === "0.85" ? "0.85" : "1";
 
@@ -175,6 +178,9 @@ function findHebrewVoice() {
 }
 
 function stopSpeech() {
+  playbackVersion += 1;
+  recordedSpeech.pause();
+  recordedSpeech.currentTime = 0;
   activeUtterance = null;
   window.speechSynthesis?.cancel();
   speechStatus.textContent = "";
@@ -197,6 +203,12 @@ function renderCard() {
     ? `Sounds like: ${current.pronunciation}`
     : "";
 
+  audioSource.textContent = current.audio ? "Recorded Hebrew voice" : "Device Hebrew voice";
+  // Prepare each recording on navigation; playback still starts directly from a tap.
+  if (current.audio && recordedSpeech.getAttribute("src") !== current.audio) {
+    recordedSpeech.src = current.audio;
+    recordedSpeech.load();
+  }
   card.classList.toggle("flipped", isFlipped);
 }
 
@@ -220,6 +232,23 @@ function moveCard(direction) {
 
 function speakHebrew() {
   stopSpeech();
+  const current = currentCard();
+  if (current.audio) {
+    const version = playbackVersion;
+    recordedSpeech.playbackRate = Number(speechRate.value);
+    recordedSpeech.preservesPitch = true;
+    recordedSpeech.webkitPreservesPitch = true;
+    const reportError = () => {
+      if (version === playbackVersion) {
+        speechStatus.textContent = "The recording could not play. Check your connection and tap Hear Hebrew again.";
+      }
+    };
+    try {
+      const playing = recordedSpeech.play();
+      if (playing && typeof playing.catch === "function") playing.catch(reportError);
+    } catch (_) { reportError(); }
+    return;
+  }
   if (!("speechSynthesis" in window)) {
     speechStatus.textContent = "Speech is unavailable in this browser. Try Safari on your iPhone or iPad.";
     return;
@@ -233,7 +262,6 @@ function speakHebrew() {
     return;
   }
 
-  const current = currentCard();
   // Niqqud is speech-only: disambiguate vowels, shin/sin and grammatical forms
   // while leaving the familiar unpointed spelling on the learning cards.
   const utterance = new SpeechSynthesisUtterance(current.speak || current.hebrew);

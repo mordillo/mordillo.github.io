@@ -10,6 +10,7 @@
       background:#ffca28; min-width:100px;
     }
   </style>
+  <link rel="stylesheet" href="game-menu.css">
 </head>
 <body>
   <canvas id="coasterCanvas"></canvas>
@@ -64,6 +65,8 @@
     btnSlow.addEventListener('touchstart', (e)=>{ e.preventDefault(); brake(); });
     btnSlow.addEventListener('click', brake);
   </script>
+  <a id="game-menu-link" href="index.html" aria-label="Back to Tyler’s Game Shelf">← Menu</a>
+  <script src="game-menu.js"></script>
 </body>
 </html>
 

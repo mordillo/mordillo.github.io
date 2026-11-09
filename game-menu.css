@@ -1,0 +1,41 @@
+/* Only the navigation link is styled; game styles and layout stay untouched. */
+#game-menu-link {
+  all: initial;
+  box-sizing: border-box;
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  left: calc(10px + env(safe-area-inset-left, 0px));
+  z-index: 2147483647;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 78px;
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid #64748b;
+  border-radius: 12px;
+  background: #172033;
+  color: #fff;
+  font: 600 14px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  transform-origin: top left;
+  --menu-safe-top: env(safe-area-inset-top, 0px);
+  --menu-safe-right: env(safe-area-inset-right, 0px);
+  --menu-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --menu-safe-left: env(safe-area-inset-left, 0px);
+}
+#game-menu-link[data-menu-side="right"] {
+  left: auto;
+  right: calc(10px + env(safe-area-inset-right, 0px));
+}
+#game-menu-link:hover { background: #28364f; }
+#game-menu-link:focus-visible {
+  outline: 3px solid #38bdf8;
+  outline-offset: 3px;
+}

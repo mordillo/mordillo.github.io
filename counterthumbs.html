@@ -79,6 +79,7 @@
     .reset .face { width: 48px; height: 48px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
     .reset .label { margin-top: 4px; color: #fff; font-size: 1rem; font-weight: bold; }
   </style>
+  <link rel="stylesheet" href="game-menu.css">
 </head>
 <body>
   <div class="top-controls">
@@ -161,5 +162,7 @@
     resetBtn.addEventListener('click',()=>{count=0;updateDisplay();clickSound.currentTime=0;clickSound.play().catch(()=>{});});
     updateDisplay();
   </script>
+  <a id="game-menu-link" href="index.html" aria-label="Back to Tyler’s Game Shelf" data-menu-side="right">← Menu</a>
+  <script src="game-menu.js"></script>
 </body>
 </html>

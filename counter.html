@@ -23,6 +23,7 @@
     .btn-small {width:40px;height:40px;font-size:1.2rem;}
     .btn:active {transform:translateY(4px);box-shadow:0 2px 4px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.3);}
   </style>
+  <link rel="stylesheet" href="game-menu.css">
 </head>
 <body>
   <div class="top-controls">
@@ -173,5 +174,7 @@
     colorPicker.value = 'Red'; colorPicker.dispatchEvent(new Event('change'));
     updateDisplay();
   </script>
+  <a id="game-menu-link" href="index.html" aria-label="Back to Tyler’s Game Shelf" data-menu-side="right">← Menu</a>
+  <script src="game-menu.js"></script>
 </body>
 </html>

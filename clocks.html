@@ -76,6 +76,7 @@
     .run-top-out   { animation: flipTopOut   .22s cubic-bezier(.33,.01,.67,.99) forwards; }
     .run-bottom-in { animation: flipBottomIn .22s cubic-bezier(.25,.6,.2,1)  .12s forwards; }
   </style>
+  <link rel="stylesheet" href="game-menu.css">
 </head>
 
 <body>
@@ -358,5 +359,7 @@
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
+  <a id="game-menu-link" href="index.html" aria-label="Back to Tyler’s Game Shelf">← Menu</a>
+  <script src="game-menu.js"></script>
 </body>
 </html>

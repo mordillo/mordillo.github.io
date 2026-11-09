@@ -140,6 +140,7 @@ li.draggable-tile:active{cursor:grabbing;transform:scale(1.05);}
 .area-months{grid-area:months;}
 .area-years{grid-area:years;}
 </style>
+  <link rel="stylesheet" href="game-menu.css">
 </head>
 <body>
 <div class="calendar-board">
@@ -170,6 +171,8 @@ else{if(zone.dataset.category!==cat)return;qs('ul.pool',zone).appendChild(tile);
 function registerDesktop(){qsa('.value.dropzone').forEach(z=>{z.addEventListener('dragover',e=>e.preventDefault());z.addEventListener('drop',e=>{e.preventDefault();handleDrop(document.getElementById(e.dataTransfer.getData('id')),z);});});qsa('.tile[data-category]').forEach(t=>{t.addEventListener('dragover',e=>e.preventDefault());t.addEventListener('drop',e=>{e.preventDefault();handleDrop(document.getElementById(e.dataTransfer.getData('id')),t);});});}
 build();registerDesktop();
 </script>
+  <a id="game-menu-link" href="index.html" aria-label="Back to Tyler’s Game Shelf">← Menu</a>
+  <script src="game-menu.js"></script>
 </body>
 </html>
 

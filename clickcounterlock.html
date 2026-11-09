@@ -10,6 +10,7 @@
     .pressable:active { transform: translateY(1px); }
     input[type="range"] { accent-color: #0ea5e9; }
   </style>
+  <link rel="stylesheet" href="game-menu.css">
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
   <div class="max-w-5xl mx-auto p-6">
@@ -200,5 +201,7 @@
 
     updateDisplay(); applyRateUI(parseFloat(rateSlider.value));
   </script>
+  <a id="game-menu-link" href="index.html" aria-label="Back to Tyler’s Game Shelf">← Menu</a>
+  <script src="game-menu.js"></script>
 </body>
 </html>
